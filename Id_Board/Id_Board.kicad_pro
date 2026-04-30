@@ -642,7 +642,7 @@
       {
         "filename": "Id_Board.kicad_sch",
         "name": "Id_Board",
-        "uuid": "00000000-0000-0000-0000-000000000000"
+        "uuid": "cf823420-7600-4961-ae2c-a9e0246795f9"
       }
     ],
     "used_designators": "",
@@ -651,39 +651,7 @@
   "sheets": [
     [
       "cf823420-7600-4961-ae2c-a9e0246795f9",
-      "Root"
-    ],
-    [
-      "3c19bbf7-3f62-4130-999e-cbc604f68cbb",
-      "Dip"
-    ],
-    [
-      "8d1b1c9f-61b8-41ba-97b5-a6c3e58c90ea",
-      "Dip1"
-    ],
-    [
-      "23bee107-acc7-4d5a-9af4-e8627e0aba1d",
-      "Dip2"
-    ],
-    [
-      "962856e0-0eaa-4527-8a21-fec1a79f395f",
-      "Dip3"
-    ],
-    [
-      "d8e8d994-dad1-4fc1-ae71-e397059aa04d",
-      "Dip4"
-    ],
-    [
-      "5c6832ca-b895-42be-8866-40096a1f6147",
-      "Dip5"
-    ],
-    [
-      "1cd1beac-41e0-40ba-8298-913bd3f0e7d1",
-      "Dip6"
-    ],
-    [
-      "a473a1f4-a908-4283-af03-a90667a94d5c",
-      "Dip7"
+      "Id_Board"
     ]
   ],
   "text_variables": {},
