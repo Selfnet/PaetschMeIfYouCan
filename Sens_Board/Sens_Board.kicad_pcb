@@ -164,8 +164,8 @@
 			(uuid "6b18447e-4aed-4c90-b38b-e34f159db381")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -286,8 +286,8 @@
 			(uuid "7c11cfd6-10ec-4528-9b61-305e0d15e882")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -329,13 +329,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R22"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "17a24d8a-8a5c-4539-957d-5083b7c54129")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -456,8 +456,8 @@
 			(uuid "b985a7d6-7f81-4092-a51c-b3e2b9515a6f")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -499,13 +499,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R24"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "747e6d67-c042-40f8-a38f-c6ac59a2c87a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -626,8 +626,8 @@
 			(uuid "25f5023d-3456-47f5-b46f-82973f33ab1a")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -669,13 +669,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R109"
-			(at 0 -1.17 90)
+			(at -2.48 -0.489304 90)
 			(layer "F.SilkS")
 			(uuid "b03fc08f-4807-4989-b8ea-0bf4238789bc")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -796,8 +796,8 @@
 			(uuid "a13db066-f8da-41a9-80a3-339b4fe46b22")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -841,11 +841,12 @@
 		(property "Reference" "H1"
 			(at 0 -4.15 90)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "053d1e8a-925f-4f0a-8a1c-03ad71462690")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -934,8 +935,8 @@
 			(uuid "4eedb609-5485-494f-beb3-477f40d6ee58")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -955,13 +956,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R44"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "3f0bbca3-1a94-431a-9410-1a1e86c6e7db")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -1082,8 +1083,8 @@
 			(uuid "5ab599e9-df39-4b60-823c-f641e2e8856d")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -1125,13 +1126,13 @@
 		(descr "SOIC, 16 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=12858&prodName=TLP291-4)")
 		(tags "SOIC SO")
 		(property "Reference" "U5"
-			(at 0 -6.1 0)
+			(at -2.310304 -6.154 0)
 			(layer "F.SilkS")
 			(uuid "507a38ec-7272-46b8-84fc-b1abf6643889")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -1404,8 +1405,8 @@
 			(uuid "b7e548e7-bdb5-4094-9b28-68447edc15db")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -1589,13 +1590,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R68"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "7af1e905-3f3a-445f-9909-97f07071f0bf")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -1716,8 +1717,8 @@
 			(uuid "9362186d-ed6b-47e7-954d-8931891174e3")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -1764,8 +1765,8 @@
 			(uuid "c18f14c2-f601-4303-b773-df8d3a1231e4")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -1886,8 +1887,8 @@
 			(uuid "575421cd-e381-4981-b520-7bf12e0fb755")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -1934,8 +1935,8 @@
 			(uuid "6b62b45b-2b37-4a77-b900-472529b05282")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2056,8 +2057,8 @@
 			(uuid "5eb880e1-663b-4f0a-9c8d-300015973a4c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2099,13 +2100,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R7"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "63c7ff6a-fc8a-4586-8111-b966aff6e33a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2226,8 +2227,8 @@
 			(uuid "d3a6d82a-bdd5-4787-92ee-578a11243cc7")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2274,8 +2275,8 @@
 			(uuid "a51095fa-a471-45f9-9a90-ee70403b97ea")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2396,8 +2397,8 @@
 			(uuid "36c13ab6-e964-4bb3-8188-d49e8faabd4a")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2439,13 +2440,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R2"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "cfd85f4d-baf8-454b-a123-305505d4fa49")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2566,8 +2567,8 @@
 			(uuid "a260201d-e5f8-4542-be4a-a93c3d728276")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2614,8 +2615,8 @@
 			(uuid "af0ee782-7b6e-4276-87ca-f78e280d00a1")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -2888,8 +2889,8 @@
 			(uuid "e91af742-29e8-49a9-914c-19b21dd911f1")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -3073,13 +3074,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R9"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "ef89ef3e-74b8-4908-8207-1fde296281fa")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -3200,8 +3201,8 @@
 			(uuid "a83ab29a-3bd7-414d-9a98-f763d3e627fd")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -3248,8 +3249,8 @@
 			(uuid "ef94f858-9233-40a3-bdb3-6a77adc66192")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -3522,8 +3523,8 @@
 			(uuid "0276257f-cb15-4475-b9bc-1c576dd3d2d2")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -3707,13 +3708,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R93"
-			(at 0 -1.17 90)
+			(at -2.08 -0.265304 90)
 			(layer "F.SilkS")
 			(uuid "716a48c1-4322-454f-a68c-6c58194b1657")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -3834,8 +3835,8 @@
 			(uuid "029648ad-5f7b-427c-82b5-3f266b358843")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -3877,13 +3878,13 @@
 		(descr "SOIC, 16 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=12858&prodName=TLP291-4)")
 		(tags "SOIC SO")
 		(property "Reference" "U13"
-			(at 0 -6.1 0)
+			(at -2.310304 -6.154 0)
 			(layer "F.SilkS")
 			(uuid "09ac0b7d-8188-44d8-a44b-c670144a4c7c")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4156,8 +4157,8 @@
 			(uuid "74b30369-2f38-4868-882d-15b19b985d22")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4346,8 +4347,8 @@
 			(uuid "33a9ac14-4d0c-4405-84d0-ee223349f948")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4468,8 +4469,8 @@
 			(uuid "2b15d6bc-cee7-473e-8fd6-72b4b14e44d8")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4511,13 +4512,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R48"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "ac5a0e74-bf1a-4a5c-b05b-85eb9779d3ea")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4638,8 +4639,8 @@
 			(uuid "aa71bf09-f276-4208-8db6-96af0efac244")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4686,8 +4687,8 @@
 			(uuid "629c11dc-5fcb-46a8-99bd-ce18a0fd89cc")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4808,8 +4809,8 @@
 			(uuid "3e878893-26e4-483f-a76b-73e06e8b2522")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4851,13 +4852,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R114"
-			(at 0 -1.17 90)
+			(at -0.307 -1.17 90)
 			(layer "F.SilkS")
 			(uuid "617543cd-4d1c-4f74-a2d3-5d74adc2a59e")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -4978,8 +4979,8 @@
 			(uuid "94f6b661-73f9-4e40-aa85-5a1f312a33c1")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5021,13 +5022,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R15"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "00a61e24-c0d4-4170-9a78-b3614392b17d")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5148,8 +5149,8 @@
 			(uuid "b2605d22-efd2-4f51-9110-44872f9e2dd6")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5191,13 +5192,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R71"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "ac355677-cd1d-43f1-8faa-2a716e3a211e")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5318,8 +5319,8 @@
 			(uuid "bb50656f-190e-4a49-a865-8e630a2ae8e9")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5366,8 +5367,8 @@
 			(uuid "c90a5882-54d4-4318-8f91-c94ee1512563")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5488,8 +5489,8 @@
 			(uuid "64fdee44-df08-43eb-a655-e4f72c7f19b9")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5531,13 +5532,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R36"
-			(at 0 -1.17 90)
+			(at 0.026 1.184696 90)
 			(layer "F.SilkS")
 			(uuid "d23bc0a6-57c7-457b-bc2a-4d2b3f1334d3")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5658,8 +5659,8 @@
 			(uuid "0917a7ab-b24b-49e1-ac3e-8ccbc68ff1b4")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5701,13 +5702,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R79"
-			(at 0 -1.17 90)
+			(at 0 1.095304 90)
 			(layer "F.SilkS")
 			(uuid "935dc558-680a-41e4-8a84-ba2c4947cba9")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5828,8 +5829,8 @@
 			(uuid "a0d6db65-f07b-484a-a000-04c43813a70b")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5871,13 +5872,13 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C13"
-			(at 0 -1.16 0)
+			(at 0 1.125 0)
 			(layer "F.SilkS")
 			(uuid "cb3930fc-5050-4474-9564-2a10ad5864e7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -5998,8 +5999,8 @@
 			(uuid "dc2f81d6-ab00-4395-9a48-cfc3cd5dd353")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6041,13 +6042,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R108"
-			(at 0 -1.17 90)
+			(at -1.274 1.177696 90)
 			(layer "F.SilkS")
 			(uuid "b96029d4-e9ef-46a5-8e33-b28ae303bd08")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6168,8 +6169,8 @@
 			(uuid "00dd0ca8-563d-4bbb-a730-94ec6115bb4c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6216,8 +6217,8 @@
 			(uuid "f425947e-c846-44b8-a682-acbe41adbed7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6338,8 +6339,8 @@
 			(uuid "15707566-1cdf-4700-87c9-1fd88c15c25a")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6381,13 +6382,13 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C103"
-			(at 0 -1.16 0)
+			(at 0 1.125 0)
 			(layer "F.SilkS")
 			(uuid "1254adfe-caf4-4731-9582-1015a3b685db")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6508,8 +6509,8 @@
 			(uuid "62e36cca-1f4a-4d0e-9d7d-7454f47b4a8a")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6551,13 +6552,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R11"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "1d49fbe0-6070-4f62-a2be-909271ebe9e4")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6678,8 +6679,8 @@
 			(uuid "44193d79-4218-46a4-870c-9caa8c727420")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6726,8 +6727,8 @@
 			(uuid "85d67939-4a4e-4889-a3c2-8dd6f33986dc")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6848,8 +6849,8 @@
 			(uuid "40140604-5a61-4b53-a557-c9aebc1c05f2")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -6891,13 +6892,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R83"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "7f0a6cc3-6587-46d2-9294-26c5ce371f6b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7018,8 +7019,8 @@
 			(uuid "d7fdbdf5-2ef5-4a97-ab2a-825f91c18b17")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7061,13 +7062,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R55"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "62658496-7aa6-4f11-bf06-8a06ba0a106c")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7188,8 +7189,8 @@
 			(uuid "06931552-82af-457b-b135-cd5fcd6839e2")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7236,8 +7237,8 @@
 			(uuid "e604a099-5076-4a6a-96dd-c8af4f46060b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7510,8 +7511,8 @@
 			(uuid "6b644063-950a-4d11-86c7-0d811e39548c")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7700,8 +7701,8 @@
 			(uuid "3ee885c9-6e2b-408d-a51e-53837f38caf7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7822,8 +7823,8 @@
 			(uuid "b3005afc-f62f-43e8-a1ad-935fa0686ead")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7870,8 +7871,8 @@
 			(uuid "f56ee4fc-2bb5-46d7-980d-817498fdee7b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -7992,8 +7993,8 @@
 			(uuid "ba1e6eeb-83c1-4809-9f12-1b1c8600af46")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -8040,8 +8041,8 @@
 			(uuid "9eb72e0e-5628-409b-8661-ab1947033dcc")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -8162,8 +8163,8 @@
 			(uuid "26e1a3ab-82b2-4116-a444-d4f8ceef167e")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -8205,13 +8206,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R80"
-			(at 0 -1.17 90)
+			(at 0 1.095304 90)
 			(layer "F.SilkS")
 			(uuid "80f4444b-6d39-497a-a76a-8ba54606b1b7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -8332,8 +8333,8 @@
 			(uuid "fb5defda-2810-4e36-a0a3-672fd2238726")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -8380,8 +8381,8 @@
 			(uuid "206e47e5-41fd-4e8c-ac74-c74e2c15e53d")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -8502,8 +8503,8 @@
 			(uuid "7a6aa8ad-c5ab-4430-947c-ecc795fe8b4d")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -8550,8 +8551,8 @@
 			(uuid "5a57fa9c-f1c3-462a-8e2d-b5fa3034c2fc")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -8824,8 +8825,8 @@
 			(uuid "185422fc-b118-47ee-9c22-ae9e3260f6dc")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9009,13 +9010,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R32"
-			(at 0 -1.17 90)
+			(at 0 1.126304 90)
 			(layer "F.SilkS")
 			(uuid "be310c19-133e-4696-a68a-7245cff07a98")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9136,8 +9137,8 @@
 			(uuid "9f8a30cc-77a9-4284-8a7b-b3a7e121c7d6")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9184,8 +9185,8 @@
 			(uuid "68ec6cf7-78d9-487b-9941-d756a384406a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9458,8 +9459,8 @@
 			(uuid "11a5e340-518d-4a66-ace5-1648d1127fb3")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9643,13 +9644,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R118"
-			(at 0 -1.17 90)
+			(at -0.305 -1.177696 90)
 			(layer "F.SilkS")
 			(uuid "9b13f2e7-b028-4287-aca1-0aad8263e496")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9770,8 +9771,8 @@
 			(uuid "b64fd469-1c39-4b5a-8338-ed87d80daece")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9813,13 +9814,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R78"
-			(at 0 -1.17 90)
+			(at -0.06 -1.060608 90)
 			(layer "F.SilkS")
 			(uuid "eaf34bd7-97e8-4f3d-b075-3e53fd13e730")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9940,8 +9941,8 @@
 			(uuid "f8b5cccf-ac26-4744-8dc7-1e295cd21b03")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -9988,8 +9989,8 @@
 			(uuid "ea264f9b-237b-434a-acab-53f2f0ba5842")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -10455,8 +10456,8 @@
 			(uuid "02d9b479-aa08-4951-990b-d4db24dd73b7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -10584,13 +10585,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R103"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "7f46d041-db89-4f20-aeb2-07689c8a9616")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -10711,8 +10712,8 @@
 			(uuid "c4ecef63-3f5d-42b1-add0-1496d24eb8da")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -10754,13 +10755,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R122"
-			(at 0 -1.17 90)
+			(at -2.46 -0.055304 90)
 			(layer "F.SilkS")
 			(uuid "61e41908-dd6a-4677-beaa-2ce9ff571a88")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -10869,8 +10870,8 @@
 			(uuid "98f44f86-d521-4742-918a-44cb2c23fcb1")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -10912,13 +10913,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R29"
-			(at 0 -1.17 90)
+			(at -2.174 -0.026304 90)
 			(layer "F.SilkS")
 			(uuid "857f7c20-1b8d-414b-91c7-0b2b167ad77d")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11039,8 +11040,8 @@
 			(uuid "a9c81447-e642-4f23-a4af-3c606fd5aa9d")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11082,13 +11083,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R105"
-			(at 0 -1.17 90)
+			(at -1.068 -1.17 90)
 			(layer "F.SilkS")
 			(uuid "f4ec6770-2e0a-48c1-8b2f-fc5228a1a419")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11209,8 +11210,8 @@
 			(uuid "8a892f37-e950-4463-b641-b4bd18153957")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11257,8 +11258,8 @@
 			(uuid "09734978-e40f-447c-9406-453655394d7a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11379,8 +11380,8 @@
 			(uuid "1c8fdade-beec-4c06-9e59-c36e923035e3")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11422,13 +11423,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R20"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "4cdcb893-be27-4fc0-84af-7c74a185580f")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11549,8 +11550,8 @@
 			(uuid "cd8ec849-d8b3-4cd9-9952-b5ed04f4be81")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11592,13 +11593,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R116"
-			(at 0 -1.17 90)
+			(at -1.219 1.189304 90)
 			(layer "F.SilkS")
 			(uuid "2476467f-814a-4773-9222-b648f7000ec9")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11719,8 +11720,8 @@
 			(uuid "7d2adca5-70e1-45c0-96c8-a7216ad5fbd8")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11762,13 +11763,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R67"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "ab21369e-44f5-4ff7-aa12-26da207cb40f")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11889,8 +11890,8 @@
 			(uuid "f9c3cd40-fd00-4398-b207-78a4ff16c483")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -11932,13 +11933,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R59"
-			(at 0 -1.17 90)
+			(at 0 1.160696 90)
 			(layer "F.SilkS")
 			(uuid "cdd68494-532b-4a4d-9ea2-9a8a41707153")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12059,8 +12060,8 @@
 			(uuid "379df22e-2b61-427d-9ef6-24c86f5b7766")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12107,8 +12108,8 @@
 			(uuid "e6295d0b-5fff-454b-9b78-b1b8149a2df7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12229,8 +12230,8 @@
 			(uuid "0c2aa16e-d378-4334-bb83-da2239863fcf")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12272,13 +12273,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R28"
-			(at 0 -1.17 90)
+			(at 0.04 1.167696 90)
 			(layer "F.SilkS")
 			(uuid "e3c70e78-7450-4e01-9676-b648cd067091")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12399,8 +12400,8 @@
 			(uuid "398dd10e-7a74-4ad8-832b-f9a659a25458")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12447,8 +12448,8 @@
 			(uuid "8272e5f4-6df2-4c85-bab8-49a1987ec595")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12569,8 +12570,8 @@
 			(uuid "449266b0-273f-4320-b8d0-f395fbc4ff4b")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12617,8 +12618,8 @@
 			(uuid "d7a5e4f4-751a-425e-a31a-adf124c87da3")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12739,8 +12740,8 @@
 			(uuid "8233bb4a-04a8-4643-9aea-3e23e8ca35f7")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12782,13 +12783,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R52"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "6afaff37-2dee-41cb-87e0-572636d06196")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12909,8 +12910,8 @@
 			(uuid "3a5ac5ff-9b8f-4a96-92a1-8aeb71afe2bd")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -12952,13 +12953,13 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C3"
-			(at 0 -1.16 90)
+			(at 0.001 1.175 90)
 			(layer "F.SilkS")
 			(uuid "f2270559-a668-449e-b831-c8fba998c046")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -13079,8 +13080,8 @@
 			(uuid "d3fef27e-8b45-45a5-8b05-2321a5b89df0")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -13122,13 +13123,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R127"
-			(at 0 -1.17 90)
+			(at -2.38 -0.101 90)
 			(layer "F.SilkS")
 			(uuid "e71a3246-daab-4378-a7ce-e7685e099494")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -13237,8 +13238,8 @@
 			(uuid "4a012421-e693-4440-acd4-5c5f4d5b352c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -13280,13 +13281,13 @@
 		(descr "SOIC, 16 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=12858&prodName=TLP291-4)")
 		(tags "SOIC SO")
 		(property "Reference" "U7"
-			(at 0 -6.1 0)
+			(at -2.310304 -6.154 0)
 			(layer "F.SilkS")
 			(uuid "cc7918e9-9e75-49cb-8e62-e667a4f80749")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -13559,8 +13560,8 @@
 			(uuid "099ea9c3-f987-4888-856f-838865e5e7c3")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -13744,13 +13745,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R21"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "c28b9fd8-3162-4f74-beff-3b8761c44166")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -13871,8 +13872,8 @@
 			(uuid "41059261-c1ab-4fec-b834-24223958f7c8")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -13914,13 +13915,13 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C4"
-			(at 0 -1.16 0)
+			(at 0 1.134 0)
 			(layer "F.SilkS")
 			(uuid "0b041ece-36a2-4fec-a1b4-4496cb6a2990")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14041,8 +14042,8 @@
 			(uuid "d9f7fcd0-50c1-4be5-a0d1-516a51395b8b")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14089,8 +14090,8 @@
 			(uuid "ae1e7a42-c496-446b-8ff3-bc23026374e9")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14211,8 +14212,8 @@
 			(uuid "d13975c2-7e20-45b8-a405-4a31b101814a")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14254,13 +14255,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R84"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "0cda2f43-9df4-44f2-ae86-2cadd98d2983")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14381,8 +14382,8 @@
 			(uuid "5e9ef27d-7b43-4bb1-994a-49b21a1a36f0")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14424,13 +14425,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R100"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "f5d6cb36-3b7c-4ea4-acbf-9e1d2c0f7d08")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14551,8 +14552,8 @@
 			(uuid "f2f12b52-bd3a-4019-aad2-7287025ad305")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14599,8 +14600,8 @@
 			(uuid "c98a36c1-9760-4e02-b9d6-d6e204c3d1b7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14709,8 +14710,8 @@
 			(uuid "712c156a-75fb-4e8f-b0db-5501688cf02b")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14752,13 +14753,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R51"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "62430b08-d343-479a-8119-9e4e35c6e82b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14879,8 +14880,8 @@
 			(uuid "2435b778-d022-4ecd-b185-4449de967853")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -14922,13 +14923,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R121"
-			(at 0 -1.17 90)
+			(at -2.48 -0.026 90)
 			(layer "F.SilkS")
 			(uuid "4ff26e6f-8b81-424f-92c2-b985bc7aeb62")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15037,8 +15038,8 @@
 			(uuid "9ce2ba65-f457-4005-8a90-2d1a5e115cf6")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15080,13 +15081,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R14"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "d73facd2-639d-4916-a926-21b0600dac49")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15207,8 +15208,8 @@
 			(uuid "dfac7792-3728-44aa-aa46-27c7165ae79b")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15250,13 +15251,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R37"
-			(at 0 -1.17 90)
+			(at -2.18 -0.055304 90)
 			(layer "F.SilkS")
 			(uuid "c4a002ab-a0e2-49ec-a21f-59c91e819feb")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15377,8 +15378,8 @@
 			(uuid "17c358d0-026a-4550-9865-e868e852f52f")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15425,8 +15426,8 @@
 			(uuid "cb4f54e3-5aea-4515-99a9-bd0b4669e80a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15547,8 +15548,8 @@
 			(uuid "dfb02f49-9687-4179-a8e1-4827fe0de603")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15590,13 +15591,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R35"
-			(at 0 -1.17 90)
+			(at 0.026 1.184696 90)
 			(layer "F.SilkS")
 			(uuid "840091ef-9009-41fc-ad7b-074a878c3d34")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15717,8 +15718,8 @@
 			(uuid "47f33fea-cbf5-46cb-a896-c4a724e41eb6")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15765,8 +15766,8 @@
 			(uuid "f7dea612-4d4c-4685-bb48-4c23b2bc400d")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15887,8 +15888,8 @@
 			(uuid "a014d370-56b6-4601-8352-c7ffbb53eae4")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -15935,8 +15936,8 @@
 			(uuid "ae1788d8-314b-4863-8775-4e29138d933f")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16045,8 +16046,8 @@
 			(uuid "ac4e1177-d42a-45c8-9da6-e3ac7aff5139")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16088,13 +16089,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R99"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "1bc522fc-ccfd-4d69-af19-bb6bdd32e5af")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16215,8 +16216,8 @@
 			(uuid "c72c4a51-2412-44fe-a30f-5d7b4a35d258")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16258,13 +16259,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R113"
-			(at 0 -1.17 90)
+			(at -1.123 -1.189304 90)
 			(layer "F.SilkS")
 			(uuid "38ae6d21-399b-4789-9f17-2ce063fcf438")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16385,8 +16386,8 @@
 			(uuid "c8c02371-f4aa-4624-8aec-9c30ac2afbba")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16433,8 +16434,8 @@
 			(uuid "19308edc-618b-482a-9c51-54fda4ccd3ba")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16555,8 +16556,8 @@
 			(uuid "95f8191d-b93b-4e29-bc25-4ab8bf5f2946")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16603,8 +16604,8 @@
 			(uuid "cad24ac8-51fe-49c0-9cd0-ae951fc6f213")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16725,8 +16726,8 @@
 			(uuid "fe5dc281-0b28-44ff-81f1-33dba9b48175")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16773,8 +16774,8 @@
 			(uuid "55afd5b0-43d1-4b93-9014-2b2a81802732")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16895,8 +16896,8 @@
 			(uuid "4a4ad27f-5d14-468a-9988-84da452dabc8")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -16938,13 +16939,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R17"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "fcbb29a5-37e1-44d6-b03d-1eacfd8bfc24")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17065,8 +17066,8 @@
 			(uuid "265bc6fc-9f0c-477d-8247-53dd35fbf214")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17108,13 +17109,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R60"
-			(at 0 -1.17 90)
+			(at 0 1.160696 90)
 			(layer "F.SilkS")
 			(uuid "42ebde66-582b-43b5-9583-22a023763a5b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17235,8 +17236,8 @@
 			(uuid "141c0cd0-bb28-4ba3-8d87-56fa56aee364")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17278,13 +17279,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R40"
-			(at 0 -1.17 90)
+			(at 0 1.155304 90)
 			(layer "F.SilkS")
 			(uuid "be6258c6-0a44-4a67-92fd-78c6fea5114e")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17405,8 +17406,8 @@
 			(uuid "df5af100-b807-4cf6-92ff-b09f4970132d")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17448,13 +17449,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R111"
-			(at 0 -1.17 90)
+			(at -0.354 1.089304 90)
 			(layer "F.SilkS")
 			(uuid "51b168b5-bf05-4eec-a4e8-cea901730058")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17575,8 +17576,8 @@
 			(uuid "b53056b1-4795-4a02-8ceb-2fe4133e6b22")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17618,13 +17619,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R117"
-			(at 0 -1.17 90)
+			(at -0.919 -1.177696 90)
 			(layer "F.SilkS")
 			(uuid "9d09ba7b-dac7-4dff-a0bf-192e56b57909")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17745,8 +17746,8 @@
 			(uuid "411bc003-1221-4a5c-8b77-cb6cb34a759f")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17793,8 +17794,8 @@
 			(uuid "5ac1d3c1-6e2c-4af9-ae5d-b989162a1a0b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17915,8 +17916,8 @@
 			(uuid "cdbb45d6-1ce7-49b1-8d19-5384e9092332")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -17958,13 +17959,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R43"
-			(at 0 -1.17 90)
+			(at 0 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "f043c949-33ff-421e-97a0-86e3b207eb9c")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18085,8 +18086,8 @@
 			(uuid "8dbddee7-4671-4cc0-99c8-3e0aec3c8d50")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18128,13 +18129,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R27"
-			(at 0 -1.17 90)
+			(at 0.04 1.167696 90)
 			(layer "F.SilkS")
 			(uuid "9e649fae-73e5-4687-aba3-3a472f5d9846")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18255,8 +18256,8 @@
 			(uuid "0f1b03e8-f4a9-4f6b-9906-767e34fac954")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18303,8 +18304,8 @@
 			(uuid "30a6e7d3-550a-42c6-9b4b-b77b045d285a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18425,8 +18426,8 @@
 			(uuid "da5c16b5-5a29-444a-badb-da615336b622")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18473,8 +18474,8 @@
 			(uuid "f12fd24f-af82-4c38-833c-52867e73ed4e")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18595,8 +18596,8 @@
 			(uuid "1c63af16-4b31-43df-807d-0cb1b44bf3d1")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18638,13 +18639,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R61"
-			(at 0 -1.17 90)
+			(at -2.174 0.020696 90)
 			(layer "F.SilkS")
 			(uuid "07757386-af84-4b61-8932-63dc6895bb85")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18765,8 +18766,8 @@
 			(uuid "56698979-065e-4d7f-9cf5-e24fff6e1c97")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18813,8 +18814,8 @@
 			(uuid "086067c0-fe4c-443d-b618-65d987ba303d")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18935,8 +18936,8 @@
 			(uuid "a2bad1fe-a0d8-4295-9e18-f5443f661de2")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -18983,8 +18984,8 @@
 			(uuid "954d1916-43d6-4d45-b236-7c16170a1e22")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -19257,8 +19258,8 @@
 			(uuid "39c7e6d7-64a1-4086-b541-be672502a1b1")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -19445,8 +19446,8 @@
 			(uuid "0def193f-0b01-439a-be05-93e504fc4951")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -19636,8 +19637,8 @@
 			(uuid "fbbb871b-2289-4299-b8fc-7cf5e97ca699")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21143,13 +21144,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R129"
-			(at 0 -1.17 90)
+			(at -2.38 -0.271 90)
 			(layer "F.SilkS")
 			(uuid "00b01a43-dfbb-49f6-a724-c1292bea1295")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21258,8 +21259,8 @@
 			(uuid "aa01ecb8-3462-46fd-8740-8ffa115b4e73")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21301,13 +21302,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R106"
-			(at 0 -1.17 90)
+			(at -0.254 -1.177696 90)
 			(layer "F.SilkS")
 			(uuid "f23a7b61-60fb-4c54-b690-60e6a974dfc1")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21428,8 +21429,8 @@
 			(uuid "ff1b6382-9abe-4f17-a103-345f6c7f1c75")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21476,8 +21477,8 @@
 			(uuid "88c42214-7c91-4944-ae4d-e3494477c98a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21598,8 +21599,8 @@
 			(uuid "99a8b05f-7cb1-47df-a5c9-696861e36797")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21641,13 +21642,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R119"
-			(at 0 -1.17 90)
+			(at -0.407 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "31e6dda6-3441-4838-95ac-b3e97573dd25")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21768,8 +21769,8 @@
 			(uuid "910308a0-d33f-4d86-a304-2cbc662127dd")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21811,13 +21812,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R3"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "9dc50bc1-b5ee-4ff0-9a09-0d772db252f0")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21938,8 +21939,8 @@
 			(uuid "ec256310-3881-46ba-8a4f-22bd261d140d")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -21986,8 +21987,8 @@
 			(uuid "ecf4c30a-b570-422d-96d8-1472e98ab30a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -22108,8 +22109,8 @@
 			(uuid "2042116c-4869-42a6-884f-231ac47347fb")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -22151,13 +22152,13 @@
 		(descr "SOIC, 16 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=12858&prodName=TLP291-4)")
 		(tags "SOIC SO")
 		(property "Reference" "U15"
-			(at 0 -6.1 0)
+			(at -2.310304 -6.154 0)
 			(layer "F.SilkS")
 			(uuid "350ddb5f-02b7-4451-860f-788f66b0b2a4")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -22430,8 +22431,8 @@
 			(uuid "43afd02f-4e26-4377-a0b9-87d854c6d65e")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -22615,13 +22616,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R23"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "fa9a3344-5bbd-46ef-a17a-8900a3c596e2")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -22742,8 +22743,8 @@
 			(uuid "e0d0155c-b041-46b5-9d53-8d722a666b81")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -22785,13 +22786,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R107"
-			(at 0 -1.17 90)
+			(at -0.474 1.177696 90)
 			(layer "F.SilkS")
 			(uuid "b7580bc1-922d-44f7-a927-caab249779c8")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -22912,8 +22913,8 @@
 			(uuid "cc8964de-fac7-446c-b27d-4e1709d3601e")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -22955,13 +22956,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R112"
-			(at 0 -1.17 90)
+			(at -1.068 1.089304 90)
 			(layer "F.SilkS")
 			(uuid "d785c2ad-ba5a-4440-995d-57c78e14b280")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -23082,8 +23083,8 @@
 			(uuid "13eed587-2b67-4d98-add0-bb0f712ad2a2")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -23130,8 +23131,8 @@
 			(uuid "a070578f-7615-4ba1-a60d-5db092cbc6a4")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -23252,8 +23253,8 @@
 			(uuid "5ddc05ef-fd35-4043-a2e4-09745f7e926f")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -23300,8 +23301,8 @@
 			(uuid "5008c17c-2854-4e59-9c6c-99f47d58f09e")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -23574,8 +23575,8 @@
 			(uuid "ba9f7c4f-01b8-42e4-bad4-c5624b86b147")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -23764,8 +23765,8 @@
 			(uuid "a64350c8-0bb1-44f4-ab53-cd74b6cb6e06")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -23886,8 +23887,8 @@
 			(uuid "4f6989e4-8886-4d96-ad1e-d6cd2a0b5492")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -23929,13 +23930,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R6"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "4b132674-25b1-430d-b6a1-e6b7c29ec476")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24056,8 +24057,8 @@
 			(uuid "e6ae3b94-8c2a-42fd-a17d-7b5819a07443")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24099,13 +24100,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R47"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "81e1b7ed-185d-48ad-9bcf-80773787072a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24226,8 +24227,8 @@
 			(uuid "d7257d20-b4cd-46a2-bd0a-cdb63e261d3a")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24269,13 +24270,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R88"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "68a52e4a-036e-4d0d-b55d-f09fc426305d")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24396,8 +24397,8 @@
 			(uuid "8f8eb526-1d08-4554-bd6e-705b00a43fe3")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24439,13 +24440,13 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C67"
-			(at 0 -1.16 0)
+			(at 0 1.125 0)
 			(layer "F.SilkS")
 			(uuid "987a648d-15e4-46fb-8dda-7e36165376f8")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24566,8 +24567,8 @@
 			(uuid "cc4f6c19-167c-4cdb-a894-d9428c77f1e4")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24614,8 +24615,8 @@
 			(uuid "bff4efd6-6b1d-477d-8569-94681d025d44")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24736,8 +24737,8 @@
 			(uuid "bef812e6-44d2-4014-9d24-730d0292b945")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24779,13 +24780,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R135"
-			(at 0 -1.17 90)
+			(at 0.386 -1.17 90)
 			(layer "F.SilkS")
 			(uuid "35448733-372e-4bfe-9226-ad5003b44e05")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24894,8 +24895,8 @@
 			(uuid "c0f2534f-bc10-48b1-aeea-ac83b79b3cb3")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -24942,8 +24943,8 @@
 			(uuid "d432b2b4-ac23-4471-930e-db77deccd994")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25052,8 +25053,8 @@
 			(uuid "f2170f9f-1f54-4de3-a7fa-8ab7791cd0ac")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25100,8 +25101,8 @@
 			(uuid "8f6c4767-2f6e-4ab5-8eb1-17040d064aa2")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25222,8 +25223,8 @@
 			(uuid "a1e6a362-1a18-47a6-bd0a-9a957a2affb3")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25270,8 +25271,8 @@
 			(uuid "720ad07c-a41e-4e06-b4b8-1f11d36d47d8")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25392,8 +25393,8 @@
 			(uuid "06cf6205-e53b-4fb0-a09d-7db206fcb61a")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25435,13 +25436,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R115"
-			(at 0 -1.17 90)
+			(at -0.405 1.214304 90)
 			(layer "F.SilkS")
 			(uuid "b5949772-a5df-4207-a74b-e36327f92c1f")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25562,8 +25563,8 @@
 			(uuid "02197399-6f5e-4e0f-8fe1-42c162d740e4")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25605,13 +25606,13 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C31"
-			(at 0 -1.16 0)
+			(at 0 1.125 0)
 			(layer "F.SilkS")
 			(uuid "c5b110d9-0673-4ebd-95ac-b3c89552a5d8")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25732,8 +25733,8 @@
 			(uuid "1748a24b-bbff-4131-bd75-baeb4a53bcfb")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -25780,8 +25781,8 @@
 			(uuid "aaac65e2-0c57-494d-94f1-c1b17dbe33d9")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -26247,8 +26248,8 @@
 			(uuid "5862f19f-d822-4c6d-ada9-ab76700b95a6")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -26376,13 +26377,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R92"
-			(at 0 -1.17 90)
+			(at -2.08 0.001696 90)
 			(layer "F.SilkS")
 			(uuid "1c46c6da-6af0-490b-a3cd-5dc7f250536a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -26503,8 +26504,8 @@
 			(uuid "8c540a94-bc5c-4bee-aea5-d5502a2e2f2c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -26546,13 +26547,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R95"
-			(at 0 -1.17 90)
+			(at 0 1.165304 90)
 			(layer "F.SilkS")
 			(uuid "9bca0b66-6381-4bb5-9b19-414f8ba9afcf")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -26673,8 +26674,8 @@
 			(uuid "aaf138e7-ed4b-4e72-b56a-4fee8cc689e8")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -26721,8 +26722,8 @@
 			(uuid "5b649c38-e617-479b-bfc2-d5be26e22b64")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -26843,8 +26844,8 @@
 			(uuid "fbf30a75-dddb-4386-95ea-b5cfc5bb6175")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -26891,8 +26892,8 @@
 			(uuid "6aac2e5f-f95a-41b0-84d8-56a20f29a283")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27001,8 +27002,8 @@
 			(uuid "8e6946a2-6ed6-4d46-8cc1-18547b6c82f1")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27044,13 +27045,13 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C22"
-			(at 0 -1.16 0)
+			(at 2.139304 0.025 0)
 			(layer "F.SilkS")
 			(uuid "8d96322b-bd14-476f-be3e-b194d3c30392")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27171,8 +27172,8 @@
 			(uuid "144981f0-e9ca-47b5-9a8b-e7787b509e96")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27219,8 +27220,8 @@
 			(uuid "980eb1b0-537f-49bc-b22a-7decd1285144")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27341,8 +27342,8 @@
 			(uuid "5c09fe42-aec3-46b1-924d-970b07636dd6")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27389,8 +27390,8 @@
 			(uuid "815ff4c8-86f7-4433-bcdb-ffc9a97f975f")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27511,8 +27512,8 @@
 			(uuid "891d6049-01b3-41a9-a91a-2585d4fd2360")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27554,13 +27555,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R10"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "80c7bcc3-419e-4f29-a442-557506cad8b5")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27681,8 +27682,8 @@
 			(uuid "ac1c6e4c-21f7-4859-857f-bfa5e31bb43c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -27724,13 +27725,13 @@
 		(descr "SOIC, 16 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=12858&prodName=TLP291-4)")
 		(tags "SOIC SO")
 		(property "Reference" "U9"
-			(at 0 -6.1 0)
+			(at -2.310304 -6.154 0)
 			(layer "F.SilkS")
 			(uuid "994fe610-59fd-4bba-9b72-4062b16249ae")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28003,8 +28004,8 @@
 			(uuid "6cbf83ad-f836-4712-ba6c-88c18edaee2b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28188,13 +28189,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R13"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "e96885d1-2bb4-4fc0-9d53-613fd8548bfa")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28315,8 +28316,8 @@
 			(uuid "b9dc81ee-b4e8-4308-b97f-571f74e34a7c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28358,13 +28359,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R77"
-			(at 0 -1.17 90)
+			(at -2.074 -0.095304 90)
 			(layer "F.SilkS")
 			(uuid "cb8135c6-ab73-4165-a188-efa596c8155f")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28485,8 +28486,8 @@
 			(uuid "5e2dc806-eb1e-409f-9af6-d604dc028f51")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28528,13 +28529,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R125"
-			(at 0 -1.17 90)
+			(at -2.48 0.015 90)
 			(layer "F.SilkS")
 			(uuid "ee1090c7-3322-4470-9130-f63289be689c")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28643,8 +28644,8 @@
 			(uuid "be5987f5-a15e-4a99-9d1d-881226588559")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28686,13 +28687,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R5"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "d7f2e4db-97ab-4aec-82bb-80bb9832942b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28813,8 +28814,8 @@
 			(uuid "359485ec-7f23-4d5c-a539-5fe5d2fcf7e7")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28856,13 +28857,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R8"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "e7a0ac4c-83de-44f3-bdd8-6ff4df0f51b6")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -28983,8 +28984,8 @@
 			(uuid "d09ef64a-f394-462e-8939-29c5a07f44ed")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -29026,13 +29027,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R104"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "2863b7a9-ec5a-48e9-839b-bccaef193c18")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -29153,8 +29154,8 @@
 			(uuid "828dc0d0-c107-489b-8d41-f3a4bd1ff3f2")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -29201,8 +29202,8 @@
 			(uuid "0a407554-4dea-40c8-a051-387590cdaedd")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -29475,8 +29476,8 @@
 			(uuid "48395506-b133-4a88-b544-40afe3a7b61b")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -29660,13 +29661,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R87"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "1e0a65b4-3640-49a0-8857-5479e36404d5")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -29787,8 +29788,8 @@
 			(uuid "ed6dc7c0-d367-4485-8c6b-b175f3f4c9e0")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -29835,8 +29836,8 @@
 			(uuid "40b68402-68bc-484d-82ef-9294b1298733")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -29957,8 +29958,8 @@
 			(uuid "8dc1a827-1612-4217-a6e5-a208d27e632f")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30000,13 +30001,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R31"
-			(at 0 -1.17 90)
+			(at 0 1.126304 90)
 			(layer "F.SilkS")
 			(uuid "2dd170bb-952f-4978-8b43-7190831c73cb")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30127,8 +30128,8 @@
 			(uuid "fcf35fab-911b-4b32-8885-91e121f9ecea")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30170,13 +30171,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R16"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "c73199f5-cbf4-484c-b001-285c6a91826f")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30297,8 +30298,8 @@
 			(uuid "d8d80dac-6d3a-486f-be5f-e8d53565042b")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30340,13 +30341,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R4"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "b64b23a1-0950-473d-a994-1be65cfaee08")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30467,8 +30468,8 @@
 			(uuid "9f238701-f7f3-447d-83a3-e1197047a07a")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30515,8 +30516,8 @@
 			(uuid "3631ba8c-b615-43ea-b205-794c911ed7ac")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30637,8 +30638,8 @@
 			(uuid "e30c6f92-8f0d-40ce-a2eb-455a19185e41")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30680,13 +30681,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R12"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "9a9154ac-c62f-4b48-a1d7-d578cd9d7c7a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30807,8 +30808,8 @@
 			(uuid "57c57881-7dfe-462a-aa2f-8c7f34213bb0")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30855,8 +30856,8 @@
 			(uuid "de6f8c21-e10a-4b02-bca3-181dfab2e59a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -30965,8 +30966,8 @@
 			(uuid "fc3d0ec7-ba05-4630-ba31-7d57b85b5d55")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31008,13 +31009,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R120"
-			(at 0 -1.17 90)
+			(at -1.023 1.077696 90)
 			(layer "F.SilkS")
 			(uuid "63ebc8b6-74ab-446d-b5f7-9dd85d49aa39")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31135,8 +31136,8 @@
 			(uuid "f92ba29c-8db0-4c0b-91ed-f6405d49b11a")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31178,13 +31179,13 @@
 		(descr "SOIC, 16 Pin (https://toshiba.semicon-storage.com/info/docget.jsp?did=12858&prodName=TLP291-4)")
 		(tags "SOIC SO")
 		(property "Reference" "U11"
-			(at 0 -6.1 0)
+			(at -2.310304 -6.154 0)
 			(layer "F.SilkS")
 			(uuid "e323be46-45a0-4e7d-87cc-ad53a46f0912")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31457,8 +31458,8 @@
 			(uuid "a0df7c4c-b82a-4ba4-9270-24934fe1ec7c")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31642,13 +31643,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R131"
-			(at 0 -1.17 90)
+			(at -2.48 -0.495 90)
 			(layer "F.SilkS")
 			(uuid "7fb29c8e-4e76-4f20-accf-95123ecc03df")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31757,8 +31758,8 @@
 			(uuid "897dc345-f60b-4bc6-99a6-40bbaccead01")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31800,13 +31801,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R76"
-			(at 0 -1.17 90)
+			(at 0 1.144696 90)
 			(layer "F.SilkS")
 			(uuid "956c32b4-deae-4f92-9b7d-53aca4aa4842")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31927,8 +31928,8 @@
 			(uuid "25f2bc82-f8e3-4f9d-870c-1150b03fe83b")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -31975,8 +31976,8 @@
 			(uuid "a44a43c9-0df2-45f4-9e08-606c3d11a522")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32097,8 +32098,8 @@
 			(uuid "e317e1a4-8722-4a27-8131-1333524ae384")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32140,13 +32141,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R123"
-			(at 0 -1.17 0)
+			(at -2.389 0.026 0)
 			(layer "F.SilkS")
 			(uuid "73eb9972-eb96-4d32-9bf1-288c39574490")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32255,8 +32256,8 @@
 			(uuid "0ad1d14f-444f-4d9c-94c1-d2015219b384")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32298,13 +32299,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R63"
-			(at 0 -1.17 90)
+			(at 0 1.179304 90)
 			(layer "F.SilkS")
 			(uuid "8adacc4a-890c-4151-a007-ca0f00548947")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32425,8 +32426,8 @@
 			(uuid "7b641983-8d98-4b44-b8c6-1241e8039fe4")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32468,13 +32469,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R56"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "3402914c-07a8-40e5-ad8c-41f46c3a2a3c")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32595,8 +32596,8 @@
 			(uuid "e78871c0-4516-4500-be68-c0ce790ce53c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32638,13 +32639,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R39"
-			(at 0 -1.17 90)
+			(at 0 1.155304 90)
 			(layer "F.SilkS")
 			(uuid "d90b854d-9e7d-444f-a2b6-ee42c61b8a4a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32765,8 +32766,8 @@
 			(uuid "ee301068-8a7e-422c-a113-af9f19dc7acf")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32808,13 +32809,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R1"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "5520aaf1-36f6-4111-bcd6-298cb9493f98")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32935,8 +32936,8 @@
 			(uuid "f91142cf-3b5c-453f-b02a-92898f7362ff")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -32978,13 +32979,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R72"
-			(at 0 -1.17 90)
+			(at -0.023 1.079696 90)
 			(layer "F.SilkS")
 			(uuid "aa03056f-cf6b-4b27-a264-1c38b10ed9aa")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33105,8 +33106,8 @@
 			(uuid "f1544572-35f0-4380-a7d0-7bf40f645456")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33148,13 +33149,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R64"
-			(at 0 -1.17 90)
+			(at 0 1.179304 90)
 			(layer "F.SilkS")
 			(uuid "a255b1ef-3772-4852-b3a8-bc097ceaefb9")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33275,8 +33276,8 @@
 			(uuid "d3e2149e-e5a3-4480-a18b-76ebd2a3b638")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33320,11 +33321,12 @@
 		(property "Reference" "H2"
 			(at 0 -4.15 90)
 			(layer "F.SilkS")
+			(hide yes)
 			(uuid "ca9de33a-261f-47d5-a8d2-24df13529933")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33413,8 +33415,8 @@
 			(uuid "33bab358-f0fd-4be5-bb51-977911d8975a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33434,13 +33436,13 @@
 		(descr "Capacitor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 76, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "capacitor")
 		(property "Reference" "C85"
-			(at 0 -1.16 0)
+			(at 0 1.125 0)
 			(layer "F.SilkS")
 			(uuid "5124f9b8-806f-4d9b-824d-dc35a0a1dff7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33561,8 +33563,8 @@
 			(uuid "8e5cdbea-7b6f-458d-b0ca-221281f4651f")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33604,13 +33606,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R75"
-			(at 0 -1.17 90)
+			(at 0 1.144696 90)
 			(layer "F.SilkS")
 			(uuid "67cdcc31-83bd-49e2-bc7a-f0fe07e584dc")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33731,8 +33733,8 @@
 			(uuid "8e847b43-9f83-4ade-a83d-8a885320b25c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33779,8 +33781,8 @@
 			(uuid "59c74767-3575-432c-a0c3-96f5c202805d")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33889,8 +33891,8 @@
 			(uuid "b6d69291-a89c-46ba-8689-126e91ee9962")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -33932,13 +33934,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R96"
-			(at 0 -1.17 90)
+			(at 0 1.165304 90)
 			(layer "F.SilkS")
 			(uuid "88bae5fc-f901-4001-b6eb-cf729a20a93e")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34059,8 +34061,8 @@
 			(uuid "6602e9d3-551c-4ed0-ac00-24584e9acc37")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34102,13 +34104,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R18"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "0456462e-6957-4d92-be92-73b04e00e7d3")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34229,8 +34231,8 @@
 			(uuid "102fa983-f8d8-4579-b9b6-20e5a5a90783")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34272,13 +34274,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R91"
-			(at 0 -1.17 90)
+			(at -0.066 1.201696 90)
 			(layer "F.SilkS")
 			(uuid "1d6d16bd-967e-4743-8965-25a92d9acfd8")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34399,8 +34401,8 @@
 			(uuid "b15fd0dd-5779-4592-9ca0-485c17ce6f8c")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34442,13 +34444,13 @@
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R19"
-			(at 0 -1.17 90)
+			(at 2.051 0.035 90)
 			(layer "F.SilkS")
 			(uuid "4d6b67f6-03f1-4c22-a975-bbe4575e28e7")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34569,8 +34571,8 @@
 			(uuid "08203ced-59a9-4200-84b3-15574a90661d")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34617,8 +34619,8 @@
 			(uuid "f16979d3-b472-4a57-9839-f138e942f0bd")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34739,8 +34741,8 @@
 			(uuid "0056df33-ce74-4db9-98ec-a4bce18f2034")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34787,8 +34789,8 @@
 			(uuid "0db63bb5-5e0c-47a3-bcf4-f1ad45cd3849")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34909,8 +34911,8 @@
 			(uuid "1a9e7db3-c12d-4bc2-9e55-c4d7a3d2f417")
 			(effects
 				(font
-					(size 0.25 0.25)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -34957,8 +34959,8 @@
 			(uuid "ef2d56b2-ddee-4362-9ede-5b5260c8e93d")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -35079,8 +35081,8 @@
 			(uuid "597a36f0-bcf4-4859-9ae1-0dd73ff1fc25")
 			(effects
 				(font
-					(size 0.26 0.26)
-					(thickness 0.04)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -35127,8 +35129,8 @@
 			(uuid "f5c253f0-1e9b-4693-bf72-3ef1f5228f5a")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
@@ -35401,8 +35403,8 @@
 			(uuid "0d360f46-998d-4ee0-8e75-a9afb625e8a0")
 			(effects
 				(font
-					(size 1 1)
-					(thickness 0.15)
+					(size 0.7 0.7)
+					(thickness 0.12)
 				)
 			)
 		)
