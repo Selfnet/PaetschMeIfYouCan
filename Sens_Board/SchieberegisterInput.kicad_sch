@@ -1549,7 +1549,7 @@
 	)
 	(hierarchical_label "D7"
 		(shape input)
-		(at 123.19 85.09 180)
+		(at 102.87 92.71 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1571,7 +1571,7 @@
 	)
 	(hierarchical_label "D0"
 		(shape input)
-		(at 129.54 82.55 180)
+		(at 148.59 74.93 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1582,7 +1582,7 @@
 	)
 	(hierarchical_label "D1"
 		(shape input)
-		(at 135.89 80.01 180)
+		(at 142.24 77.47 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1593,7 +1593,7 @@
 	)
 	(hierarchical_label "D6"
 		(shape input)
-		(at 116.84 87.63 180)
+		(at 110.49 90.17 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1604,7 +1604,7 @@
 	)
 	(hierarchical_label "D2"
 		(shape input)
-		(at 142.24 77.47 180)
+		(at 135.89 80.01 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1615,7 +1615,7 @@
 	)
 	(hierarchical_label "D5"
 		(shape input)
-		(at 110.49 90.17 180)
+		(at 116.84 87.63 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1626,7 +1626,7 @@
 	)
 	(hierarchical_label "D4"
 		(shape input)
-		(at 102.87 92.71 180)
+		(at 123.19 85.09 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1659,7 +1659,7 @@
 	)
 	(hierarchical_label "D3"
 		(shape input)
-		(at 148.59 74.93 180)
+		(at 129.54 82.55 180)
 		(effects
 			(font
 				(size 1.27 1.27)
