@@ -1,0 +1,21 @@
+Designator,Val,Package,Mid X,Mid Y,Rotation,Layer
+H1,MountingHole,MountingHole_3.2mm_M3,4.5,-20.0,0.0,top
+H2,MountingHole,MountingHole_3.2mm_M3,115.5,-20.0,0.0,top
+H3,MountingHole,MountingHole_3.2mm_M3,40.0,-30.0,0.0,top
+H4,MountingHole,MountingHole_3.2mm_M3,80.0,-30.0,0.0,top
+J1,~,RJ45-TH_HC-WK88-H13-1X8-55QS_1,60.0,-6.305,180.0,top
+J2,Conn_01x02_Pin,JST_PH_B2B-PH-SM4-TB_1x02-1MP_P2.00mm_Vertical,14.4446,-25.5778,90.0,top
+J3,Conn_01x02_Pin,JST_PH_B2B-PH-SM4-TB_1x02-1MP_P2.00mm_Vertical,104.9046,-26.0568,-90.0,top
+R10,0,R_0603_1608Metric,61.0,-13.45,90.0,top
+R11,0,R_0603_1608Metric,64.5,-13.45,90.0,top
+R15,0,R_0603_1608Metric,48.75,-13.45,90.0,top
+R16,0,R_0603_1608Metric,33.076,-13.45,90.0,top
+R18,0,R_0603_1608Metric,34.75,-13.45,90.0,top
+R20,0,R_0603_1608Metric,22.5,-13.45,90.0,top
+R21,0,R_0603_1608Metric,20.828,-13.45,90.0,top
+R22,0,R_0603_1608Metric,4.572,-13.45,90.0,top
+R23,0,R_0603_1608Metric,8.5,-13.45,90.0,top
+R24,0,R_0603_1608Metric,6.604,-13.45,90.0,top
+R4,0,R_0603_1608Metric,89.0,-13.45,90.0,top
+R8,0,R_0603_1608Metric,78.5,-13.45,90.0,top
+SW1,SW_DIP_x08,SW-SMD_16P-L20.3-W6.0-P2.54-LS9.3-BL,60.0,-26.5,0.0,top
