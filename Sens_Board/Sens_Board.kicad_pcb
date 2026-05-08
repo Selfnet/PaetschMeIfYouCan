@@ -2665,6 +2665,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C5947"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "59b868b9-69c1-4fc3-ae48-ca708fab9fde")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(property ki_fp_filters "DIP*W7.62mm* SOIC*3.9x9.9mm*P1.27mm* TSSOP*4.4x5mm*P0.65mm* SOIC*5.3x10.2mm*P1.27mm* SOIC*7.5x10.3mm*P1.27mm*")
 		(path "/5b3dabaa-465b-45b9-8530-9a531772e334/c7ab6e25-6ae1-474e-b1ce-0d45ff89270f")
 		(sheetname "/OutputShift1/")
@@ -19031,6 +19042,17 @@
 				(font
 					(size 1 1)
 					(thickness 0.15)
+				)
+			)
+		)
+		(property "LCSC" "C5613"
+			(at 0 0 0)
+			(layer "F.SilkS")
+			(hide yes)
+			(uuid "ddf9d532-9bf3-48b8-84e0-21f3e47ea711")
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
