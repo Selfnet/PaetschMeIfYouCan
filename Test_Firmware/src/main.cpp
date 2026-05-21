@@ -47,8 +47,6 @@ void updateLeds() {
 void setLed(int port, int led, bool state) {
     int ledIdx = port * 2 + led;
     ledData[ledIdxMapping[ledIdx] / 8] = 1 << (ledIdxMapping[ledIdx] % 8);
-
-    updateLeds();
 }
 
 
@@ -65,24 +63,31 @@ void setup() {
     analogWrite(PIN_LED_OE, 127);
 
     Serial.begin(115200);
+
+    for (int i = 0; i < NUM_LEDS; i++) {
+        memset(ledData, 0, sizeof(ledData));
+        setLed(i/2, i%2, 1);
+        updateLeds();
+        delay(50);
+    }
+    for (int i = NUM_LEDS - 1; i > 0; i--) {
+        memset(ledData, 0, sizeof(ledData));
+        setLed(i/2, i%2, 1);
+        updateLeds();
+        delay(50);
+    }
+    memset(ledData, 0, sizeof(ledData));
+    updateLeds();
 }
 
 
 uint32_t ledIdx = 0;
 
 void loop() {
-    // memset(ledData, 0, sizeof(ledData));
-    // ledData[ledIdxMapping[ledIdx] / 8] = 1 << (ledIdxMapping[ledIdx] % 8);
     ledIdx++;
     if (ledIdx >= NUM_LEDS) {
         ledIdx = 0;
     }
-
-    // for (int i = 0; i < NUM_LED_BYTES; i++) {
-    //     shiftOut(PIN_LED_DOUT, PIN_LED_CLK, MSBFIRST, ledData[i]);
-    // }
-    // digitalWrite(PIN_LED_LATCH, HIGH);
-    // digitalWrite(PIN_LED_LATCH, LOW);
     
     memset(ledData, 0, sizeof(ledData));
     updateLeds();
@@ -104,6 +109,7 @@ void loop() {
         if (portData[i] != 0xFF) {
             setLed(NUM_PORTS - i - 1, ledIdx % 2, !(ledIdx % 2));
             setLed(NUM_PORTS - i - 1, ledIdx % 2, (ledIdx % 2));
+            updateLeds();
         }
 
         char buf[64];
