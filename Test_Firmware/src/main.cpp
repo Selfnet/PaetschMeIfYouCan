@@ -8,9 +8,10 @@ static const int PIN_DATA_CLK   = 18;
 static const int PIN_DATA_LATCH = 17;
 static const int PIN_DATA_DIN   = 16;
 
-static const int NUM_PORTS = 12;
-static const int NUM_LEDS = NUM_PORTS * 2;
+static const int NUM_PORTS = 48;
 
+static const int NUM_PORTS_PER_BANK = 12;
+static const int NUM_LEDS = NUM_PORTS * 2;
 static const size_t NUM_LED_BYTES = (NUM_LEDS + 7) / 8;
 
 uint8_t ledData[NUM_LED_BYTES] = {0};
@@ -46,7 +47,15 @@ void updateLeds() {
 // led: 0 = yellow, 1 = green
 void setLed(int port, int led, bool state) {
     int ledIdx = port * 2 + led;
-    ledData[ledIdxMapping[ledIdx] / 8] = 1 << (ledIdxMapping[ledIdx] % 8);
+    int portBankOffset = (ledIdx / 2 / NUM_PORTS_PER_BANK) * NUM_PORTS_PER_BANK * 2;
+    int mappedIdx = ledIdxMapping[ledIdx % (NUM_PORTS_PER_BANK*2)] + portBankOffset;
+
+    if (state) {
+        ledData[mappedIdx / 8] |= 1 << (mappedIdx % 8);
+    }
+    else {
+        ledData[mappedIdx / 8] &= ~(1 << (mappedIdx % 8));
+    }
 }
 
 
@@ -68,13 +77,7 @@ void setup() {
         memset(ledData, 0, sizeof(ledData));
         setLed(i/2, i%2, 1);
         updateLeds();
-        delay(50);
-    }
-    for (int i = NUM_LEDS - 1; i > 0; i--) {
-        memset(ledData, 0, sizeof(ledData));
-        setLed(i/2, i%2, 1);
-        updateLeds();
-        delay(50);
+        delay(25);
     }
     memset(ledData, 0, sizeof(ledData));
     updateLeds();
@@ -107,8 +110,8 @@ void loop() {
         }
 
         if (portData[i] != 0xFF) {
-            setLed(NUM_PORTS - i - 1, ledIdx % 2, !(ledIdx % 2));
-            setLed(NUM_PORTS - i - 1, ledIdx % 2, (ledIdx % 2));
+            setLed(NUM_PORTS - i - 1, 0, (ledIdx % 2));
+            setLed(NUM_PORTS - i - 1, 1, !(ledIdx % 2));
             updateLeds();
         }
 
