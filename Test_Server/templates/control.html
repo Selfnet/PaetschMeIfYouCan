@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pätsch me if you can - Control</title>
+
+</head>
+<body>
+
+<button id="startBtn">Start Clock</button>
+<button id="stopBtn1">Stop Player 1</button>
+<button id="stopBtn2">Stop Player 2</button>
+<button id="resetBtn">Reset Clock</button>
+<button id="restartSerial">Restart Serial</button>
+
+<script>
+    document.getElementById("startBtn").addEventListener("click", () => {
+        fetch("/start-clock");
+    });
+
+    document.getElementById("stopBtn1").addEventListener("click", () => {
+        fetch("/stop-clock1");
+    });
+
+    document.getElementById("stopBtn2").addEventListener("click", () => {
+        fetch("/stop-clock2");
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+        fetch("/reset-clock");
+    });
+
+    document.getElementById("restartSerial").addEventListener("click", () => {
+        fetch("/restart-serial");
+    });
+
+</script>
+
+</body>
+</html>

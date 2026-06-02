@@ -1,0 +1,11 @@
+[project]
+name = "flask-websocket-dashboard"
+version = "0.1.0"
+description = "Real-time 48-cell dashboard using Flask and WebSockets"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.1.0",
+    "flask-socketio>=5.5.0",
+    "eventlet>=0.40.0",
+    "pyserial",
+]

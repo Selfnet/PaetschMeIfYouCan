@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pätsch me if you can</title>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        td {
+            width: 60px;
+            height: 40px;
+            text-align: center;
+            border: 1px solid #333;
+            color: white;
+            font-weight: bold;
+        }
+
+        .green {
+            background-color: #28a745;
+        }
+
+        .red {
+            background-color: #dc3545;
+            color: black;
+        }
+
+        .clockDisplay {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Player 1</h2>
+
+<div id="clockDisplay1" class="clockDisplay">
+    00:00
+</div>
+
+<table id="statusTable1"></table>
+
+<h2>Player 2</h2>
+
+<div id="clockDisplay2" class="clockDisplay">
+    00:00
+</div>
+
+<table id="statusTable2"></table>
+
+<script>
+    const socket = io();
+
+    const NUM_ROWS = 6;
+    const NUM_COLS = 8;
+
+
+    // Generate 48 cells
+    let counter = 0;
+    let ports = [
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46],
+        [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47]
+    ]
+
+    for(let x = 1; x <= 2; x++) {
+        const table = document.getElementById("statusTable" + x);
+        ports.forEach((row, rowIndex) => {
+            const tr = document.createElement("tr");
+
+            row.forEach((port, colIndex) => {
+                const td = document.createElement("td");
+
+                td.id = `cell-${x}-${port}`;
+                td.textContent = port;
+
+                tr.appendChild(td);
+            });
+
+            table.appendChild(tr);
+        });
+    }
+
+    socket.on("table_update", (data) => {
+        data.states.forEach((state, index) => {
+            const cell = document.getElementById(`cell-${data.switch_id}-${index}`);
+
+            cell.classList.remove("red", "green");
+            cell.classList.add(state ? "green" : "red");
+        });
+    });
+
+    socket.on("clock_update", (data) => {
+        console.log(data);
+        const totalSeconds1 = data.seconds1;
+        const totalSeconds2 = data.seconds2;
+
+        const minutes1 = Math.floor((totalSeconds1) / 60)
+            .toString()
+            .padStart(2, "0");
+
+        const seconds1 = (totalSeconds1 % 60)
+            .toString()
+            .padStart(2, "0");
+
+        const minutes2 = Math.floor((totalSeconds2) / 60)
+            .toString()
+            .padStart(2, "0");
+
+        const seconds2 = (totalSeconds2 % 60)
+            .toString()
+            .padStart(2, "0");
+
+        document.getElementById("clockDisplay1").textContent = `${minutes1}:${seconds1}`;
+
+        document.getElementById("clockDisplay2").textContent = `${minutes2}:${seconds2}`;
+    });
+
+    socket.on("connect", () => {
+        console.log("Connected");
+    });
+
+    socket.on("disconnect", () => {
+        console.log("Disconnected");
+    });
+
+    socket.on("reconnect", () => {
+        console.log("Reconnected");
+    });
+
+</script>
+
+</body>
+</html>
