@@ -1,128 +1,893 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pätsch me if you can</title>
 
     <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
 
     <style>
+        :root {
+            --paper: #fffdf2;
+            --ink: #090909;
+            --blue: #004dff;
+            --red: #ff1616;
+            --yellow: #fff200;
+            --green: #00c853;
+            --pink: #ff4fd8;
+            --patched: #111;
+            --open: #ff8a00;
+            --font-display: "DejaVu Sans Condensed", "Noto Sans", Cantarell, "Liberation Sans", "Arial Black", system-ui, sans-serif;
+            --font-condensed: "DejaVu Sans Condensed", "Noto Sans Condensed", "Liberation Sans Narrow", "Arial Narrow", "Noto Sans", Cantarell, system-ui, sans-serif;
+            --font-mono: "DejaVu Sans Mono", "Liberation Mono", "Noto Sans Mono", "Courier New", monospace;
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            color: var(--ink);
+            font-family: var(--font-display);
+            background: #f2f4f8;
         }
 
-        table {
-            border-collapse: collapse;
-            margin-top: 20px;
+        .page {
+            height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: clamp(6px, 1vh, 16px);
         }
 
-        td {
-            width: 60px;
-            height: 40px;
+        .race-stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: clamp(8px, 1vh, 18px);
+            border: 12px ridge var(--blue);
+            background:
+                radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.78) 0 6px, transparent 7px),
+                radial-gradient(circle at 76% 12%, rgba(255, 22, 22, 0.55) 0 8px, transparent 9px),
+                repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.08) 0 2px, transparent 2px 18px),
+                var(--paper);
+            box-shadow: 16px 16px 0 #000, -10px -10px 0 var(--pink);
+        }
+
+        .stage-header {
+            flex: 0 0 auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 520px;
+            gap: clamp(8px, 1vh, 20px);
+            align-items: end;
+            margin-bottom: clamp(6px, 0.9vh, 14px);
+            padding-right: 360px;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            margin: 0 0 8px;
+            padding: 4px 12px;
+            border: 4px solid #000;
+            color: var(--yellow);
+            background: var(--red);
+            font-size: 1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            transform: rotate(-2deg);
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--blue);
+            font-family: var(--font-display);
+            font-size: clamp(2.4rem, 4.4vw, 5.4rem);
+            font-weight: 900;
+            line-height: 0.88;
+            text-transform: uppercase;
+            text-shadow: 5px 5px 0 var(--yellow), 10px 10px 0 var(--red);
+        }
+
+        .voice-badge {
+            position: absolute;
+            top: clamp(10px, 1.1vh, 18px);
+            right: clamp(12px, 1.3vw, 24px);
+            z-index: 2;
+            width: 345px;
+            min-height: 170px;
+            display: grid;
+            place-items: center;
+            padding: 34px 30px;
+            border: 6px solid #000;
+            color: var(--yellow);
+            background: var(--red);
+            border-radius: 999px / 72%;
+            filter: drop-shadow(7px 7px 0 #000);
+            font-size: 1.6rem;
+            font-weight: 900;
+            font-family: var(--font-display);
+            line-height: 1.02;
             text-align: center;
-            border: 1px solid #333;
-            color: white;
-            font-weight: bold;
+            text-transform: uppercase;
+            transform: rotate(8deg);
         }
 
-        .green {
-            background-color: #28a745;
+        .race-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
         }
 
-        .red {
-            background-color: #dc3545;
-            color: black;
+        .stat-card,
+        .stat {
+            border: 4px solid #000;
+            color: #000;
+            background: #fff;
+            box-shadow: 6px 6px 0 #000;
         }
 
-        .clockDisplay {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 20px;
+        .stat-card:nth-child(1) {
+            background: var(--green);
+        }
+
+        .stat-card:nth-child(2) {
+            background: var(--pink);
+        }
+
+        .stat-card:nth-child(3) {
+            background: var(--yellow);
+        }
+
+        .stat-card {
+            padding: clamp(6px, 0.8vh, 12px) 12px;
+            transform: rotate(1deg);
+        }
+
+        .stat-card:nth-child(2) {
+            transform: rotate(-1.5deg);
+        }
+
+        .stat-label {
+            display: block;
+            margin-bottom: 4px;
+            font-family: var(--font-condensed);
+            font-size: clamp(0.7rem, 1.2vh, 0.88rem);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            display: block;
+            font-family: var(--font-display);
+            font-size: clamp(1.05rem, 2.2vh, 2rem);
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .players {
+            flex: 1 1 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: clamp(6px, 1vh, 14px);
+            min-height: 0;
+        }
+
+        .player-panel {
+            position: relative;
+            min-height: 0;
+            display: grid;
+            grid-template-rows: auto auto auto minmax(0, 1fr);
+            padding: clamp(6px, 0.9vh, 14px);
+            border: 8px solid #000;
+            background:
+                linear-gradient(90deg, rgba(255, 255, 255, 0.72) 50%, rgba(255, 242, 0, 0.6) 50%) 0 0 / 32px 32px,
+                var(--panel-color);
+            box-shadow: 10px 10px 0 var(--shadow-color);
+        }
+
+        .player-one {
+            --panel-color: #00cfff;
+            --shadow-color: var(--red);
+            --accent: var(--blue);
+        }
+
+        .player-two {
+            --panel-color: #ff62ce;
+            --shadow-color: var(--blue);
+            --accent: var(--red);
+        }
+
+        .player-top {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: clamp(4px, 0.7vh, 10px);
+        }
+
+        .player-label {
+            display: inline-block;
+            margin: 0 0 5px;
+            padding: 3px 8px;
+            border: 4px solid #000;
+            color: #fff;
+            background: var(--accent);
+            font-size: clamp(0.85rem, 1.5vh, 1.1rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            transform: rotate(-2deg);
+        }
+
+        .player-two .player-label {
+            transform: rotate(2deg);
+        }
+
+        .player-name {
+            margin: 0;
+            font-size: clamp(1.5rem, 3.3vh, 3rem);
+            line-height: 0.9;
+            text-transform: uppercase;
+            text-shadow: 4px 4px 0 var(--yellow);
+        }
+
+        .clock-display {
+            min-width: 252px;
+            padding: clamp(6px, 0.8vh, 12px) 12px;
+            border: 6px inset #333;
+            color: #00ff66;
+            background: #000;
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+            font-size: clamp(1.45rem, 3.5vh, 2.75rem);
+            font-weight: 900;
+            line-height: 1;
+            text-align: right;
+            text-shadow: 0 0 10px #00ff66;
+        }
+
+        .player-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: clamp(4px, 0.7vh, 10px);
+            margin-bottom: clamp(4px, 0.7vh, 10px);
+        }
+
+        .stat {
+            padding: clamp(5px, 0.7vh, 10px) 10px;
+            background: #fff;
+        }
+
+        .stat:nth-child(1) {
+            background: var(--yellow);
+        }
+
+        .stat:nth-child(2) {
+            background: #ffb3e8;
+        }
+
+        .stat:nth-child(3) {
+            background: #8cfffb;
+        }
+
+        .switch-caption {
+            margin: 0 0 clamp(4px, 0.8vh, 8px);
+            padding: 3px 8px;
+            border: 3px dashed #000;
+            background: #fff;
+            font-size: clamp(0.72rem, 1.3vh, 0.92rem);
+            font-weight: 900;
+            text-align: center;
+        }
+
+        .board {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(24, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: clamp(2px, 0.5vh, 5px);
+            padding: clamp(5px, 0.8vh, 12px);
+            min-height: 0;
+            overflow: hidden;
+            border: 7px solid #111;
+            background:
+                linear-gradient(180deg, #4b4b4b, #1c1c1c 42%, #050505);
+            box-shadow: inset 0 0 0 5px #777, 7px 7px 0 #000;
+        }
+
+        .patch-cell {
+            grid-column: var(--switch-column);
+            grid-row: var(--switch-row);
+            min-width: 0;
+            min-height: 0;
+            display: grid;
+            place-items: center;
+            border: 2px solid #111;
+            color: #000;
+            background: #f7f7f7;
+            font-family: var(--font-condensed);
+            font-size: clamp(0.5rem, 1.15vh, 0.86rem);
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            transition:
+                transform 160ms var(--ease-out),
+                border-color 160ms var(--ease-out),
+                box-shadow 160ms var(--ease-out),
+                background-color 160ms var(--ease-out);
+        }
+
+        .patch-cell.is-patched {
+            color: var(--yellow);
+            border-color: #00ff66;
+            background:
+                radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.14), transparent 25%),
+                linear-gradient(145deg, #2b2b2b, var(--patched) 70%);
+            box-shadow: 0 0 11px #00ff66, inset 0 0 0 2px #000;
+        }
+
+        .patch-cell.cell-change {
+            animation: cell-pop 220ms var(--ease-out);
+        }
+
+        .spacebar-indicator {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.92);
+        }
+
+        .spacebar-indicator.is-visible {
+            animation: spacebar-flash 1050ms var(--ease-out) both;
+        }
+
+        .spacebar-indicator__card {
+            width: min(92vw, 920px);
+            padding: clamp(22px, 4vw, 52px);
+            border: clamp(8px, 1.2vw, 16px) solid #000;
+            color: #000;
+            background: var(--yellow);
+            box-shadow: clamp(10px, 2vw, 24px) clamp(10px, 2vw, 24px) 0 #000;
+            text-align: center;
+            text-transform: uppercase;
+            transform: rotate(-2deg);
+        }
+
+        .spacebar-indicator__kicker {
+            display: block;
+            margin-bottom: 0.18em;
+            font-family: var(--font-condensed);
+            font-size: clamp(1.1rem, 3vw, 2.4rem);
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .spacebar-indicator__action {
+            display: block;
+            color: var(--red);
+            font-size: clamp(5rem, 18vw, 15rem);
+            font-weight: 900;
+            line-height: 0.82;
+            text-shadow: 0.06em 0.06em 0 var(--blue);
+        }
+
+        .spacebar-indicator[data-action="paused"] .spacebar-indicator__card {
+            background: #fff;
+        }
+
+        .spacebar-indicator[data-action="paused"] .spacebar-indicator__action {
+            color: var(--blue);
+            text-shadow: 0.06em 0.06em 0 var(--yellow);
+        }
+
+        .spacebar-indicator[data-action="reset"] .spacebar-indicator__card {
+            background: var(--red);
+        }
+
+        .spacebar-indicator[data-action="reset"] .spacebar-indicator__action,
+        .spacebar-indicator[data-action="reset"] .spacebar-indicator__kicker {
+            color: #fff;
+        }
+
+        .spacebar-indicator[data-action="reset"] .spacebar-indicator__action {
+            text-shadow: 0.06em 0.06em 0 #000;
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .patch-cell:hover {
+                transform: scale(1.14) rotate(-4deg);
+                z-index: 1;
+            }
+        }
+
+        @keyframes cell-pop {
+            0% {
+                transform: scale(0.88) rotate(3deg);
+                filter: brightness(1.45);
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+                filter: brightness(1);
+            }
+        }
+
+        @keyframes spacebar-flash {
+            0% {
+                opacity: 0;
+                transform: scale(0.82) rotate(2deg);
+            }
+
+            14% {
+                opacity: 1;
+                transform: scale(1.03) rotate(0deg);
+            }
+
+            72% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(1.08) rotate(-1deg);
+            }
+        }
+
+        @media (max-width: 1400px) {
+            .stage-header,
+            .players {
+                grid-template-columns: 1fr;
+            }
+
+            .stage-header {
+                padding-right: 300px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .page {
+                padding: 10px;
+            }
+
+            .race-stage {
+                padding: 14px;
+                box-shadow: 7px 7px 0 #000;
+            }
+
+            .race-summary,
+            .player-top,
+            .player-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .clock-display {
+                min-width: 0;
+                text-align: left;
+            }
+
+            .board {
+                grid-template-columns: repeat(24, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-height: 820px) {
+            .voice-badge {
+                width: 280px;
+                min-height: 132px;
+                padding: 22px 24px;
+                font-size: 1.2rem;
+            }
+
+            .stage-header {
+                padding-right: 292px;
+            }
+
+            .eyebrow,
+            .switch-caption {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .spacebar-indicator.is-visible {
+                animation: spacebar-flash 1050ms ease-out both;
+            }
+
+            .patch-cell.cell-change {
+                animation: none;
+            }
+
+            .patch-cell {
+                transition:
+                    border-color 140ms ease,
+                    box-shadow 140ms ease,
+                    background-color 140ms ease;
+            }
         }
     </style>
 </head>
 <body>
+<main class="page">
+    <section class="race-stage" aria-labelledby="game-title">
+        <div id="spacebarIndicator" class="spacebar-indicator" aria-live="assertive" aria-atomic="true">
+            <div class="spacebar-indicator__card">
+                <span id="spacebarKicker" class="spacebar-indicator__kicker">Spacebar triggered</span>
+                <span id="spacebarAction" class="spacebar-indicator__action">Go</span>
+            </div>
+        </div>
 
-<h2>Player 1</h2>
+        <div class="voice-badge">Voice Controled: Loudly shout "Patch Me If You Can!" to start game!</div>
 
-<div id="clockDisplay1" class="clockDisplay">
-    00:00
-</div>
+        <header class="stage-header">
+            <div>
+                <p class="eyebrow">Selfnet e.V. presents</p>
+                <h1 id="game-title">Pätsch me if you can</h1>
+            </div>
 
-<table id="statusTable1"></table>
+            <div class="race-summary" aria-label="Race statistics">
+                <div class="stat-card">
+                    <span class="stat-label">Total patches</span>
+                    <span id="totalPatches" class="stat-value">0 / 96</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Black patches / sec</span>
+                    <span id="totalRate" class="stat-value">0.00</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Leader</span>
+                    <span id="leader" class="stat-value">Even</span>
+                </div>
+            </div>
+        </header>
 
-<h2>Player 2</h2>
+        <div class="players">
+            <article class="player-panel player-one" aria-labelledby="player-one-title">
+                <div class="player-top">
+                    <div>
+                        <p class="player-label">Left player</p>
+                        <h2 id="player-one-title" class="player-name">Player 1</h2>
+                    </div>
+                    <div id="clockDisplay1" class="clock-display" aria-label="Player 1 time">00:00.000</div>
+                </div>
 
-<div id="clockDisplay2" class="clockDisplay">
-    00:00
-</div>
+                <div class="player-stats" aria-label="Player 1 statistics">
+                    <div class="stat">
+                        <span class="stat-label">Total patches</span>
+                        <span id="patchCount1" class="stat-value">0 / 48</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Black patches / sec</span>
+                        <span id="patchRate1" class="stat-value">0.00</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Remaining</span>
+                        <span id="remaining1" class="stat-value">48</span>
+                    </div>
+                </div>
 
-<table id="statusTable2"></table>
+                <p class="switch-caption">1-1 patches, as fast as you can. Grab another person and let's fucking gooooo</p>
+                <div id="statusBoard1" class="board" role="grid" aria-label="Player 1 patch board"></div>
+            </article>
+
+            <article class="player-panel player-two" aria-labelledby="player-two-title">
+                <div class="player-top">
+                    <div>
+                        <p class="player-label">Right player</p>
+                        <h2 id="player-two-title" class="player-name">Player 2</h2>
+                    </div>
+                    <div id="clockDisplay2" class="clock-display" aria-label="Player 2 time">00:00.000</div>
+                </div>
+
+                <div class="player-stats" aria-label="Player 2 statistics">
+                    <div class="stat">
+                        <span class="stat-label">Total patches</span>
+                        <span id="patchCount2" class="stat-value">0 / 48</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Black patches / sec</span>
+                        <span id="patchRate2" class="stat-value">0.00</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Remaining</span>
+                        <span id="remaining2" class="stat-value">48</span>
+                    </div>
+                </div>
+
+                <p class="switch-caption">Different human, same kinda switch. Grab cables, sit across from each other, press the spacebar and 1:1 patch as fast as you can go!</p>
+                <div id="statusBoard2" class="board" role="grid" aria-label="Player 2 patch board"></div>
+            </article>
+        </div>
+    </section>
+</main>
 
 <script>
     const socket = io();
 
-    const NUM_ROWS = 6;
-    const NUM_COLS = 8;
+    const SWITCH_ROWS = 2;
+    const SWITCH_COLUMNS = 24;
+    const NUM_CELLS = SWITCH_ROWS * SWITCH_COLUMNS;
+    const PLAYER_IDS = [1, 2];
 
+    const players = {
+        1: {
+            seconds: 0,
+            milliseconds: 0,
+            states: Array(NUM_CELLS).fill(false),
+        },
+        2: {
+            seconds: 0,
+            milliseconds: 0,
+            states: Array(NUM_CELLS).fill(false),
+        },
+    };
+    const clockState = {
+        running: false,
+        syncedAt: performance.now(),
+    };
+    let clockGeneration = -1;
+    let clockAnimationFrame;
+    let indicatorTimeout;
 
-    // Generate 48 cells
-    let counter = 0;
-    let ports = [
-        [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46],
-        [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47]
-    ]
+    const SPACEBAR_ACTIONS = {
+        started: { action: "Go", kicker: "Spacebar started the game" },
+        paused: { action: "Paused", kicker: "Spacebar paused the game" },
+        reset: { action: "Reset", kicker: "Spacebar reset the game" },
+    };
 
-    for(let x = 1; x <= 2; x++) {
-        const table = document.getElementById("statusTable" + x);
-        ports.forEach((row, rowIndex) => {
-            const tr = document.createElement("tr");
+    function formatTime(totalSeconds, milliseconds = 0) {
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+        const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+        const millis = Math.max(0, Math.min(999, milliseconds)).toString().padStart(3, "0");
 
-            row.forEach((port, colIndex) => {
-                const td = document.createElement("td");
+        return `${minutes}:${seconds}.${millis}`;
+    }
 
-                td.id = `cell-${x}-${port}`;
-                td.textContent = port;
+    function playerClockIsActive(playerId) {
+        return clockState.running && patchCount(playerId) < NUM_CELLS;
+    }
 
-                tr.appendChild(td);
-            });
+    function currentMilliseconds(playerId) {
+        if (!playerClockIsActive(playerId)) {
+            return players[playerId].milliseconds;
+        }
 
-            table.appendChild(tr);
+        return Math.min(999, Math.floor(performance.now() - clockState.syncedAt));
+    }
+
+    function paintClocks() {
+        PLAYER_IDS.forEach((playerId) => {
+            document.getElementById(`clockDisplay${playerId}`).textContent = formatTime(
+                players[playerId].seconds,
+                currentMilliseconds(playerId),
+            );
         });
     }
 
-    socket.on("table_update", (data) => {
-        data.states.forEach((state, index) => {
-            const cell = document.getElementById(`cell-${data.switch_id}-${index}`);
+    function animateClocks() {
+        clockAnimationFrame = undefined;
+        paintClocks();
 
-            cell.classList.remove("red", "green");
-            cell.classList.add(state ? "green" : "red");
+        if (PLAYER_IDS.some(playerClockIsActive)) {
+            clockAnimationFrame = window.requestAnimationFrame(animateClocks);
+        }
+    }
+
+    function ensureClockAnimation() {
+        if (!clockAnimationFrame && PLAYER_IDS.some(playerClockIsActive)) {
+            clockAnimationFrame = window.requestAnimationFrame(animateClocks);
+        }
+    }
+
+    function patchCount(playerId) {
+        return players[playerId].states.filter(Boolean).length;
+    }
+
+    function patchRate(count, seconds) {
+        if (seconds <= 0) {
+            return "0.00";
+        }
+
+        return (count / seconds).toFixed(2);
+    }
+
+    function updatePlayerStats(playerId) {
+        const count = patchCount(playerId);
+        const seconds = players[playerId].seconds;
+
+        document.getElementById(`clockDisplay${playerId}`).textContent = formatTime(seconds, currentMilliseconds(playerId));
+        document.getElementById(`patchCount${playerId}`).textContent = `${count} / ${NUM_CELLS}`;
+        document.getElementById(`patchRate${playerId}`).textContent = patchRate(count, seconds);
+        document.getElementById(`remaining${playerId}`).textContent = NUM_CELLS - count;
+    }
+
+    function updateRaceStats() {
+        const counts = PLAYER_IDS.map((playerId) => patchCount(playerId));
+        const totalPatches = counts.reduce((sum, count) => sum + count, 0);
+        const longestRunningClock = Math.max(...PLAYER_IDS.map((playerId) => players[playerId].seconds));
+        const lead = counts[0] - counts[1];
+
+        document.getElementById("totalPatches").textContent = `${totalPatches} / ${NUM_CELLS * PLAYER_IDS.length}`;
+        document.getElementById("totalRate").textContent = patchRate(totalPatches, longestRunningClock);
+        document.getElementById("leader").textContent = lead === 0
+            ? "Even"
+            : `P${lead > 0 ? "1" : "2"} +${Math.abs(lead)}`;
+    }
+
+    function updateStats() {
+        PLAYER_IDS.forEach(updatePlayerStats);
+        updateRaceStats();
+    }
+
+    function createBoard(playerId) {
+        const board = document.getElementById(`statusBoard${playerId}`);
+
+        for (let port = 0; port < NUM_CELLS; port += 1) {
+            const cell = document.createElement("div");
+
+            cell.id = `cell-${playerId}-${port}`;
+            cell.className = "patch-cell";
+            cell.textContent = port;
+            cell.style.setProperty("--switch-column", Math.floor(port / SWITCH_ROWS) + 1);
+            cell.style.setProperty("--switch-row", (port % SWITCH_ROWS) + 1);
+            cell.setAttribute("role", "gridcell");
+            cell.setAttribute("aria-colindex", Math.floor(port / SWITCH_ROWS) + 1);
+            cell.setAttribute("aria-rowindex", (port % SWITCH_ROWS) + 1);
+            cell.setAttribute("aria-label", `Port ${port} open`);
+            cell.addEventListener("animationend", () => cell.classList.remove("cell-change"));
+
+            board.appendChild(cell);
+        }
+    }
+
+    function updateBoard(playerId, states) {
+        if (!Array.isArray(states) || states.length < NUM_CELLS) {
+            console.warn(`Ignoring incomplete update for player ${playerId}`);
+            return;
+        }
+
+        const previousStates = players[playerId].states;
+        const wasComplete = previousStates.every(Boolean);
+        const nextStates = states.slice(0, NUM_CELLS).map(Boolean);
+        const isComplete = nextStates.every(Boolean);
+
+        if (!wasComplete && isComplete) {
+            players[playerId].milliseconds = currentMilliseconds(playerId);
+        }
+
+        players[playerId].states = nextStates;
+
+        nextStates.forEach((state, index) => {
+            const cell = document.getElementById(`cell-${playerId}-${index}`);
+
+            if (!cell) {
+                return;
+            }
+
+            cell.classList.toggle("is-patched", state);
+            cell.setAttribute("aria-label", `Port ${index} ${state ? "patched" : "open"}`);
+
+            if (previousStates[index] !== state) {
+                cell.classList.remove("cell-change");
+                void cell.offsetWidth;
+                cell.classList.add("cell-change");
+            }
         });
+    }
+
+    function showSpacebarIndicator(action) {
+        const indicator = document.getElementById("spacebarIndicator");
+        const actionLabel = document.getElementById("spacebarAction");
+        const kicker = document.getElementById("spacebarKicker");
+        const message = SPACEBAR_ACTIONS[action];
+
+        if (!indicator || !actionLabel || !kicker || !message) {
+            return;
+        }
+
+        clearTimeout(indicatorTimeout);
+
+        indicator.dataset.action = action;
+        kicker.textContent = message.kicker;
+        actionLabel.textContent = message.action;
+        indicator.classList.remove("is-visible");
+        void indicator.offsetWidth;
+        indicator.classList.add("is-visible");
+
+        indicatorTimeout = window.setTimeout(() => {
+            indicator.classList.remove("is-visible");
+        }, 1100);
+    }
+
+    PLAYER_IDS.forEach(createBoard);
+    updateStats();
+
+    socket.on("table_update", (data) => {
+        updateBoard(data.switch_id, data.states);
+        updateStats();
     });
 
     socket.on("clock_update", (data) => {
-        console.log(data);
-        const totalSeconds1 = data.seconds1;
-        const totalSeconds2 = data.seconds2;
+        if (Number.isInteger(data.generation)) {
+            if (data.generation < clockGeneration) {
+                return;
+            }
 
-        const minutes1 = Math.floor((totalSeconds1) / 60)
-            .toString()
-            .padStart(2, "0");
+            clockGeneration = data.generation;
+        }
 
-        const seconds1 = (totalSeconds1 % 60)
-            .toString()
-            .padStart(2, "0");
+        const wasRunning = clockState.running;
 
-        const minutes2 = Math.floor((totalSeconds2) / 60)
-            .toString()
-            .padStart(2, "0");
+        if (wasRunning && !data.running) {
+            PLAYER_IDS.forEach((playerId) => {
+                players[playerId].milliseconds = currentMilliseconds(playerId);
+            });
+        }
 
-        const seconds2 = (totalSeconds2 % 60)
-            .toString()
-            .padStart(2, "0");
+        players[1].seconds = data.seconds1;
+        players[2].seconds = data.seconds2;
+        clockState.running = Boolean(data.running);
+        clockState.syncedAt = performance.now();
 
-        document.getElementById("clockDisplay1").textContent = `${minutes1}:${seconds1}`;
+        if (data.running) {
+            PLAYER_IDS.forEach((playerId) => {
+                if (patchCount(playerId) < NUM_CELLS) {
+                    players[playerId].milliseconds = 0;
+                }
+            });
+        } else if (!data.started) {
+            PLAYER_IDS.forEach((playerId) => {
+                players[playerId].milliseconds = 0;
+            });
+        }
 
-        document.getElementById("clockDisplay2").textContent = `${minutes2}:${seconds2}`;
+        updateStats();
+        ensureClockAnimation();
+    });
+
+    async function advanceClockWithSpacebar() {
+        try {
+            const response = await fetch("/space-clock");
+
+            if (!response.ok) {
+                throw new Error(`Clock control failed with ${response.status}`);
+            }
+
+            const result = await response.text();
+            const action = result.trim().replace(/^Clock\s+/i, "").toLowerCase();
+
+            showSpacebarIndicator(action);
+        } catch (error) {
+            console.error("Spacebar clock control failed", error);
+        }
+    }
+
+    document.addEventListener("keydown", (event) => {
+        if (event.code !== "Space" || event.repeat) {
+            return;
+        }
+
+        const interactiveElements = ["BUTTON", "INPUT", "SELECT", "TEXTAREA"];
+
+        if (event.target instanceof HTMLElement && interactiveElements.includes(event.target.tagName)) {
+            return;
+        }
+
+        event.preventDefault();
+        advanceClockWithSpacebar();
     });
 
     socket.on("connect", () => {
@@ -136,8 +901,6 @@
     socket.on("reconnect", () => {
         console.log("Reconnected");
     });
-
 </script>
-
 </body>
 </html>
