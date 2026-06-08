@@ -3,7 +3,6 @@ from flask_socketio import SocketIO
 import random
 import threading
 import serial
-import sys
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "secret"
@@ -20,6 +19,7 @@ cell_states = states = [random.choice([0, 1]) for _ in range(48)]
 def index():
     return render_template("index.html")
 
+
 @app.route("/control")
 def control():
     return render_template("control.html")
@@ -30,67 +30,78 @@ def randomize():
     global cell_states
 
     # Generate 48 new states
-    cell_states = [
-        random.choice([0, 1])
-        for _ in range(NUM_CELLS)
-    ]
+    cell_states = [random.choice([0, 1]) for _ in range(NUM_CELLS)]
 
     # Broadcast all 48 values in one websocket message
     for x in [1, 2]:
-        socketio.emit(
-            "table_update",
-            {
-                "switch_id": x,
-                "states": cell_states
-            }
-        )
+        socketio.emit("table_update", {"switch_id": x, "states": cell_states})
 
     return jsonify(cell_states)
 
 
 timer_running = False
+timer_started = False
 timer_seconds = 0
 player1_done = False
 player2_done = False
 player1_time = 0
 player2_time = 0
 timer_thread = None
+timer_generation = 0
+timer_lock = threading.Lock()
 stop_serial = False
 
 
-def timer_loop():
+def clock_payload():
+    return {
+        "seconds1": player1_time,
+        "seconds2": player2_time,
+        "running": timer_running,
+        "started": timer_started,
+        "generation": timer_generation,
+    }
+
+
+def timer_loop(generation):
     global timer_seconds, timer_running
     global player1_time, player1_done
     global player2_time, player2_done
 
-    while timer_running:
-        socketio.emit(
-            "clock_update",
-            {
-                "seconds1": player1_time,
-                "seconds2": player2_time
-            }
-        )
+    while True:
+        with timer_lock:
+            if not timer_running or generation != timer_generation:
+                break
+            payload = clock_payload()
+
+        socketio.emit("clock_update", payload)
 
         socketio.sleep(1)
-        timer_seconds += 1
-        if not player1_done:
-            player1_time = timer_seconds
-        if not player2_done:
-            player2_time = timer_seconds
 
-        if player1_done and player2_done:
-            timer_running = False
+        with timer_lock:
+            if not timer_running or generation != timer_generation:
+                break
+
+            timer_seconds += 1
+            if not player1_done:
+                player1_time = timer_seconds
+            if not player2_done:
+                player2_time = timer_seconds
+
+            if player1_done and player2_done:
+                timer_running = False
+
 
 def serial_loop(serial_id: int = 0) -> None:
+    global player1_done, player2_done
+
     print(f"Restarted {serial_id}")
     ser = serial.Serial(
-        port=f'/dev/ttyACM{serial_id}',
+        port=f"/dev/ttyACM{serial_id}",
         baudrate=9600,
         parity=serial.PARITY_ODD,
         stopbits=serial.STOPBITS_TWO,
         bytesize=serial.SEVENBITS,
-        timeout=5
+        timeout=5,
     )
     while not stop_serial:
         line = ser.readline()
@@ -99,38 +110,42 @@ def serial_loop(serial_id: int = 0) -> None:
         cell_states = [x != "FF" for x in data]
 
         socketio.emit(
-            "table_update",
-            {
-                "switch_id": serial_id + 1,
-                "states": cell_states
-            }
+            "table_update", {"switch_id": serial_id + 1, "states": cell_states}
         )
         for x in cell_states:
             if not x:
                 break
         else:
-            if serial_id == 0:
-                global player1_done
-                player1_done = True
-            else:
-                global player2_done
-                player2_done = True
+            with timer_lock:
+                if serial_id == 0:
+                    player1_done = True
+                else:
+                    player2_done = True
 
 
+def start_timer_thread(generation):
+    global timer_thread
+
+    timer_thread = threading.Thread(target=timer_loop, args=(generation,), daemon=True)
+    timer_thread.start()
 
 
 @app.route("/start-clock")
 def start_clock():
-    global timer_running, timer_thread
+    global timer_running, timer_started, timer_generation
 
-    if not timer_running:
+    with timer_lock:
+        if timer_running:
+            return "Clock started"
+
         timer_running = True
+        timer_started = True
+        timer_generation += 1
+        generation = timer_generation
+        payload = clock_payload()
 
-        timer_thread = threading.Thread(
-            target=timer_loop,
-            daemon=True
-        )
-        timer_thread.start()
+    start_timer_thread(generation)
+    socketio.emit("clock_update", payload)
 
     return "Clock started"
 
@@ -139,41 +154,80 @@ def start_clock():
 def stop_clock1():
     global player1_done
 
-    player1_done = True
+    with timer_lock:
+        player1_done = True
 
     return "Clock stopped"
+
 
 @app.route("/stop-clock2")
 def stop_clock2():
     global player2_done
 
-    player2_done = True
+    with timer_lock:
+        player2_done = True
 
     return "Clock stopped"
 
 
 @app.route("/reset-clock")
 def reset_clock():
-    global timer_seconds, timer_running
+    global timer_seconds, timer_running, timer_started, timer_generation
     global player1_time, player1_done
     global player2_time, player2_done
 
-    timer_seconds = 0
-    player1_time = 0
-    player1_done = False
-    player2_time = 0
-    player2_done = False
-    timer_running = False
+    with timer_lock:
+        timer_seconds = 0
+        player1_time = 0
+        player1_done = False
+        player2_time = 0
+        player2_done = False
+        timer_running = False
+        timer_started = False
+        timer_generation += 1
+        payload = clock_payload()
 
-    socketio.emit(
-        "clock_update",
-        {
-            "seconds1": player1_time,
-            "seconds2": player2_time
-        }
-    )
+    socketio.emit("clock_update", payload)
 
     return "Clock reset"
+
+
+@app.route("/space-clock")
+def space_clock():
+    global timer_seconds, timer_running, timer_started, timer_generation
+    global player1_time, player1_done
+    global player2_time, player2_done
+
+    with timer_lock:
+        if timer_running:
+            timer_running = False
+            timer_generation += 1
+            action = "paused"
+        elif timer_started:
+            timer_seconds = 0
+            player1_time = 0
+            player1_done = False
+            player2_time = 0
+            player2_done = False
+            timer_started = False
+            timer_generation += 1
+            action = "reset"
+        else:
+            timer_running = True
+            timer_started = True
+            timer_generation += 1
+            generation = timer_generation
+            action = "started"
+
+        payload = clock_payload()
+
+    if action == "started":
+        start_timer_thread(generation)
+
+    socketio.emit("clock_update", payload)
+
+    return f"Clock {action}"
+
 
 @app.route("/restart-serial")
 def restart_serial():
@@ -187,8 +241,8 @@ def restart_serial():
     return "Done"
 
 
-
 serial_threads = None
+
 
 def reset_serial_thread():
     global serial_threads, stop_serial
@@ -198,36 +252,22 @@ def reset_serial_thread():
     if serial_threads is not None:
         raise Exception("Stuff")
 
-    serial_threads = [ threading.Thread(
-        target=serial_loop,
-        args=(x,),
-        daemon=True
-    ) for x in [0,1]]
+    serial_threads = [
+        threading.Thread(target=serial_loop, args=(x,), daemon=True) for x in [0, 1]
+    ]
     for t in serial_threads:
         t.start()
 
 
 @socketio.on("connect")
 def handle_connect():
-    socketio.emit(
-        "clock_update",
-        {
-            "seconds1": player1_time,
-            "seconds2": player2_time
-        }
-    )
+    socketio.emit("clock_update", clock_payload())
     # Send current state immediately
     for x in [1, 2]:
-        socketio.emit(
-            "table_update",
-            {
-                "switch_id": x,
-                "states": cell_states
-            }
-        )
+        socketio.emit("table_update", {"switch_id": x, "states": cell_states})
     if serial_threads is None:
         reset_serial_thread()
 
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", debug=True)
+    socketio.run(app, host="0.0.0.0", debug=True, allow_unsafe_werkzeug=True)
