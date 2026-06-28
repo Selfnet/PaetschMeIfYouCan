@@ -3,6 +3,7 @@ from flask_socketio import SocketIO
 import random
 import threading
 import serial
+import datetime
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "secret"
@@ -50,6 +51,8 @@ timer_thread = None
 timer_generation = 0
 timer_lock = threading.Lock()
 stop_serial = False
+verify = True
+
 
 
 def clock_payload():
@@ -94,6 +97,15 @@ def timer_loop(generation):
 def serial_loop(serial_id: int = 0) -> None:
     global player1_done, player2_done
 
+    # Panel sequence only bit 2, 4 and 8 are relevant
+    PANEL = [int(x, 2) for x in ['1110', '0110', '1010', '0010', '1100', '0100', '1000', '0000']]
+
+    EXPECTED_IDS = []
+    for o, u in [('00000001', '01000000'), ('10000000', '01000001'), ('10000001', '11000000')]:
+        for x in PANEL:
+            EXPECTED_IDS.append(x | int(o, 2))
+            EXPECTED_IDS.append(x | int(u, 2))
+
     print(f"Restarted {serial_id}")
     ser = serial.Serial(
         port=f"/dev/ttyACM{serial_id}",
@@ -103,17 +115,37 @@ def serial_loop(serial_id: int = 0) -> None:
         bytesize=serial.SEVENBITS,
         timeout=5,
     )
+    last_print = datetime.datetime.now()
+
+    def parse_state(val, exp):
+        if verify:
+            if val == exp:
+                return 2
+            elif val != 255:
+                return 1
+            else:
+                return 0
+        else:
+            if val != 255:
+                return 2
+            else:
+                return 0
+
     while not stop_serial:
         line = ser.readline()
         data = line.decode("ascii").strip("\r\n ").split(" ")
         data.reverse()
-        cell_states = [x != "FF" for x in data]
+
+        ids = [int(x, 16) for x in data]
+        cell_states = [parse_state(x, y) for x, y in zip(ids, EXPECTED_IDS)]
+        if (datetime.datetime.now() - last_print).seconds >= 1:
+            last_print = datetime.datetime.now()
 
         socketio.emit(
             "table_update", {"switch_id": serial_id + 1, "states": cell_states}
         )
         for x in cell_states:
-            if not x:
+            if x != 2:
                 break
         else:
             with timer_lock:
@@ -202,7 +234,7 @@ def space_clock():
         if timer_running:
             timer_running = False
             timer_generation += 1
-            action = "paused"
+            action = "stopped"
         elif timer_started:
             timer_seconds = 0
             player1_time = 0
@@ -228,6 +260,11 @@ def space_clock():
 
     return f"Clock {action}"
 
+@app.route("/toggle-verify")
+def toggle_verify():
+    global verify
+    verify = not verify
+    return "Done"
 
 @app.route("/restart-serial")
 def restart_serial():

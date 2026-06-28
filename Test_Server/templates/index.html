@@ -334,6 +334,11 @@
             box-shadow: 0 0 11px #00ff66, inset 0 0 0 2px #000;
         }
 
+        .patch-cell.is-wrong {
+            color: var(--red);
+            border: 4px solid var(--red);
+        }
+
         .patch-cell.cell-change {
             animation: cell-pop 220ms var(--ease-out);
         }
@@ -384,11 +389,11 @@
             text-shadow: 0.06em 0.06em 0 var(--blue);
         }
 
-        .spacebar-indicator[data-action="paused"] .spacebar-indicator__card {
+        .spacebar-indicator[data-action="stopped"] .spacebar-indicator__card {
             background: #fff;
         }
 
-        .spacebar-indicator[data-action="paused"] .spacebar-indicator__action {
+        .spacebar-indicator[data-action="stopped"] .spacebar-indicator__action {
             color: var(--blue);
             text-shadow: 0.06em 0.06em 0 var(--yellow);
         }
@@ -558,7 +563,6 @@
             <article class="player-panel player-one" aria-labelledby="player-one-title">
                 <div class="player-top">
                     <div>
-                        <p class="player-label">Left player</p>
                         <h2 id="player-one-title" class="player-name">Player 1</h2>
                     </div>
                     <div id="clockDisplay1" class="clock-display" aria-label="Player 1 time">00:00.000</div>
@@ -586,7 +590,6 @@
             <article class="player-panel player-two" aria-labelledby="player-two-title">
                 <div class="player-top">
                     <div>
-                        <p class="player-label">Right player</p>
                         <h2 id="player-two-title" class="player-name">Player 2</h2>
                     </div>
                     <div id="clockDisplay2" class="clock-display" aria-label="Player 2 time">00:00.000</div>
@@ -644,7 +647,7 @@
 
     const SPACEBAR_ACTIONS = {
         started: { action: "Go", kicker: "Spacebar started the game" },
-        paused: { action: "Paused", kicker: "Spacebar paused the game" },
+        stopped: { action: "Stop", kicker: "Spacebar stopped the game" },
         reset: { action: "Reset", kicker: "Spacebar reset the game" },
     };
 
@@ -761,7 +764,7 @@
 
         const previousStates = players[playerId].states;
         const wasComplete = previousStates.every(Boolean);
-        const nextStates = states.slice(0, NUM_CELLS).map(Boolean);
+        const nextStates = states.slice(0, NUM_CELLS);
         const isComplete = nextStates.every(Boolean);
 
         if (!wasComplete && isComplete) {
@@ -777,7 +780,8 @@
                 return;
             }
 
-            cell.classList.toggle("is-patched", state);
+            cell.classList.toggle("is-patched", state == 2);
+            cell.classList.toggle("is-wrong", state == 1);
             cell.setAttribute("aria-label", `Port ${index} ${state ? "patched" : "open"}`);
 
             if (previousStates[index] !== state) {
@@ -876,18 +880,33 @@
     }
 
     document.addEventListener("keydown", (event) => {
-        if (event.code !== "Space" || event.repeat) {
-            return;
-        }
-
         const interactiveElements = ["BUTTON", "INPUT", "SELECT", "TEXTAREA"];
 
         if (event.target instanceof HTMLElement && interactiveElements.includes(event.target.tagName)) {
             return;
         }
 
-        event.preventDefault();
-        advanceClockWithSpacebar();
+        if (event.repeat) {
+            return;
+        }
+
+        if (event.code === "Space") {
+            event.preventDefault();
+            advanceClockWithSpacebar();
+            return;
+        }
+
+        if (event.code === "KeyV") {
+            event.preventDefault();
+            fetch("/toggle-verify");
+            return;
+        }
+
+        if (event.code === "KeyS") {
+            event.preventDefault();
+            fetch("/restart-serial");
+            return;
+        }
     });
 
     socket.on("connect", () => {
