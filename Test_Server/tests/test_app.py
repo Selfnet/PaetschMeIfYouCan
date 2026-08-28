@@ -116,6 +116,25 @@ def test_restart_serial_joins_readers_before_replacing_them(app_bundle, monkeypa
     assert calls == ["join-0", "join-1", "start"]
 
 
+def test_index_contains_all_phase_views_and_exact_copy(app_bundle):
+    app, _, _ = app_bundle
+
+    html = app.test_client().get("/").get_data(as_text=True)
+
+    assert 'id="raceView"' in html
+    assert 'id="nameEntryView"' in html
+    assert 'id="leaderboardView"' in html
+    assert "you were able to success" in html
+    assert html.count('data-max-codepoints="12"') == 2
+    assert 'id="nameEntryCountdown"' in html
+    assert 'id="leaderboardCountdown"' in html
+    assert 'id="persistenceError"' in html
+    assert "grid-column: var(--switch-column)" in html
+    assert "grid-row: var(--switch-row)" in html
+    assert "Math.floor(port / 2) + 1" in html
+    assert "(port % 2) + 1" in html
+
+
 def test_submitting_names_persists_and_highlights_current_rows(app_bundle, clock):
     app, socketio, runtime = app_bundle
     finish_race(runtime, clock)
