@@ -33,6 +33,14 @@ def parse_cell_state(value, expected, verify):
     return 2 if value != 255 else 0
 
 
+class UnavailableLeaderboardStore:
+    def insert_entries(self, entries):
+        raise OSError("Leaderboard store is unavailable")
+
+    def top_entries(self):
+        raise OSError("Leaderboard store is unavailable")
+
+
 class GameRuntime:
     def __init__(self, socketio, race, store, logger):
         self.socketio = socketio
@@ -276,10 +284,16 @@ def create_app(
     kwargs = {"clock_ns": clock_ns}
     if race_id_factory is not None:
         kwargs["race_id_factory"] = race_id_factory
+    if store is None:
+        try:
+            store = LeaderboardStore(default_database_path())
+        except (sqlite3.Error, OSError):
+            app.logger.exception("Could not initialize leaderboard scores")
+            store = UnavailableLeaderboardStore()
     runtime = GameRuntime(
         socketio,
         RaceStateMachine(**kwargs),
-        store or LeaderboardStore(default_database_path()),
+        store,
         app.logger,
     )
     app.extensions["game_runtime"] = runtime

@@ -48,6 +48,26 @@ def test_connect_receives_ready_state_without_starting_serial(app_bundle):
     assert runtime.serial_threads is None
 
 
+def test_unavailable_default_database_does_not_prevent_ready_screen(
+    tmp_path, monkeypatch, clock
+):
+    blocked_directory = tmp_path / "not-a-directory"
+    blocked_directory.write_text("blocked")
+    monkeypatch.setenv("LEADERBOARD_DB", str(blocked_directory / "scores.sqlite3"))
+
+    app, socketio = create_app(
+        {
+            "TESTING": True,
+            "START_SERIAL_ON_CONNECT": False,
+            "START_BACKGROUND_TASKS": False,
+        },
+        clock_ns=clock,
+        race_id_factory=lambda: "race-1",
+    )
+
+    assert latest_event(socketio.test_client(app), "game_state")["phase"] == Phase.READY
+
+
 def test_state_changes_are_synchronized_across_clients(app_bundle):
     app, socketio, _ = app_bundle
     first = socketio.test_client(app)
