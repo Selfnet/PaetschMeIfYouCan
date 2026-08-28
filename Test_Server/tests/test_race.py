@@ -114,3 +114,112 @@ def test_equal_floor_milliseconds_are_a_tie_and_prompt_player_one_first(clock):
     assert state["tie"] is True
     assert state["result_order"] == [1, 2]
     assert state["name_entry"]["active_player"] == 1
+
+
+def completed_race(clock):
+    machine = started_race(clock)
+    clock.advance_ms(1000)
+    machine.observe_cells(1, VERIFIED)
+    clock.advance_ms(250)
+    machine.observe_cells(2, VERIFIED)
+    return machine
+
+
+def test_name_entry_is_sequential_and_trims_confirmed_names(clock):
+    machine = completed_race(clock)
+    race_id = machine.snapshot()["race_id"]
+
+    assert machine.set_name_draft(race_id, 1, "  Ada  ").changed
+    assert machine.submit_name(race_id, 1, "  Ada  ").action == "next_name"
+    assert machine.snapshot()["name_entry"]["active_player"] == 2
+
+    final = machine.submit_name(race_id, 2, "Grace")
+    assert final.action == "leaderboard"
+    assert [(item.player_number, item.name) for item in final.submissions] == [
+        (1, "Ada"),
+        (2, "Grace"),
+    ]
+    assert [item.duration_ms for item in final.submissions] == [1000, 1250]
+
+
+def test_empty_names_skip_rows_and_stale_events_are_ignored(clock):
+    machine = completed_race(clock)
+    race_id = machine.snapshot()["race_id"]
+
+    assert not machine.set_name_draft("old-race", 1, "Ada").changed
+    assert not machine.submit_name(race_id, 2, "Grace").changed
+    assert machine.submit_name(race_id, 1, "").action == "next_name"
+    final = machine.submit_name(race_id, 2, "   ")
+
+    assert final.submissions == ()
+    assert machine.snapshot()["phase"] == Phase.LEADERBOARD
+
+
+@pytest.mark.parametrize("draft", ["A" * 13, "Ada\n", 123, None])
+def test_invalid_drafts_do_not_change_state_or_extend_deadline(clock, draft):
+    machine = completed_race(clock)
+    before = machine.snapshot()
+    clock.advance_ms(5000)
+
+    assert not machine.set_name_draft(before["race_id"], 1, draft).changed
+    after = machine.snapshot()
+    assert after["name_entry"]["drafts"] == before["name_entry"]["drafts"]
+    assert after["remaining_seconds"] == 115
+
+
+def test_printable_unicode_draft_restarts_idle_deadline(clock):
+    machine = completed_race(clock)
+    race_id = machine.snapshot()["race_id"]
+    clock.advance_ms(119_000)
+
+    assert machine.set_name_draft(race_id, 1, "Zoë 🚀").changed
+    assert machine.snapshot()["remaining_seconds"] == 120
+
+
+def test_name_timeout_saves_confirmed_names_and_leaderboard_resets(clock):
+    machine = completed_race(clock)
+    race_id = machine.snapshot()["race_id"]
+    machine.submit_name(race_id, 1, "Ada")
+    machine.set_name_draft(race_id, 2, "Unconfirmed")
+    clock.advance_ms(120_000)
+
+    expired = machine.tick()
+    assert [(item.player_number, item.name) for item in expired.submissions] == [
+        (1, "Ada")
+    ]
+    assert machine.snapshot()["remaining_seconds"] == 60
+
+    clock.advance_ms(60_000)
+    assert machine.tick().action == "reset"
+    assert machine.snapshot()["phase"] == Phase.READY
+
+
+def test_name_event_at_deadline_enters_leaderboard_without_accepting_draft(clock):
+    machine = completed_race(clock)
+    race_id = machine.snapshot()["race_id"]
+    clock.advance_ms(120_000)
+
+    change = machine.set_name_draft(race_id, 1, "Too late")
+
+    assert change.action == "leaderboard"
+    assert change.submissions == ()
+    assert machine.snapshot()["phase"] == Phase.LEADERBOARD
+
+
+def test_leaderboard_rows_highlight_current_race_and_dismiss(clock):
+    machine = completed_race(clock)
+    race_id = machine.snapshot()["race_id"]
+    machine.submit_name(race_id, 1, "Ada")
+    machine.submit_name(race_id, 2, "")
+    machine.set_leaderboard(
+        race_id,
+        [{"id": 4, "rank": 1, "name": "Ada", "duration_ms": 1000}],
+        highlighted_ids={4},
+        persistence_error="Scores could not be saved",
+    )
+
+    state = machine.snapshot()
+    assert state["leaderboard"][0]["current_race"] is True
+    assert state["persistence_error"] == "Scores could not be saved"
+    assert not machine.dismiss_leaderboard("old-race").changed
+    assert machine.dismiss_leaderboard(race_id).action == "reset"

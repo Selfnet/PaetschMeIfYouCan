@@ -2,7 +2,7 @@ import math
 import threading
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -44,6 +44,14 @@ class StateChange:
 class NameFieldState:
     draft: str = ""
     resolved: bool = False
+
+
+def _valid_draft(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) <= 12
+        and all(character.isprintable() for character in value)
+    )
 
 
 class RaceStateMachine:
@@ -170,6 +178,113 @@ class RaceStateMachine:
         self.deadline_ns = now_ns + NAME_TIMEOUT_NS
         self.phase = Phase.NAME_ENTRY
         return StateChange(True, "name_entry")
+
+    def _valid_name_event_unlocked(
+        self, race_id: object, player_number: object, draft: object
+    ) -> bool:
+        return (
+            self.phase == Phase.NAME_ENTRY
+            and race_id == self.race_id
+            and type(player_number) is int
+            and player_number == self.active_name_player
+            and _valid_draft(draft)
+        )
+
+    def set_name_draft(
+        self, race_id: object, player_number: object, draft: object
+    ) -> StateChange:
+        with self._lock:
+            expired = self._expire_if_due_unlocked()
+            if expired is not None:
+                return expired
+            if not self._valid_name_event_unlocked(race_id, player_number, draft):
+                return StateChange(False)
+            self.name_fields[player_number].draft = draft
+            self.deadline_ns = self._clock_ns() + NAME_TIMEOUT_NS
+            return StateChange(True, "name_draft")
+
+    def submit_name(
+        self, race_id: object, player_number: object, draft: object
+    ) -> StateChange:
+        with self._lock:
+            expired = self._expire_if_due_unlocked()
+            if expired is not None:
+                return expired
+            if not self._valid_name_event_unlocked(race_id, player_number, draft):
+                return StateChange(False)
+            field = self.name_fields[player_number]
+            field.draft = draft.strip()
+            field.resolved = True
+            current_index = self.result_order.index(player_number)
+            if current_index + 1 < len(self.result_order):
+                self.active_name_player = self.result_order[current_index + 1]
+                self.deadline_ns = self._clock_ns() + NAME_TIMEOUT_NS
+                return StateChange(True, "next_name")
+            return self._enter_leaderboard_unlocked()
+
+    def _enter_leaderboard_unlocked(self) -> StateChange:
+        if self.race_id is None:
+            return StateChange(False)
+        now_ns = self._clock_ns()
+        submissions = tuple(
+            ScoreSubmission(
+                race_id=self.race_id,
+                player_number=player_number,
+                name=self.name_fields[player_number].draft,
+                duration_ms=self._duration_ms_unlocked(player_number, now_ns),
+            )
+            for player_number in self.result_order
+            if self.name_fields[player_number].resolved
+            and self.name_fields[player_number].draft
+        )
+        self.phase = Phase.LEADERBOARD
+        self.active_name_player = None
+        self.deadline_ns = now_ns + LEADERBOARD_TIMEOUT_NS
+        self.leaderboard_rows = []
+        self.persistence_error = None
+        return StateChange(True, "leaderboard", submissions)
+
+    def tick(self) -> StateChange:
+        with self._lock:
+            return self._expire_if_due_unlocked() or StateChange(False)
+
+    def _expire_if_due_unlocked(self) -> StateChange | None:
+        if self.deadline_ns is None or self._clock_ns() < self.deadline_ns:
+            return None
+        if self.phase == Phase.NAME_ENTRY:
+            for field in self.name_fields.values():
+                if not field.resolved:
+                    field.draft = ""
+                    field.resolved = True
+            return self._enter_leaderboard_unlocked()
+        if self.phase == Phase.LEADERBOARD:
+            self._reset_unlocked()
+            return StateChange(True, "reset")
+        return None
+
+    def set_leaderboard(
+        self,
+        race_id: object,
+        rows: Sequence[dict[str, object]],
+        highlighted_ids: set[int],
+        persistence_error: str | None,
+    ) -> StateChange:
+        with self._lock:
+            if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
+                return StateChange(False)
+            self.leaderboard_rows = [
+                {**row, "current_race": row.get("id") in highlighted_ids}
+                for row in rows
+            ]
+            self.persistence_error = persistence_error
+            return StateChange(True, "leaderboard_updated")
+
+    def dismiss_leaderboard(self, race_id: object) -> StateChange:
+        with self._lock:
+            if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
+                return StateChange(False)
+            self._reset_unlocked()
+            return StateChange(True, "reset")
 
     def reset(self) -> StateChange:
         with self._lock:
