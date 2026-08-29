@@ -86,15 +86,19 @@ class GameRuntime:
         except (sqlite3.Error, OSError, ValueError):
             self.logger.exception("Could not save leaderboard scores")
             persistence_error = "Scores could not be saved"
-        try:
-            rows = [asdict(row) for row in self.store.top_entries()]
-        except (sqlite3.Error, OSError):
-            self.logger.exception("Could not load leaderboard scores")
-            rows = []
-            persistence_error = "Scores could not be saved"
+        rows, load_error = self.load_leaderboard()
+        if load_error and persistence_error is None:
+            persistence_error = load_error
         self.race.set_leaderboard(
             self.race.snapshot()["race_id"], rows, highlighted_ids, persistence_error
         )
+
+    def load_leaderboard(self):
+        try:
+            return [asdict(row) for row in self.store.top_entries()], None
+        except (sqlite3.Error, OSError):
+            self.logger.exception("Could not load leaderboard scores")
+            return [], "Leaderboard could not be loaded"
 
     def emit_state(self):
         self.socketio.emit("game_state", self.race.snapshot())
@@ -258,6 +262,18 @@ def register_socket_events(app, socketio, runtime):
     def dismiss(data):
         if isinstance(data, dict):
             runtime.handle_change(runtime.race.dismiss_leaderboard(data.get("race_id")))
+
+    @socketio.on("request_leaderboard")
+    def request_idle_leaderboard(data=None):
+        if runtime.race.snapshot()["phase"] not in (Phase.READY, Phase.STOPPED):
+            return
+        request_id = data.get("request_id") if isinstance(data, dict) else None
+        rows, error = runtime.load_leaderboard()
+        socketio.emit(
+            "leaderboard_snapshot",
+            {"request_id": request_id, "rows": rows, "error": error},
+            to=request.sid,
+        )
 
 
 def background_loop(socketio, runtime):

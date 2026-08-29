@@ -159,6 +159,31 @@
             min-height: 0;
         }
 
+        .idle-actions {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: center;
+            padding-top: clamp(6px, 0.8vh, 12px);
+        }
+
+        .leaderboard-button {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 20px;
+            border: 4px solid #000;
+            color: #000;
+            background: var(--yellow);
+            box-shadow: 5px 5px 0 #000;
+            font: 900 1rem/1 var(--font-display);
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 140ms var(--ease-out);
+        }
+        .leaderboard-button:active { transform: scale(0.97); }
+        .leaderboard-button kbd { min-width: 28px; padding: 4px 7px; border: 3px solid #000; background: #fff; font: 900 0.9rem/1 var(--font-mono); }
+
         .player-panel {
             position: relative;
             min-height: 0;
@@ -204,8 +229,9 @@
         .result-card.is-resolved { opacity: 0.72; }
         .leaderboard-table { width: 100%; border-collapse: collapse; background: #fff; font-size: clamp(1rem, 2.2vh, 2rem); }
         .leaderboard-table th, .leaderboard-table td { border: 4px solid #000; padding: clamp(6px, 1vh, 14px); text-align: left; }
-        .leaderboard-table td:last-child { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+        .leaderboard-table td:nth-child(3), .leaderboard-table td:nth-child(4) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
         .leaderboard-table tr.is-current-race { background: var(--yellow); }
+        .leaderboard-empty { text-align: center !important; }
         .phase-footer { margin: auto 0 0; padding-top: 14px; font-weight: 900; text-align: center; }
         .persistence-error { border: 4px solid #000; padding: 8px 12px; color: #fff; background: var(--red); }
 
@@ -324,6 +350,9 @@
                     <div id="statusBoard2" class="board" role="grid" aria-label="Player 2 patch board"></div>
                 </article>
             </div>
+            <div id="idleActions" class="idle-actions">
+                <button id="leaderboardButton" class="leaderboard-button" type="button"><kbd aria-hidden="true">L</kbd><span>Leaderboard</span></button>
+            </div>
         </div>
 
         <section id="nameEntryView" class="phase-view post-race-view" aria-labelledby="resultTitle" hidden>
@@ -338,9 +367,9 @@
 
         <section id="leaderboardView" class="phase-view post-race-view" aria-labelledby="leaderboardTitle" hidden>
             <p class="eyebrow">Fastest patchers</p>
-            <h2 id="leaderboardTitle" class="result-title">Top 10</h2>
+            <h2 id="leaderboardTitle" class="result-title" tabindex="-1">Top 10</h2>
             <p id="persistenceError" class="persistence-error" role="status" hidden></p>
-            <table class="leaderboard-table"><thead><tr><th>Rank</th><th>Name</th><th>Time</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
+            <table class="leaderboard-table"><thead><tr><th>Rank</th><th>Name</th><th>Time</th><th>Set at</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
             <p id="leaderboardCountdown" class="phase-footer" aria-live="polite"></p>
         </section>
     </section>
@@ -350,6 +379,7 @@
     const socket = io();
     const NUM_CELLS = 48;
     const PLAYER_IDS = [1, 2];
+    const IDLE_LEADERBOARD_TIMEOUT_MS = 60_000;
     const players = {
         1: { durationMs: 0, states: Array(NUM_CELLS).fill(0) },
         2: { durationMs: 0, states: Array(NUM_CELLS).fill(0) },
@@ -362,6 +392,12 @@
     };
     let clockAnimationFrame;
     let indicatorTimeout;
+    let idleLeaderboardOpen = false;
+    let idleLeaderboardDeadline = 0;
+    let idleLeaderboardTimeout;
+    let idleLeaderboardInterval;
+    let idleLeaderboardRequestCounter = 0;
+    let pendingLeaderboardRequestId = null;
     let gameState = {
         phase: "ready", race_id: null, players: {}, result_order: [], tie: false,
         name_entry: { active_player: null, drafts: {}, resolved: {} },
@@ -379,6 +415,14 @@
     function formatCountdown(seconds) {
         const safe = Math.max(0, Number(seconds) || 0);
         return `${Math.floor(safe / 60)}:${Math.floor(safe % 60).toString().padStart(2, "0")}`;
+    }
+
+    function formatCreatedAt(value) {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "-";
+        const pad = (part) => String(part).padStart(2, "0");
+        return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     }
 
     function currentDurationMs(playerId) {
@@ -470,19 +514,31 @@
     }
 
     function showPhase(phase) {
-        document.getElementById("raceView").hidden = !["ready", "racing", "stopped"].includes(phase);
+        const idlePhase = ["ready", "stopped"].includes(phase);
+        document.getElementById("raceView").hidden = idleLeaderboardOpen || !["ready", "racing", "stopped"].includes(phase);
         document.getElementById("nameEntryView").hidden = phase !== "name_entry";
-        document.getElementById("leaderboardView").hidden = phase !== "leaderboard";
+        document.getElementById("leaderboardView").hidden = !idleLeaderboardOpen && phase !== "leaderboard";
+        document.getElementById("idleActions").hidden = !idlePhase;
     }
 
     function renderLeaderboard(rows) {
         const body = document.getElementById("leaderboardRows");
         body.replaceChildren();
+        if (rows.length === 0) {
+            const tableRow = document.createElement("tr");
+            const emptyCell = document.createElement("td");
+            emptyCell.colSpan = 4;
+            emptyCell.className = "leaderboard-empty";
+            emptyCell.textContent = "No records yet";
+            tableRow.appendChild(emptyCell);
+            body.appendChild(tableRow);
+            return;
+        }
         rows.forEach((row) => {
             const tableRow = document.createElement("tr");
             tableRow.classList.toggle("is-current-race", Boolean(row.current_race));
             if (row.current_race) tableRow.setAttribute("aria-current", "true");
-            [row.rank, row.name, formatDuration(row.duration_ms)].forEach((value) => {
+            [row.rank, row.name, formatDuration(row.duration_ms), formatCreatedAt(row.created_at)].forEach((value) => {
                 const cell = document.createElement("td");
                 cell.textContent = String(value);
                 tableRow.appendChild(cell);
@@ -495,6 +551,10 @@
         const priorPhase = gameState.phase;
         const priorRaceId = gameState.race_id;
         const priorActive = gameState.name_entry.active_player;
+        if (!["ready", "stopped"].includes(state.phase)) {
+            cancelIdleLeaderboardRequest();
+            if (idleLeaderboardOpen) closeIdleLeaderboard(false);
+        }
         gameState = state;
         showPhase(state.phase);
         PLAYER_IDS.forEach((playerId) => {
@@ -529,11 +589,13 @@
             card.classList.toggle("is-resolved", resolved);
         });
         document.getElementById("nameEntryCountdown").textContent = `Leaderboard in ${formatCountdown(state.remaining_seconds)} - empty names are skipped`;
-        renderLeaderboard(state.leaderboard);
-        const error = document.getElementById("persistenceError");
-        error.textContent = state.persistence_error || "";
-        error.hidden = !state.persistence_error;
-        document.getElementById("leaderboardCountdown").textContent = `Next race in ${formatCountdown(state.remaining_seconds)} - press Space to continue`;
+        if (!idleLeaderboardOpen) {
+            renderLeaderboard(state.leaderboard);
+            const error = document.getElementById("persistenceError");
+            error.textContent = state.persistence_error || "";
+            error.hidden = !state.persistence_error;
+            document.getElementById("leaderboardCountdown").textContent = `Next race in ${formatCountdown(state.remaining_seconds)} - L or Esc to continue`;
+        }
 
         const focusedNameInput = document.activeElement instanceof HTMLInputElement && document.activeElement.matches(".name-input:not(:disabled)");
         if (state.phase === "name_entry" && (!focusedNameInput || priorPhase !== state.phase || priorRaceId !== state.race_id || priorActive !== state.name_entry.active_player)) {
@@ -589,6 +651,57 @@
         }, 1050);
     }
 
+    function updateIdleLeaderboardCountdown() {
+        const remaining = Math.ceil(Math.max(0, idleLeaderboardDeadline - Date.now()) / 1000);
+        document.getElementById("leaderboardCountdown").textContent = `Closing in ${formatCountdown(remaining)} - L or Esc to return`;
+    }
+
+    function closeIdleLeaderboard(restorePhase = true) {
+        if (!idleLeaderboardOpen) return;
+        idleLeaderboardOpen = false;
+        clearTimeout(idleLeaderboardTimeout);
+        clearInterval(idleLeaderboardInterval);
+        idleLeaderboardTimeout = undefined;
+        idleLeaderboardInterval = undefined;
+        if (restorePhase) {
+            showPhase(gameState.phase);
+            document.getElementById("leaderboardButton").focus();
+        }
+    }
+
+    function showIdleLeaderboard(rows, errorMessage) {
+        if (!["ready", "stopped"].includes(gameState.phase)) return;
+        idleLeaderboardOpen = true;
+        idleLeaderboardDeadline = Date.now() + IDLE_LEADERBOARD_TIMEOUT_MS;
+        renderLeaderboard(rows);
+        const error = document.getElementById("persistenceError");
+        error.textContent = errorMessage || "";
+        error.hidden = !errorMessage;
+        updateIdleLeaderboardCountdown();
+        showPhase(gameState.phase);
+        document.getElementById("leaderboardTitle").focus();
+        clearTimeout(idleLeaderboardTimeout);
+        clearInterval(idleLeaderboardInterval);
+        idleLeaderboardTimeout = setTimeout(closeIdleLeaderboard, IDLE_LEADERBOARD_TIMEOUT_MS);
+        idleLeaderboardInterval = setInterval(updateIdleLeaderboardCountdown, 1000);
+    }
+
+    function cancelIdleLeaderboardRequest() {
+        pendingLeaderboardRequestId = null;
+    }
+
+    function toggleIdleLeaderboard() {
+        if (idleLeaderboardOpen) {
+            closeIdleLeaderboard();
+        } else if (pendingLeaderboardRequestId !== null) {
+            cancelIdleLeaderboardRequest();
+        } else if (["ready", "stopped"].includes(gameState.phase)) {
+            const requestId = ++idleLeaderboardRequestCounter;
+            pendingLeaderboardRequestId = requestId;
+            socket.emit("request_leaderboard", { request_id: requestId });
+        }
+    }
+
     PLAYER_IDS.forEach(createBoard);
     const boardResizeObserver = new ResizeObserver((entries) => entries.forEach((entry) => fitBoardCells(entry.target)));
     document.querySelectorAll(".board").forEach((board) => {
@@ -604,6 +717,11 @@
     });
     socket.on("table_update", (data) => updateBoard(data.switch_id, data.states));
     socket.on("game_state", renderGameState);
+    socket.on("leaderboard_snapshot", (data) => {
+        if (pendingLeaderboardRequestId === null || data?.request_id !== pendingLeaderboardRequestId) return;
+        cancelIdleLeaderboardRequest();
+        showIdleLeaderboard(Array.isArray(data?.rows) ? data.rows : [], data?.error || null);
+    });
     socket.on("clock_update", (data) => {
         if (data.race_id !== gameState.race_id) return;
         PLAYER_IDS.forEach((playerId) => {
@@ -614,6 +732,7 @@
         updateStats();
         ensureClockAnimation();
     });
+    document.getElementById("leaderboardButton").addEventListener("click", toggleIdleLeaderboard);
     document.addEventListener("keydown", (event) => {
         if (event.repeat) return;
         if (gameState.phase === "name_entry") {
@@ -626,11 +745,35 @@
             }
             return;
         }
+        if (event.code === "KeyL") {
+            event.preventDefault();
+            if (gameState.phase === "leaderboard") {
+                socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
+            } else {
+                toggleIdleLeaderboard();
+            }
+            return;
+        }
+        if (event.key === "Escape") {
+            if (pendingLeaderboardRequestId !== null) {
+                event.preventDefault();
+                cancelIdleLeaderboardRequest();
+            } else if (idleLeaderboardOpen) {
+                event.preventDefault();
+                closeIdleLeaderboard();
+            } else if (gameState.phase === "leaderboard") {
+                event.preventDefault();
+                socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
+            }
+            return;
+        }
         if (event.code === "KeyV") { event.preventDefault(); fetch("/toggle-verify"); return; }
         if (event.code === "KeyS") { event.preventDefault(); fetch("/restart-serial"); return; }
         if (event.code !== "Space") return;
         event.preventDefault();
-        if (gameState.phase === "leaderboard") {
+        if (idleLeaderboardOpen) {
+            return;
+        } else if (gameState.phase === "leaderboard") {
             socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
         } else if (["ready", "racing", "stopped"].includes(gameState.phase)) {
             advanceClockWithSpacebar().catch((error) => console.error("Clock control failed", error));

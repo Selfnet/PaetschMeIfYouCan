@@ -3,7 +3,7 @@ import sqlite3
 import pytest
 
 from app import create_app
-from leaderboard import LeaderboardStore
+from leaderboard import LeaderboardStore, NewLeaderboardEntry
 from race import Phase
 
 VERIFIED = [2] * 48
@@ -79,6 +79,18 @@ def test_state_changes_are_synchronized_across_clients(app_bundle):
 
     assert latest_event(first, "game_state")["phase"] == Phase.RACING
     assert latest_event(second, "game_state")["phase"] == Phase.RACING
+
+
+@pytest.mark.parametrize("route", ["/start-clock", "/space-clock"])
+@pytest.mark.parametrize("cached_state", [0, 1, 2])
+def test_cached_cable_state_does_not_block_start(app_bundle, route, cached_state):
+    app, _, runtime = app_bundle
+    runtime.cell_states[2][17] = cached_state
+
+    response = app.test_client().get(route)
+
+    assert response.get_data(as_text=True) == "Clock started"
+    assert runtime.race.snapshot()["phase"] == Phase.RACING
 
 
 @pytest.mark.parametrize(
@@ -164,6 +176,24 @@ def test_index_contains_all_phase_views_and_exact_copy(app_bundle):
     assert "input.disabled = resolved" in html
     assert "document.activeElement" in html
     assert "submitNames()" in html
+    assert 'id="leaderboardButton"' in html
+    assert "<th>Set at</th>" in html
+    assert 'socket.emit("request_leaderboard",' in html
+    assert 'socket.on("leaderboard_snapshot"' in html
+    assert "const IDLE_LEADERBOARD_TIMEOUT_MS = 60_000" in html
+    assert 'event.code === "KeyL"' in html
+    assert 'event.key === "Escape"' in html
+    assert "emptyCell.colSpan = 4" in html
+    assert 'emptyCell.textContent = "No records yet"' in html
+    assert "formatCreatedAt(row.created_at)" in html
+    assert "pendingLeaderboardRequestId" in html
+    assert "function cancelIdleLeaderboardRequest()" in html
+    assert "request_id: requestId" in html
+    assert "pendingLeaderboardRequestId === null" in html
+    assert "data?.request_id !== pendingLeaderboardRequestId" in html
+    assert 'id="leaderboardTitle" class="result-title" tabindex="-1"' in html
+    assert 'document.getElementById("leaderboardTitle").focus()' in html
+    assert 'document.getElementById("leaderboardButton").focus()' in html
 
 
 def test_submitting_names_persists_and_highlights_current_rows(app_bundle, clock):
@@ -184,6 +214,113 @@ def test_submitting_names_persists_and_highlights_current_rows(app_bundle, clock
     assert all(row["current_race"] for row in state["leaderboard"])
 
 
+@pytest.mark.parametrize("phase", [Phase.READY, Phase.STOPPED])
+def test_idle_leaderboard_is_returned_only_to_requesting_client(app_bundle, phase):
+    app, socketio, runtime = app_bundle
+    runtime.store.insert_entries([NewLeaderboardEntry("existing", 1, "Ada", 875)])
+    if phase == Phase.STOPPED:
+        runtime.handle_change(runtime.race.start())
+        runtime.handle_change(runtime.race.space())
+    requester = socketio.test_client(app)
+    observer = socketio.test_client(app)
+    requester.get_received()
+    observer.get_received()
+
+    requester.emit("request_leaderboard", {"request_id": 7})
+
+    payload = latest_event(requester, "leaderboard_snapshot")
+    assert payload["request_id"] == 7
+    assert payload["error"] is None
+    assert payload["rows"][0]["name"] == "Ada"
+    assert payload["rows"][0]["created_at"] is not None
+    assert observer.get_received() == []
+    assert runtime.race.snapshot()["phase"] == phase
+
+
+@pytest.mark.parametrize("phase", [Phase.RACING, Phase.NAME_ENTRY, Phase.LEADERBOARD])
+def test_idle_leaderboard_request_is_ignored_outside_idle_phases(
+    app_bundle, clock, phase
+):
+    app, socketio, runtime = app_bundle
+    runtime.handle_change(runtime.race.start())
+    if phase in (Phase.NAME_ENTRY, Phase.LEADERBOARD):
+        clock.advance_ms(1000)
+        runtime.observe_cells(1, VERIFIED)
+        runtime.observe_cells(2, VERIFIED)
+    if phase == Phase.LEADERBOARD:
+        race_id = runtime.race.snapshot()["race_id"]
+        runtime.handle_change(runtime.race.submit_name(race_id, 1, ""))
+        runtime.handle_change(runtime.race.submit_name(race_id, 2, ""))
+    client = socketio.test_client(app)
+    client.get_received()
+
+    client.emit("request_leaderboard", {"request_id": 7})
+
+    assert client.get_received() == []
+
+
+class ReadFailingStore:
+    def insert_entries(self, entries):
+        return set()
+
+    def top_entries(self):
+        raise sqlite3.OperationalError("read failed")
+
+
+class PostRaceReadFailingStore(ReadFailingStore):
+    def insert_entries(self, entries):
+        return {7}
+
+
+def test_idle_leaderboard_read_failure_is_non_fatal_and_targeted(clock):
+    app, socketio = create_app(
+        {
+            "TESTING": True,
+            "START_SERIAL_ON_CONNECT": False,
+            "START_BACKGROUND_TASKS": False,
+        },
+        clock_ns=clock,
+        store=ReadFailingStore(),
+    )
+    client = socketio.test_client(app)
+    client.get_received()
+
+    client.emit("request_leaderboard", {"request_id": 9})
+
+    payload = latest_event(client, "leaderboard_snapshot")
+    assert payload == {
+        "request_id": 9,
+        "rows": [],
+        "error": "Leaderboard could not be loaded",
+    }
+    assert app.extensions["game_runtime"].race.snapshot()["phase"] == Phase.READY
+
+
+def test_post_race_read_failure_reports_load_error(clock):
+    app, socketio = create_app(
+        {
+            "TESTING": True,
+            "START_SERIAL_ON_CONNECT": False,
+            "START_BACKGROUND_TASKS": False,
+        },
+        clock_ns=clock,
+        store=PostRaceReadFailingStore(),
+        race_id_factory=lambda: "race-1",
+    )
+    runtime = app.extensions["game_runtime"]
+    finish_race(runtime, clock)
+    client = socketio.test_client(app)
+    race_id = runtime.race.snapshot()["race_id"]
+    client.get_received()
+
+    client.emit("submit_name", {"race_id": race_id, "player_number": 1, "draft": "Ada"})
+    client.emit("submit_name", {"race_id": race_id, "player_number": 2, "draft": ""})
+
+    state = latest_event(client, "game_state")
+    assert state["phase"] == Phase.LEADERBOARD
+    assert state["persistence_error"] == "Leaderboard could not be loaded"
+
+
 class FailingStore:
     def insert_entries(self, entries):
         raise sqlite3.OperationalError("write failed")
@@ -192,7 +329,13 @@ class FailingStore:
         return []
 
 
-def test_database_failure_still_enters_dismissible_leaderboard(clock):
+class WriteAndReadFailingStore(FailingStore):
+    def top_entries(self):
+        raise sqlite3.OperationalError("read failed")
+
+
+@pytest.mark.parametrize("store", [FailingStore(), WriteAndReadFailingStore()])
+def test_database_failure_still_enters_dismissible_leaderboard(clock, store):
     app, socketio = create_app(
         {
             "TESTING": True,
@@ -200,7 +343,7 @@ def test_database_failure_still_enters_dismissible_leaderboard(clock):
             "START_BACKGROUND_TASKS": False,
         },
         clock_ns=clock,
-        store=FailingStore(),
+        store=store,
         race_id_factory=lambda: "race-1",
     )
     runtime = app.extensions["game_runtime"]

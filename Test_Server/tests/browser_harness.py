@@ -1,12 +1,13 @@
 import itertools
 import sys
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app import create_app
-from leaderboard import LeaderboardStore
+from leaderboard import LeaderboardStore, NewLeaderboardEntry
 
 
 class BrowserClock:
@@ -23,10 +24,19 @@ class BrowserClock:
 clock = BrowserClock()
 database = Path(tempfile.mkdtemp(prefix="patchme-browser-")) / "leaderboard.sqlite3"
 race_ids = itertools.count(1)
+store = LeaderboardStore(
+    database, now=lambda: datetime(2026, 8, 30, 14, 30, tzinfo=UTC)
+)
+store.insert_entries(
+    [
+        NewLeaderboardEntry("browser-old", 1, "Legacy", 48_210),
+        NewLeaderboardEntry("browser-new", 2, "CableCat", 51_875),
+    ]
+)
 app, socketio = create_app(
     {"START_SERIAL_ON_CONNECT": False, "START_BACKGROUND_TASKS": False},
     clock_ns=clock,
-    store=LeaderboardStore(database),
+    store=store,
     race_id_factory=lambda: f"browser-race-{next(race_ids)}",
 )
 runtime = app.extensions["game_runtime"]
