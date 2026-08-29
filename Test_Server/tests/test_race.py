@@ -125,15 +125,16 @@ def completed_race(clock):
     return machine
 
 
-def test_name_entry_is_sequential_and_trims_confirmed_names(clock):
+def test_name_entry_accepts_either_player_first_and_trims_confirmed_names(clock):
     machine = completed_race(clock)
     race_id = machine.snapshot()["race_id"]
 
     assert machine.set_name_draft(race_id, 1, "  Ada  ").changed
-    assert machine.submit_name(race_id, 1, "  Ada  ").action == "next_name"
-    assert machine.snapshot()["name_entry"]["active_player"] == 2
+    assert machine.set_name_draft(race_id, 2, "Grace").changed
+    assert machine.submit_name(race_id, 2, "Grace").action == "next_name"
+    assert machine.snapshot()["name_entry"]["active_player"] == 1
 
-    final = machine.submit_name(race_id, 2, "Grace")
+    final = machine.submit_name(race_id, 1, "  Ada  ")
     assert final.action == "leaderboard"
     assert [(item.player_number, item.name) for item in final.submissions] == [
         (1, "Ada"),
@@ -147,7 +148,6 @@ def test_empty_names_skip_rows_and_stale_events_are_ignored(clock):
     race_id = machine.snapshot()["race_id"]
 
     assert not machine.set_name_draft("old-race", 1, "Ada").changed
-    assert not machine.submit_name(race_id, 2, "Grace").changed
     assert machine.submit_name(race_id, 1, "").action == "next_name"
     final = machine.submit_name(race_id, 2, "   ")
 

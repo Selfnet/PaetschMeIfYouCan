@@ -186,7 +186,8 @@ class RaceStateMachine:
             self.phase == Phase.NAME_ENTRY
             and race_id == self.race_id
             and type(player_number) is int
-            and player_number == self.active_name_player
+            and player_number in self.name_fields
+            and not self.name_fields[player_number].resolved
             and _valid_draft(draft)
         )
 
@@ -215,9 +216,13 @@ class RaceStateMachine:
             field = self.name_fields[player_number]
             field.draft = draft.strip()
             field.resolved = True
-            current_index = self.result_order.index(player_number)
-            if current_index + 1 < len(self.result_order):
-                self.active_name_player = self.result_order[current_index + 1]
+            unresolved_players = [
+                candidate
+                for candidate in self.result_order
+                if not self.name_fields[candidate].resolved
+            ]
+            if unresolved_players:
+                self.active_name_player = unresolved_players[0]
                 self.deadline_ns = self._clock_ns() + NAME_TIMEOUT_NS
                 return StateChange(True, "next_name")
             return self._enter_leaderboard_unlocked()

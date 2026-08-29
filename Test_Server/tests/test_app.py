@@ -153,6 +153,9 @@ def test_index_contains_all_phase_views_and_exact_copy(app_bundle):
     assert "grid-row: var(--switch-row)" in html
     assert "Math.floor(port / 2) + 1" in html
     assert "(port % 2) + 1" in html
+    assert "input.disabled = resolved" in html
+    assert "document.activeElement" in html
+    assert "submitNames()" in html
 
 
 def test_submitting_names_persists_and_highlights_current_rows(app_bundle, clock):

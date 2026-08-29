@@ -325,14 +325,17 @@
             const key = String(playerNumber);
             const input = card.querySelector(".name-input");
             const resolved = Boolean(state.name_entry.resolved[key]);
-            const active = state.name_entry.active_player === playerNumber;
+            const focusedPlayer = document.activeElement instanceof HTMLInputElement && document.activeElement.matches(".name-input:not(:disabled)")
+                ? Number(document.activeElement.dataset.playerNumber)
+                : null;
+            const active = focusedPlayer === playerNumber || (focusedPlayer === null && state.name_entry.active_player === playerNumber);
             card.dataset.playerNumber = key;
             input.dataset.playerNumber = key;
             card.querySelector(".result-place").textContent = state.tie ? "Tie" : index === 0 ? "Winner" : "Second place";
             card.querySelector(".result-player").textContent = `Player ${playerNumber}`;
             card.querySelector(".result-time").textContent = formatDuration(state.players[key].duration_ms);
             if (document.activeElement !== input || resolved) input.value = state.name_entry.drafts[key] || "";
-            input.disabled = !active || resolved;
+            input.disabled = resolved;
             input.setAttribute("aria-label", `Player ${playerNumber} leaderboard name`);
             card.classList.toggle("is-active", active);
             card.classList.toggle("is-resolved", resolved);
@@ -344,7 +347,8 @@
         error.hidden = !state.persistence_error;
         document.getElementById("leaderboardCountdown").textContent = `Next race in ${formatCountdown(state.remaining_seconds)} - press Space to continue`;
 
-        if (state.phase === "name_entry" && (priorPhase !== state.phase || priorRaceId !== state.race_id || priorActive !== state.name_entry.active_player)) {
+        const focusedNameInput = document.activeElement instanceof HTMLInputElement && document.activeElement.matches(".name-input:not(:disabled)");
+        if (state.phase === "name_entry" && (!focusedNameInput || priorPhase !== state.phase || priorRaceId !== state.race_id || priorActive !== state.name_entry.active_player)) {
             document.querySelector(".name-input:not(:disabled)")?.focus();
         }
     }
@@ -355,6 +359,21 @@
         socket.emit("name_draft", { race_id: gameState.race_id, player_number: Number(input.dataset.playerNumber), draft: input.value });
     }
 
+    function submitNames() {
+        document.querySelectorAll(".name-input:not(:disabled)").forEach((input) => {
+            socket.emit("submit_name", { race_id: gameState.race_id, player_number: Number(input.dataset.playerNumber), draft: input.value });
+        });
+    }
+
+    function cycleNameFocus(reverse = false) {
+        const inputs = Array.from(document.querySelectorAll(".name-input:not(:disabled)"));
+        if (inputs.length === 0) return;
+        const currentIndex = inputs.indexOf(document.activeElement);
+        const step = reverse ? -1 : 1;
+        const nextIndex = currentIndex < 0 ? 0 : (currentIndex + step + inputs.length) % inputs.length;
+        inputs[nextIndex].focus();
+    }
+
     async function advanceClockWithSpacebar() {
         const response = await fetch("/space-clock");
         if (!response.ok) console.error("Clock control failed", response.status);
@@ -362,7 +381,12 @@
 
     PLAYER_IDS.forEach(createBoard);
     updateStats();
-    document.querySelectorAll(".name-input").forEach((input) => input.addEventListener("input", () => emitNameDraft(input)));
+    document.querySelectorAll(".name-input").forEach((input) => {
+        input.addEventListener("input", () => emitNameDraft(input));
+        input.addEventListener("focus", () => {
+            document.querySelectorAll(".result-card").forEach((card) => card.classList.toggle("is-active", card.contains(input)));
+        });
+    });
     socket.on("table_update", (data) => updateBoard(data.switch_id, data.states));
     socket.on("game_state", renderGameState);
     socket.on("clock_update", (data) => {
@@ -379,10 +403,11 @@
         if (event.repeat) return;
         if (gameState.phase === "name_entry") {
             if (event.key === "Enter") {
-                const active = document.querySelector(".name-input:not(:disabled)");
-                if (!active) return;
                 event.preventDefault();
-                socket.emit("submit_name", { race_id: gameState.race_id, player_number: Number(active.dataset.playerNumber), draft: active.value });
+                submitNames();
+            } else if (event.key === "Tab") {
+                event.preventDefault();
+                cycleNameFocus(event.shiftKey);
             }
             return;
         }
