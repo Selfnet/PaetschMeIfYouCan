@@ -14,15 +14,18 @@
             --yellow: #fff200;
             --green: #00c853;
             --pink: #ff4fd8;
-            --font-display: "DejaVu Sans Condensed", "Noto Sans", Cantarell, system-ui, sans-serif;
-            --font-mono: "DejaVu Sans Mono", "Liberation Mono", monospace;
+            --patched: #111;
+            --font-display: "DejaVu Sans Condensed", "Noto Sans", Cantarell, "Liberation Sans", "Arial Black", system-ui, sans-serif;
+            --font-condensed: "DejaVu Sans Condensed", "Noto Sans Condensed", "Liberation Sans Narrow", "Arial Narrow", "Noto Sans", Cantarell, system-ui, sans-serif;
+            --font-mono: "DejaVu Sans Mono", "Liberation Mono", "Noto Sans Mono", "Courier New", monospace;
+            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         * { box-sizing: border-box; }
         [hidden] { display: none !important; }
 
         body {
-            min-height: 100vh;
+            height: 100vh;
             margin: 0;
             overflow: hidden;
             color: var(--ink);
@@ -31,20 +34,30 @@
         }
 
         .page {
-            min-height: 100vh;
+            height: 100vh;
             max-width: 1800px;
             margin: auto;
-            padding: clamp(8px, 1vh, 16px);
+            display: grid;
+            place-items: center;
+            padding: clamp(6px, 1vh, 16px);
         }
 
         .race-stage {
-            min-height: calc(100vh - clamp(16px, 2vh, 32px));
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 0;
             display: flex;
             flex-direction: column;
-            padding: clamp(12px, 1.5vh, 24px);
+            overflow: hidden;
+            padding: clamp(8px, 1vh, 18px);
             border: 12px ridge var(--blue);
-            background: var(--paper);
-            box-shadow: 16px 16px 0 #000, -8px -8px 0 var(--pink);
+            background:
+                radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.78) 0 6px, transparent 7px),
+                radial-gradient(circle at 76% 12%, rgba(255, 22, 22, 0.55) 0 8px, transparent 9px),
+                repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.08) 0 2px, transparent 2px 18px),
+                var(--paper);
+            box-shadow: 16px 16px 0 #000, -10px -10px 0 var(--pink);
         }
 
         .phase-view { min-height: 0; }
@@ -58,11 +71,37 @@
         }
 
         .stage-header {
+            flex: 0 0 auto;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(300px, 0.9fr);
-            gap: 20px;
+            grid-template-columns: minmax(0, 1fr) 520px;
+            gap: clamp(8px, 1vh, 20px);
             align-items: end;
-            margin-bottom: 16px;
+            min-height: clamp(140px, 17vh, 180px);
+            margin-bottom: clamp(6px, 0.9vh, 14px);
+            padding-right: 360px;
+        }
+
+        .voice-badge {
+            position: absolute;
+            top: clamp(10px, 1.1vh, 18px);
+            right: clamp(12px, 1.3vw, 24px);
+            z-index: 2;
+            width: 290px;
+            min-height: 140px;
+            display: grid;
+            place-items: center;
+            padding: 24px 26px;
+            border: 6px solid #000;
+            border-radius: 999px / 72%;
+            color: var(--yellow);
+            background: var(--red);
+            filter: drop-shadow(7px 7px 0 #000);
+            font-size: 1.25rem;
+            font-weight: 900;
+            line-height: 1.02;
+            text-align: center;
+            text-transform: uppercase;
+            transform: rotate(8deg);
         }
 
         .eyebrow {
@@ -72,41 +111,84 @@
             border: 4px solid #000;
             color: var(--yellow);
             background: var(--red);
+            font-size: 1rem;
             font-weight: 900;
             text-transform: uppercase;
             transform: rotate(-2deg);
         }
 
-        h1, .result-title {
+        h1,
+        .result-title {
             margin: 0;
             color: var(--blue);
-            font-size: clamp(2.5rem, 6vh, 5.5rem);
+            font-size: clamp(2.4rem, 4.4vw, 5.4rem);
             font-weight: 900;
-            line-height: 0.95;
+            line-height: 0.88;
             text-transform: uppercase;
-            text-shadow: 5px 5px 0 var(--yellow), 9px 9px 0 var(--red);
+            text-shadow: 5px 5px 0 var(--yellow), 10px 10px 0 var(--red);
         }
 
-        .race-summary, .player-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-        .stat-card, .stat { border: 4px solid #000; padding: 8px; background: #fff; box-shadow: 5px 5px 0 #000; }
-        .stat-card:nth-child(1), .stat:nth-child(1) { background: var(--green); }
-        .stat-card:nth-child(2), .stat:nth-child(2) { background: var(--pink); }
-        .stat-card:nth-child(3), .stat:nth-child(3) { background: var(--yellow); }
-        .stat-label { display: block; font-size: clamp(0.68rem, 1.2vh, 0.9rem); font-weight: 900; text-transform: uppercase; }
-        .stat-value { display: block; font-size: clamp(1rem, 2.2vh, 2rem); font-weight: 900; line-height: 1; }
+        .race-summary,
+        .player-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
 
-        .players { flex: 1 1 auto; display: grid; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 14px; min-height: 0; }
-        .player-panel { min-height: 0; display: grid; grid-template-rows: auto auto 1fr; padding: 12px; border: 8px solid #000; box-shadow: 10px 10px 0 var(--shadow); }
-        .player-one { --accent: var(--blue); --shadow: var(--red); background: #00cfff; }
-        .player-two { --accent: var(--red); --shadow: var(--blue); background: #ff62ce; }
-        .player-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-bottom: 10px; }
-        .player-name { margin: 0; font-size: clamp(1.5rem, 3.3vh, 3rem); line-height: 0.9; text-transform: uppercase; }
-        .clock-display { min-width: 252px; padding: 10px 12px; border: 6px inset #333; color: #00ff66; background: #000; font-family: var(--font-mono); font-size: clamp(1.4rem, 3.5vh, 2.7rem); font-variant-numeric: tabular-nums; font-weight: 900; text-align: right; }
-        .player-stats { margin-bottom: 10px; }
-        .board { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 4px; min-height: 0; padding: 8px; border: 7px solid #111; background: #111; box-shadow: inset 0 0 0 4px #777; }
-        .patch-cell { grid-column: var(--switch-column); grid-row: var(--switch-row); display: grid; place-items: center; min-width: 0; min-height: 0; border: 2px solid #111; background: #f7f7f7; font-size: clamp(0.5rem, 1.15vh, 0.86rem); font-weight: 900; }
-        .patch-cell.is-patched { border-color: #00ff66; color: var(--yellow); background: #111; box-shadow: 0 0 9px #00ff66; }
+        .stat-card,
+        .stat {
+            border: 4px solid #000;
+            color: #000;
+            background: #fff;
+            box-shadow: 6px 6px 0 #000;
+        }
+
+        .stat-card { padding: clamp(6px, 0.8vh, 12px) 12px; transform: rotate(1deg); }
+        .stat-card:nth-child(1) { background: var(--green); }
+        .stat-card:nth-child(2) { background: var(--pink); transform: rotate(-1.5deg); }
+        .stat-card:nth-child(3) { background: var(--yellow); }
+        .stat-label { display: block; margin-bottom: 4px; font-family: var(--font-condensed); font-size: clamp(0.7rem, 1.2vh, 0.88rem); text-transform: uppercase; }
+        .stat-value { display: block; font-size: clamp(1.05rem, 2.2vh, 2rem); font-weight: 900; line-height: 1; }
+
+        .players {
+            flex: 1 1 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: clamp(6px, 1vh, 14px);
+            min-height: 0;
+        }
+
+        .player-panel {
+            position: relative;
+            min-height: 0;
+            display: grid;
+            grid-template-rows: auto auto auto minmax(0, 1fr);
+            padding: clamp(6px, 0.9vh, 14px);
+            border: 8px solid #000;
+            background:
+                linear-gradient(90deg, rgba(255, 255, 255, 0.72) 50%, rgba(255, 242, 0, 0.6) 50%) 0 0 / 32px 32px,
+                var(--panel-color);
+            box-shadow: 10px 10px 0 var(--shadow-color);
+        }
+
+        .player-one { --panel-color: #00cfff; --shadow-color: var(--red); --accent: var(--blue); }
+        .player-two { --panel-color: #ff62ce; --shadow-color: var(--blue); --accent: var(--red); }
+        .player-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-bottom: clamp(4px, 0.7vh, 10px); }
+        .player-name { margin: 0; font-size: clamp(1.5rem, 3.3vh, 3rem); line-height: 0.9; text-transform: uppercase; text-shadow: 4px 4px 0 var(--yellow); }
+        .clock-display { min-width: 252px; padding: clamp(6px, 0.8vh, 12px) 12px; border: 6px inset #333; color: #00ff66; background: #000; font-family: var(--font-mono); font-size: clamp(1.45rem, 3.5vh, 2.75rem); font-variant-numeric: tabular-nums; font-weight: 900; line-height: 1; text-align: right; text-shadow: 0 0 10px #00ff66; }
+        .player-stats { gap: clamp(4px, 0.7vh, 10px); margin-bottom: clamp(4px, 0.7vh, 10px); }
+        .stat { padding: clamp(5px, 0.7vh, 10px) 10px; }
+        .stat:nth-child(1) { background: var(--yellow); }
+        .stat:nth-child(2) { background: #ffb3e8; }
+        .stat:nth-child(3) { background: #8cfffb; }
+
+        .switch-caption { margin: 0 0 clamp(4px, 0.8vh, 8px); padding: 3px 8px; border: 3px dashed #000; background: #fff; font-size: clamp(0.72rem, 1.3vh, 0.92rem); font-weight: 900; text-align: center; }
+        .board { --board-gap: clamp(2px, 0.5vh, 5px); --port-size: minmax(0, 1fr); position: relative; display: grid; grid-template-columns: repeat(24, var(--port-size)); grid-template-rows: repeat(2, var(--port-size)); place-content: center; gap: var(--board-gap); min-height: 0; overflow: hidden; padding: clamp(5px, 0.8vh, 12px); border: 7px solid #111; background: linear-gradient(180deg, #4b4b4b, #1c1c1c 42%, #050505); box-shadow: inset 0 0 0 5px #777, 7px 7px 0 #000; }
+        .patch-cell { grid-column: var(--switch-column); grid-row: var(--switch-row); display: grid; place-items: center; width: 100%; min-width: 0; aspect-ratio: 1; border: 2px solid #111; color: #000; background: #f7f7f7; font-family: var(--font-condensed); font-size: clamp(0.5rem, 1.15vh, 0.86rem); font-variant-numeric: tabular-nums; font-weight: 900; line-height: 1; transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out); }
+        .patch-cell.is-patched { border-color: #00ff66; color: var(--yellow); background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.14), transparent 25%), linear-gradient(145deg, #2b2b2b, var(--patched) 70%); box-shadow: 0 0 11px #00ff66, inset 0 0 0 2px #000; }
         .patch-cell.is-wrong { border: 4px solid var(--red); color: var(--red); }
+        .patch-cell.cell-change { animation: cell-pop 220ms var(--ease-out); }
 
         .result-title { margin-bottom: clamp(18px, 3vh, 40px); }
         .post-race-view > .eyebrow { align-self: flex-start; width: fit-content; transform: translateY(-4px) rotate(-2deg); }
@@ -127,21 +209,96 @@
         .phase-footer { margin: auto 0 0; padding-top: 14px; font-weight: 900; text-align: center; }
         .persistence-error { border: 4px solid #000; padding: 8px 12px; color: #fff; background: var(--red); }
 
+        .spacebar-indicator {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.92);
+        }
+        .spacebar-indicator.is-visible { animation: spacebar-flash 1050ms var(--ease-out) both; }
+        .spacebar-indicator__card {
+            width: min(92vw, 920px);
+            padding: clamp(22px, 4vw, 52px);
+            border: clamp(8px, 1.2vw, 16px) solid #000;
+            color: #000;
+            background: var(--yellow);
+            box-shadow: clamp(10px, 2vw, 24px) clamp(10px, 2vw, 24px) 0 #000;
+            text-align: center;
+            text-transform: uppercase;
+            transform: rotate(-2deg);
+        }
+        .spacebar-indicator__kicker { display: block; margin-bottom: 0.18em; font-family: var(--font-condensed); font-size: clamp(1.1rem, 3vw, 2.4rem); font-weight: 900; line-height: 1; }
+        .spacebar-indicator__action { display: block; color: var(--red); font-size: clamp(5rem, 18vw, 15rem); font-weight: 900; line-height: 0.82; text-shadow: 0.06em 0.06em 0 var(--blue); }
+        .spacebar-indicator[data-action="stopped"] .spacebar-indicator__card { background: #fff; }
+        .spacebar-indicator[data-action="stopped"] .spacebar-indicator__action { color: var(--blue); text-shadow: 0.06em 0.06em 0 var(--yellow); }
+        .spacebar-indicator[data-action="reset"] .spacebar-indicator__card { color: #fff; background: var(--red); }
+        .spacebar-indicator[data-action="reset"] .spacebar-indicator__action { color: #fff; text-shadow: 0.06em 0.06em 0 #000; }
+
+        @media (hover: hover) and (pointer: fine) {
+            .patch-cell:hover { z-index: 1; transform: scale(1.14) rotate(-4deg); }
+        }
+
+        @keyframes cell-pop {
+            0% { filter: brightness(1.45); transform: scale(0.88) rotate(3deg); }
+            100% { filter: brightness(1); transform: scale(1) rotate(0deg); }
+        }
+
+        @keyframes spacebar-flash {
+            0% { opacity: 0; transform: scale(0.82) rotate(2deg); }
+            14% { opacity: 1; transform: scale(1.03) rotate(0deg); }
+            72% { opacity: 1; transform: scale(1) rotate(0deg); }
+            100% { opacity: 0; transform: scale(1.08) rotate(-1deg); }
+        }
+
+        @media (max-width: 1400px) {
+            .stage-header { grid-template-columns: 1fr; padding-right: 300px; }
+        }
+
         @media (max-width: 760px) {
             body { overflow: auto; }
             .stage-header, .race-summary, .player-top, .player-stats, .result-cards { grid-template-columns: 1fr; }
+            .stage-header { padding-right: 0; padding-top: 120px; }
+            .voice-badge { width: 200px; min-height: 100px; }
             .result-card { grid-template-columns: 1fr; }
             .result-player { margin-top: 12px; }
             .result-time { margin-top: 8px; }
             .clock-display { min-width: 0; text-align: left; }
-            .race-stage { min-height: 100vh; }
+            .race-stage { min-height: 100vh; padding: 14px; box-shadow: 7px 7px 0 #000; }
+        }
+
+        @media (max-height: 820px) {
+            .voice-badge { top: -4px; width: 210px; min-height: 80px; padding: 12px 14px; font-size: 0.85rem; }
+            .stage-header { min-height: 105px; padding-right: 222px; }
+            .eyebrow, .switch-caption { display: none; }
+        }
+
+        @media (max-width: 760px) and (max-height: 820px) {
+            .stage-header { padding-right: 0; padding-top: 100px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .spacebar-indicator.is-visible { animation-timing-function: ease-out; }
+            .patch-cell.cell-change { animation: none; }
+            .patch-cell { transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease; }
         }
     </style>
 </head>
 <body>
+<div id="spacebarIndicator" class="spacebar-indicator" aria-live="assertive" aria-atomic="true" hidden>
+    <div class="spacebar-indicator__card">
+        <span id="spacebarKicker" class="spacebar-indicator__kicker">Spacebar triggered</span>
+        <span id="spacebarAction" class="spacebar-indicator__action">Go</span>
+    </div>
+</div>
 <main class="page">
     <section class="race-stage" aria-labelledby="game-title">
         <div id="raceView" class="phase-view">
+            <div class="voice-badge">Voice Controled: Loudly shout "Patch Me If You Can!" to start game!</div>
             <header class="stage-header">
                 <div>
                     <p class="eyebrow">Selfnet e.V. presents</p>
@@ -157,11 +314,13 @@
                 <article class="player-panel player-one" aria-labelledby="player-one-title">
                     <div class="player-top"><h2 id="player-one-title" class="player-name">Player 1</h2><div id="clockDisplay1" class="clock-display">00:00.000</div></div>
                     <div class="player-stats"><div class="stat"><span class="stat-label">Patches</span><span id="patchCount1" class="stat-value">0 / 48</span></div><div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate1" class="stat-value">0.00</span></div><div class="stat"><span class="stat-label">Remaining</span><span id="remaining1" class="stat-value">48</span></div></div>
+                    <p class="switch-caption">1-1 patches, as fast as you can. Grab another person and let's fucking gooooo</p>
                     <div id="statusBoard1" class="board" role="grid" aria-label="Player 1 patch board"></div>
                 </article>
                 <article class="player-panel player-two" aria-labelledby="player-two-title">
                     <div class="player-top"><h2 id="player-two-title" class="player-name">Player 2</h2><div id="clockDisplay2" class="clock-display">00:00.000</div></div>
                     <div class="player-stats"><div class="stat"><span class="stat-label">Patches</span><span id="patchCount2" class="stat-value">0 / 48</span></div><div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate2" class="stat-value">0.00</span></div><div class="stat"><span class="stat-label">Remaining</span><span id="remaining2" class="stat-value">48</span></div></div>
+                    <p class="switch-caption">Different human, same kinda switch. Grab cables, sit across from each other, press the spacebar and 1:1 patch as fast as you can go!</p>
                     <div id="statusBoard2" class="board" role="grid" aria-label="Player 2 patch board"></div>
                 </article>
             </div>
@@ -196,7 +355,13 @@
         2: { durationMs: 0, states: Array(NUM_CELLS).fill(0) },
     };
     const clockState = { activePlayers: { 1: false, 2: false }, syncedAt: performance.now() };
+    const SPACEBAR_ACTIONS = {
+        started: { action: "Go", kicker: "Spacebar started the game" },
+        stopped: { action: "Pause", kicker: "Spacebar paused the game" },
+        reset: { action: "Reset", kicker: "Spacebar reset the game" },
+    };
     let clockAnimationFrame;
+    let indicatorTimeout;
     let gameState = {
         phase: "ready", race_id: null, players: {}, result_order: [], tie: false,
         name_entry: { active_player: null, drafts: {}, resolved: {} },
@@ -266,19 +431,42 @@
             cell.style.setProperty("--switch-column", Math.floor(port / 2) + 1);
             cell.style.setProperty("--switch-row", (port % 2) + 1);
             cell.setAttribute("role", "gridcell");
+            cell.setAttribute("aria-colindex", Math.floor(port / 2) + 1);
+            cell.setAttribute("aria-rowindex", (port % 2) + 1);
+            cell.setAttribute("aria-label", `Port ${port} open`);
+            cell.addEventListener("animationend", () => cell.classList.remove("cell-change"));
             board.appendChild(cell);
         }
     }
 
     function updateBoard(playerId, states) {
         if (!PLAYER_IDS.includes(playerId) || !Array.isArray(states) || states.length !== NUM_CELLS) return;
+        const previousStates = players[playerId].states;
         players[playerId].states = states.slice();
         states.forEach((state, index) => {
             const cell = document.getElementById(`cell-${playerId}-${index}`);
             cell.classList.toggle("is-patched", state === 2);
             cell.classList.toggle("is-wrong", state === 1);
+            cell.setAttribute("aria-label", `Port ${index} ${state === 2 ? "patched" : state === 1 ? "wrong" : "open"}`);
+            if (previousStates[index] !== state) {
+                cell.classList.remove("cell-change");
+                void cell.offsetWidth;
+                cell.classList.add("cell-change");
+            }
         });
         updateStats();
+    }
+
+    function fitBoardCells(board) {
+        const style = getComputedStyle(board);
+        const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+        const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+        const columnGap = parseFloat(style.columnGap);
+        const rowGap = parseFloat(style.rowGap);
+        const availableWidth = board.clientWidth - horizontalPadding - (23 * columnGap);
+        const availableHeight = board.clientHeight - verticalPadding - rowGap;
+        const portSize = Math.max(1, Math.min(availableWidth / 24, availableHeight / 2));
+        board.style.setProperty("--port-size", `${portSize}px`);
     }
 
     function showPhase(phase) {
@@ -377,9 +565,36 @@
     async function advanceClockWithSpacebar() {
         const response = await fetch("/space-clock");
         if (!response.ok) console.error("Clock control failed", response.status);
+        if (response.ok) {
+            const action = (await response.text()).trim().replace(/^Clock\s+/i, "").toLowerCase();
+            showSpacebarIndicator(action);
+        }
+    }
+
+    function showSpacebarIndicator(action) {
+        const indicator = document.getElementById("spacebarIndicator");
+        const message = SPACEBAR_ACTIONS[action];
+        if (!message) return;
+        clearTimeout(indicatorTimeout);
+        indicator.hidden = false;
+        indicator.dataset.action = action;
+        document.getElementById("spacebarKicker").textContent = message.kicker;
+        document.getElementById("spacebarAction").textContent = message.action;
+        indicator.classList.remove("is-visible");
+        void indicator.offsetWidth;
+        indicator.classList.add("is-visible");
+        indicatorTimeout = setTimeout(() => {
+            indicator.classList.remove("is-visible");
+            indicator.hidden = true;
+        }, 1050);
     }
 
     PLAYER_IDS.forEach(createBoard);
+    const boardResizeObserver = new ResizeObserver((entries) => entries.forEach((entry) => fitBoardCells(entry.target)));
+    document.querySelectorAll(".board").forEach((board) => {
+        fitBoardCells(board);
+        boardResizeObserver.observe(board);
+    });
     updateStats();
     document.querySelectorAll(".name-input").forEach((input) => {
         input.addEventListener("input", () => emitNameDraft(input));

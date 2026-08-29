@@ -153,6 +153,14 @@ def test_index_contains_all_phase_views_and_exact_copy(app_bundle):
     assert "grid-row: var(--switch-row)" in html
     assert "Math.floor(port / 2) + 1" in html
     assert "(port % 2) + 1" in html
+    assert 'id="spacebarIndicator"' in html
+    assert 'aria-atomic="true" hidden' in html
+    assert 'started: { action: "Go"' in html
+    assert 'stopped: { action: "Pause"' in html
+    assert 'reset: { action: "Reset"' in html
+    assert "showSpacebarIndicator(action)" in html
+    assert "aspect-ratio: 1" in html
+    assert "Voice Controled: Loudly shout" in html
     assert "input.disabled = resolved" in html
     assert "document.activeElement" in html
     assert "submitNames()" in html
