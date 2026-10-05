@@ -46,3 +46,7 @@ fp-info-cache
 .env
 .env.*
 !.env.example
+
+# Local development artifacts
+__pycache__/
+.superpowers/
