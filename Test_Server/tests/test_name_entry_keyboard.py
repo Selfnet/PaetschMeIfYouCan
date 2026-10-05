@@ -67,25 +67,14 @@ console.log(JSON.stringify({emitted, prevented,
 
 @pytest.mark.parametrize("order", [[1, 2], [2, 1]])
 @pytest.mark.parametrize(
-    ("names", "unnamed"),
-    [(["Ada", ""], 2), (["", "Grace"], 1), (["", ""], None), (["Ada", "  "], 2)],
+    "names",
+    [["Ada", "Grace"], ["Ada", ""], ["", "Grace"], ["", ""], ["Ada", "  "]],
 )
-def test_enter_focuses_unnamed_player_without_resolving(order, names, unnamed):
-    result = run_keyboard(
-        {"order": order, "names": names, "focus": order[0], "keys": [{"key": "Enter"}]}
-    )
-    assert result["emitted"] == []
-    assert result["focus"] == (unnamed or order[0])
-    assert result["disabled"] == [False, False]
-    assert result["prevented"] == [True]
-
-
-@pytest.mark.parametrize("order", [[1, 2], [2, 1]])
-def test_enter_submits_both_named_players_with_original_race(order):
+def test_enter_submits_optional_names_with_original_race(order, names):
     result = run_keyboard(
         {
             "order": order,
-            "names": ["Ada", "Grace"],
+            "names": names,
             "focus": order[0],
             "replaceRace": True,
             "keys": [{"key": "Enter"}],
@@ -96,10 +85,11 @@ def test_enter_submits_both_named_players_with_original_race(order):
             "event": "submit_name",
             "race_id": "original-race",
             "player_number": player,
-            "draft": ["Ada", "Grace"][player - 1],
+            "draft": names[player - 1],
         }
         for player in order
     ]
+    assert result["prevented"] == [True]
 
 
 @pytest.mark.parametrize("order", [[1, 2], [2, 1]])
@@ -135,11 +125,12 @@ def test_repeated_enter_does_not_submit_or_move_focus(names):
     assert result["prevented"] == [True]
 
 
-def test_enter_submits_only_remaining_named_player():
+@pytest.mark.parametrize("name", ["Grace", "", "  "])
+def test_enter_submits_only_remaining_player(name):
     result = run_keyboard(
         {
             "order": [1, 2],
-            "names": ["Ada", "Grace"],
+            "names": ["Ada", name],
             "focus": 2,
             "resolved": [1],
             "keys": [{"key": "Enter"}],
@@ -150,7 +141,7 @@ def test_enter_submits_only_remaining_named_player():
             "event": "submit_name",
             "race_id": "original-race",
             "player_number": 2,
-            "draft": "Grace",
+            "draft": name,
         }
     ]
 

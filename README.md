@@ -5,8 +5,7 @@ Ein Geschicklichkeitsspiel mit Spaß am Gerät
 
 This is a required interaction contract. Preserve it when changing the dashboard:
 
-- **Enter with a name missing:** focus the unnamed player's input without submitting either name, skipping a player, or opening the leaderboard. Whitespace-only input counts as missing.
-- **Enter with both names filled:** submit both names and proceed to the leaderboard.
+- **Enter:** submit both players' names and proceed to the leaderboard. Names are optional: empty or whitespace-only names skip that player's leaderboard entry.
 - **Tab / Shift+Tab:** cycle between the name inputs, including wrapping; never submit names or advance to the leaderboard, even when both names are filled.
 
 These rules apply regardless of which player wins or whether the race is tied. Automatic name-entry timeout is separate from keyboard submission.

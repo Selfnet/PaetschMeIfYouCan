@@ -805,11 +805,6 @@
 
     function submitNames() {
         const inputs = Array.from(document.querySelectorAll(".name-input:not(:disabled)"));
-        const unnamed = inputs.find((input) => !input.value.trim());
-        if (unnamed) {
-            unnamed.focus();
-            return;
-        }
         const raceId = gameState.race_id;
         inputs.forEach((input) => {
             socket.emit("submit_name", { race_id: raceId, player_number: Number(input.dataset.playerNumber), draft: input.value });

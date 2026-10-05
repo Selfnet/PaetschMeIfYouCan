@@ -52,6 +52,34 @@ def finish_race(runtime, clock):
     return race_id
 
 
+@pytest.mark.parametrize("order", [[1, 2], [2, 1]])
+@pytest.mark.parametrize("names", [["Ada", ""], ["", "Grace"], ["", ""], ["Ada", "  "]])
+def test_optional_names_save_only_named_players(app_bundle, clock, order, names):
+    app, sio, runtime = app_bundle
+    client = sio.test_client(app)
+    runtime.apply(runtime.race.start)
+    for player in order:
+        clock.advance_ms(1000)
+        runtime.observe_board(player, EXPECTED_IDS)
+    race_id = runtime.race.snapshot()["race_id"]
+    for player in order:
+        client.emit(
+            "submit_name",
+            {"race_id": race_id, "player_number": player, "draft": names[player - 1]},
+        )
+
+    state = latest_event(client, "game_state")
+    assert state["phase"] == "leaderboard"
+    assert state["persistence_status"] == "saved"
+    client.emit("request_leaderboard", page_request(race_id=race_id))
+    rows = latest_event(client, "leaderboard_snapshot")["rows"]
+    assert [(row["player_number"], row["name"]) for row in rows] == [
+        (player, names[player - 1].strip())
+        for player in order
+        if names[player - 1].strip()
+    ]
+
+
 def test_mode_selection_broadcast_and_ack(app_bundle):
     app, sio, runtime = app_bundle
     clients = [sio.test_client(app), sio.test_client(app)]
