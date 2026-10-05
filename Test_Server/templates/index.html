@@ -64,11 +64,15 @@
         #raceView { flex: 1 1 auto; display: flex; flex-direction: column; }
         .post-race-view {
             flex: 1 1 auto;
+            min-width: 0;
             width: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
+        .page:has(.post-race-view:not([hidden])) { grid-template-columns: minmax(0, 1fr); }
+        .race-stage:has(.post-race-view:not([hidden])) { min-width: 0; }
+        .post-race-view > * { min-width: 0; }
 
         .stage-header {
             flex: 0 0 auto;
@@ -149,6 +153,7 @@
         .stat-card:nth-child(3) { background: var(--yellow); }
         .stat-label { display: block; margin-bottom: 4px; font-family: var(--font-condensed); font-size: clamp(0.7rem, 1.2vh, 0.88rem); text-transform: uppercase; }
         .stat-value { display: block; font-size: clamp(1.05rem, 2.2vh, 2rem); font-weight: 900; line-height: 1; }
+        .stat-value.is-long { font-size: 1rem; overflow-wrap: anywhere; max-width: 100%; }
 
         .players {
             flex: 1 1 auto;
@@ -165,6 +170,19 @@
             justify-content: center;
             padding-top: clamp(6px, 0.8vh, 12px);
         }
+        .mode-bar { align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .mode-bar__info { min-width: 0; font-family: var(--font-condensed); }
+        .mode-bar__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 49px; }
+        .mode-control:focus-visible { outline: 4px solid var(--blue); outline-offset: 4px; }
+        .player-objective { font-family: var(--font-condensed); font-size: 0.85rem; font-weight: 900; }
+        .result-mode { font-family: var(--font-condensed); font-weight: 900; }
+        #modeDialog { width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; padding: 24px; border: 4px solid var(--ink); background: var(--paper); box-shadow: 5px 5px 0 var(--ink); font-family: var(--font-display); }
+        #modeDialog::backdrop { background: rgb(0 0 0 / 55%); }
+        #modeDialog h2 { margin-top: 0; text-transform: uppercase; }
+        #modeOptions { display: grid; gap: 12px; }
+        #modeOptions button { width: 100%; min-height: 60px; display: block; text-align: left; background: #fff; }
+        #modeOptions button[aria-pressed="true"] { background: var(--yellow); }
+        #modeOptions button span { display: block; margin-top: 6px; font: 1rem/1.3 var(--font-condensed); text-transform: none; }
 
         .leaderboard-button {
             min-height: 44px;
@@ -209,10 +227,13 @@
         .stat:nth-child(3) { background: #8cfffb; }
 
         .switch-caption { margin: 0 0 clamp(4px, 0.8vh, 8px); padding: 3px 8px; border: 3px dashed #000; background: #fff; font-size: clamp(0.72rem, 1.3vh, 0.92rem); font-weight: 900; text-align: center; }
-        .board { --board-gap: clamp(2px, 0.5vh, 5px); --port-size: minmax(0, 1fr); position: relative; display: grid; grid-template-columns: repeat(24, var(--port-size)); grid-template-rows: repeat(2, var(--port-size)); place-content: center; gap: var(--board-gap); min-height: 0; overflow: hidden; padding: clamp(5px, 0.8vh, 12px); border: 7px solid #111; background: linear-gradient(180deg, #4b4b4b, #1c1c1c 42%, #050505); box-shadow: inset 0 0 0 5px #777, 7px 7px 0 #000; }
-        .patch-cell { grid-column: var(--switch-column); grid-row: var(--switch-row); display: grid; place-items: center; width: 100%; min-width: 0; aspect-ratio: 1; border: 2px solid #111; color: #000; background: #f7f7f7; font-family: var(--font-condensed); font-size: clamp(0.5rem, 1.15vh, 0.86rem); font-variant-numeric: tabular-nums; font-weight: 900; line-height: 1; transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out); }
+        .board { --board-gap: clamp(2px, 0.5vh, 5px); --port-width: minmax(0, 1fr); --port-height: minmax(0, 1fr); position: relative; display: grid; grid-template-columns: repeat(24, var(--port-width)); grid-template-rows: repeat(2, var(--port-height)); place-content: center; gap: var(--board-gap); min-height: 0; overflow: hidden; padding: clamp(5px, 0.8vh, 12px); border: 7px solid #111; background: linear-gradient(180deg, #4b4b4b, #1c1c1c 42%, #050505); box-shadow: inset 0 0 0 5px #777, 7px 7px 0 #000; }
+        .patch-cell { grid-column: var(--switch-column); grid-row: var(--switch-row); display: grid; place-items: center; width: 100%; height: 100%; min-width: 0; min-height: 0; border: 2px solid #111; color: #000; background: #f7f7f7; font-family: var(--font-condensed); font-size: clamp(0.5rem, 1.15vh, 0.86rem); font-variant-numeric: tabular-nums; font-weight: 900; line-height: 1; transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out); }
         .patch-cell.is-patched { border-color: #00ff66; color: var(--yellow); background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.14), transparent 25%), linear-gradient(145deg, #2b2b2b, var(--patched) 70%); box-shadow: 0 0 11px #00ff66, inset 0 0 0 2px #000; }
         .patch-cell.is-wrong { border: 4px solid var(--red); color: var(--red); }
+        .patch-cell.is-unknown { color: #555; background: #ddd; }
+        .patch-cell.is-inactive { color: #aaa; background: #333; box-shadow: none; }
+        .patch-cell.is-inactive.is-wrong { color: #ff8a8a; border-color: #a83c3c; }
         .patch-cell.cell-change { animation: cell-pop 220ms var(--ease-out); }
 
         .result-title { margin-bottom: clamp(18px, 3vh, 40px); }
@@ -231,8 +252,15 @@
         .leaderboard-table th, .leaderboard-table td { border: 4px solid #000; padding: clamp(6px, 1vh, 14px); text-align: left; }
         .leaderboard-table td:nth-child(3), .leaderboard-table td:nth-child(4) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
         .leaderboard-table tr.is-current-race { background: var(--yellow); }
+        #leaderboardView { justify-content: flex-start; }
+        #leaderboardView .result-title { flex: 0 0 auto; margin-bottom: 12px; }
+        #leaderboardView .result-mode { margin: 0 0 12px; }
+        #closeLeaderboard { align-self: flex-start; flex: 0 0 auto; margin-bottom: 12px; }
+        .leaderboard-scroll { flex: 1 1 auto; min-width: 0; max-width: 100%; min-height: 0; overflow: auto; }
+        .leaderboard-table tr:focus-visible { outline: 4px solid var(--blue); outline-offset: -6px; }
+        #loadLeaderboardPage { margin: 12px 0 8px; }
         .leaderboard-empty { text-align: center !important; }
-        .phase-footer { margin: auto 0 0; padding-top: 14px; font-weight: 900; text-align: center; }
+        .phase-footer { flex: 0 0 auto; min-width: 0; overflow-wrap: anywhere; margin: auto 0 0; padding-top: 14px; font-weight: 900; text-align: center; }
         .persistence-error { border: 4px solid #000; padding: 8px 12px; color: #fff; background: var(--red); }
 
         .spacebar-indicator {
@@ -307,6 +335,44 @@
             .stage-header { padding-right: 0; padding-top: 100px; }
         }
 
+        @media (min-width: 761px) and (max-height: 720px) {
+            #nameEntryView { justify-content: safe center; overflow-y: auto; padding: 0 14px 14px 0; }
+            #nameEntryView > * { flex: 0 0 auto; }
+            #nameEntryView .result-title { font-size: 2.8rem; margin-bottom: 12px; }
+            #nameEntryView .result-mode { margin: 0 0 12px; }
+            #nameEntryView .result-cards { gap: 14px; }
+            #nameEntryView .result-card { padding: 12px; }
+            #nameEntryView .result-card label { margin-top: 6px; }
+            #nameEntryView .name-input { margin-top: 6px; padding: 6px; font-size: 1.8rem; line-height: 1.2; }
+            #nameEntryView .phase-footer { padding-top: 10px; }
+        }
+
+        #raceView[data-density] .stat { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; padding: 4px 10px; }
+        #raceView[data-density] .stat .stat-label { margin: 0; }
+        #raceView[data-density] .player-top, #raceView[data-density] .player-stats { margin-bottom: 4px; }
+        #raceView[data-density] .clock-display { padding: 4px 8px; min-width: 230px; }
+        #raceView[data-density] .switch-caption { margin-bottom: 4px; padding: 2px 8px; }
+        #raceView[data-density="tight"] .stage-header { min-height: 90px; gap: 6px; margin-bottom: 6px; }
+        #raceView[data-density="tight"] h1 { font-size: 3rem; }
+        #raceView[data-density="tight"] .voice-badge { top: -4px; width: 210px; min-height: 64px; padding: 6px 12px; font-size: 0.75rem; transform: rotate(5deg); }
+        #raceView[data-density="tight"] .stat-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; padding: 4px 8px; }
+        #raceView[data-density="tight"] .stat-card .stat-label { margin: 0; }
+        #raceView[data-density="tight"] .eyebrow, #raceView[data-density="tight"] .switch-caption { display: none; }
+        #raceView[data-density="tight"] .player-panel { padding: 5px; }
+        #raceView[data-density="tight"] .players { gap: 6px; }
+        #raceView[data-density="tight"] .board { --board-gap: 2px; padding: 5px; }
+        #raceView[data-density="tight"] .idle-actions { padding-top: 6px; }
+
+        @media (max-width: 760px) {
+            .page { height: auto; min-height: 100vh; }
+            .race-stage { height: auto; overflow: visible; }
+            .voice-badge { position: static; align-self: flex-end; margin: 16px; }
+            .stage-header { padding-top: 0; min-height: 0; }
+            .players { grid-template-rows: repeat(2, auto); }
+            .board { min-height: 82px; overflow-x: auto; justify-content: safe center; }
+            #raceView[data-density] .clock-display { min-width: 0; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .spacebar-indicator.is-visible { animation-timing-function: ease-out; }
             .patch-cell.cell-change { animation: none; }
@@ -328,7 +394,7 @@
             <header class="stage-header">
                 <div>
                     <p class="eyebrow">Selfnet e.V. presents</p>
-                    <h1 id="game-title">Pätsch me if you can</h1>
+                    <h1 id="game-title" tabindex="-1">Pätsch me if you can</h1>
                 </div>
                 <div class="race-summary" aria-label="Race statistics">
                     <div class="stat-card"><span class="stat-label">Total patches</span><span id="totalPatches" class="stat-value">0 / 96</span></div>
@@ -340,24 +406,33 @@
                 <article class="player-panel player-one" aria-labelledby="player-one-title">
                     <div class="player-top"><h2 id="player-one-title" class="player-name">Player 1</h2><div id="clockDisplay1" class="clock-display">00:00.000</div></div>
                     <div class="player-stats"><div class="stat"><span class="stat-label">Patches</span><span id="patchCount1" class="stat-value">0 / 48</span></div><div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate1" class="stat-value">0.00</span></div><div class="stat"><span class="stat-label">Remaining</span><span id="remaining1" class="stat-value">48</span></div></div>
-                    <p class="switch-caption">1-1 patches, as fast as you can. Grab another person and let's fucking gooooo</p>
+                    <div><p class="switch-caption">1-1 patches, as fast as you can. Grab another person and let's fucking gooooo</p>
+                    <span id="objective1" class="player-objective"></span></div>
                     <div id="statusBoard1" class="board" role="grid" aria-label="Player 1 patch board"></div>
                 </article>
                 <article class="player-panel player-two" aria-labelledby="player-two-title">
                     <div class="player-top"><h2 id="player-two-title" class="player-name">Player 2</h2><div id="clockDisplay2" class="clock-display">00:00.000</div></div>
                     <div class="player-stats"><div class="stat"><span class="stat-label">Patches</span><span id="patchCount2" class="stat-value">0 / 48</span></div><div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate2" class="stat-value">0.00</span></div><div class="stat"><span class="stat-label">Remaining</span><span id="remaining2" class="stat-value">48</span></div></div>
-                    <p class="switch-caption">Different human, same kinda switch. Grab cables, sit across from each other, press the spacebar and 1:1 patch as fast as you can go!</p>
+                    <div><p class="switch-caption">Different human, same kinda switch. Grab cables, sit across from each other, press the spacebar and 1:1 patch as fast as you can go!</p>
+                    <span id="objective2" class="player-objective"></span></div>
                     <div id="statusBoard2" class="board" role="grid" aria-label="Player 2 patch board"></div>
                 </article>
             </div>
-            <div id="idleActions" class="idle-actions">
+            <p id="modeError" class="persistence-error" role="alert" hidden></p>
+            <div id="idleActions" class="idle-actions mode-bar">
+                <div class="mode-bar__info"><strong id="currentMode"></strong><span id="modeDescription"></span></div>
+                <div class="mode-bar__actions">
+                <button id="modeButton" class="leaderboard-button mode-control" type="button"><kbd aria-hidden="true">M</kbd><span>Mode</span></button>
                 <button id="leaderboardButton" class="leaderboard-button" type="button"><kbd aria-hidden="true">L</kbd><span>Leaderboard</span></button>
+                <span id="modeShortcut"></span>
+                </div>
             </div>
         </div>
 
         <section id="nameEntryView" class="phase-view post-race-view" aria-labelledby="resultTitle" hidden>
             <p class="eyebrow">Race complete</p>
             <h2 id="resultTitle" class="result-title">you were able to success</h2>
+            <p id="nameEntryMode" class="result-mode"></p>
             <div id="resultCards" class="result-cards">
                 <article class="result-card" data-result-slot="0"><span class="result-place">Winner</span><strong class="result-player">Player 1</strong><output class="result-time">00:00.000</output><label>Name for the leaderboard<input id="nameInput1" class="name-input" type="text" data-max-codepoints="12" autocomplete="off" spellcheck="false"></label></article>
                 <article class="result-card" data-result-slot="1"><span class="result-place">Second place</span><strong class="result-player">Player 2</strong><output class="result-time">00:00.000</output><label>Name for the leaderboard<input id="nameInput2" class="name-input" type="text" data-max-codepoints="12" autocomplete="off" spellcheck="false"></label></article>
@@ -367,13 +442,26 @@
 
         <section id="leaderboardView" class="phase-view post-race-view" aria-labelledby="leaderboardTitle" hidden>
             <p class="eyebrow">Fastest patchers</p>
-            <h2 id="leaderboardTitle" class="result-title" tabindex="-1">Top 10</h2>
+            <h2 id="leaderboardTitle" class="result-title" tabindex="-1">Leaderboard</h2>
+            <p id="leaderboardMode" class="result-mode"></p>
             <p id="persistenceError" class="persistence-error" role="status" hidden></p>
-            <table class="leaderboard-table"><thead><tr><th>Rank</th><th>Name</th><th>Time</th><th>Set at</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
+            <button id="closeLeaderboard" class="leaderboard-button mode-control" type="button">Close</button>
+            <div id="leaderboardScroll" class="leaderboard-scroll" role="region" aria-label="Leaderboard scores">
+                <table class="leaderboard-table"><thead><tr><th>Rank</th><th>Name</th><th>Time</th><th>Set at</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
+                <p id="leaderboardPageError" role="status" hidden></p>
+                <button id="loadLeaderboardPage" class="leaderboard-button mode-control" type="button">Load more</button>
+            </div>
             <p id="leaderboardCountdown" class="phase-footer" aria-live="polite"></p>
         </section>
     </section>
 </main>
+<dialog id="modeDialog" aria-labelledby="modeDialogTitle">
+    <h2 id="modeDialogTitle">Game mode</h2>
+    <div id="modeOptions"></div>
+    <p id="modeSelectionError" role="status" hidden></p>
+    <p>Arrows: browse | Enter: select | Esc / M: cancel</p>
+    <button id="closeModeDialog" class="leaderboard-button mode-control" type="button">Close</button>
+</dialog>
 
 <script>
     const socket = io();
@@ -392,12 +480,17 @@
     };
     let clockAnimationFrame;
     let indicatorTimeout;
-    let idleLeaderboardOpen = false;
-    let idleLeaderboardDeadline = 0;
-    let idleLeaderboardTimeout;
-    let idleLeaderboardInterval;
-    let idleLeaderboardRequestCounter = 0;
-    let pendingLeaderboardRequestId = null;
+    let browsing = null;
+    let leaderboardRequestCounter = 0;
+    let closedLeaderboardRaceId = null;
+    let activityTimer;
+    let lastActivityAt = -Infinity;
+    let scrollIntentUntil = 0;
+    let suppressScrollUntil = 0;
+    let scrollbarDragging = false;
+    let lastStateRevision = null;
+    let modeDialogGeneration = 0;
+    let pendingModeGeneration = null;
     let gameState = {
         phase: "ready", race_id: null, players: {}, result_order: [], tie: false,
         name_entry: { active_player: null, drafts: {}, resolved: {} },
@@ -430,24 +523,36 @@
         return players[playerId].durationMs + elapsed;
     }
 
-    function patchCount(playerId) { return players[playerId].states.filter((state) => state === 2).length; }
+    function progressFor(playerId) { return gameState.players[String(playerId)]?.presentation?.progress ?? null; }
+
+    function renderStat(id, label, value) {
+        const element = document.getElementById(id);
+        element.previousElementSibling.textContent = label;
+        element.textContent = value;
+        element.classList.toggle("is-long", String(value).length > 12);
+    }
 
     function updateStats() {
-        const counts = PLAYER_IDS.map(patchCount);
+        const progress = PLAYER_IDS.map(progressFor);
         const longest = Math.max(...PLAYER_IDS.map(currentDurationMs));
         PLAYER_IDS.forEach((playerId) => {
-            const count = patchCount(playerId);
+            const counter = progressFor(playerId);
+            const patches = counter?.unit === "correct";
+            const unit = counter && !patches ? ` (${counter.unit})` : "";
             const duration = currentDurationMs(playerId) / 1000;
             document.getElementById(`clockDisplay${playerId}`).textContent = formatDuration(currentDurationMs(playerId));
-            document.getElementById(`patchCount${playerId}`).textContent = `${count} / ${NUM_CELLS}`;
-            document.getElementById(`patchRate${playerId}`).textContent = duration > 0 ? (count / duration).toFixed(2) : "0.00";
-            document.getElementById(`remaining${playerId}`).textContent = NUM_CELLS - count;
+            renderStat(`patchCount${playerId}`, patches ? "Patches" : `Progress${unit}`, counter ? `${counter.current} / ${counter.total}` : "-");
+            renderStat(`patchRate${playerId}`, patches ? "Patches / sec" : "Rate", patches ? (duration > 0 ? (counter.current / duration).toFixed(2) : "0.00") : "-");
+            renderStat(`remaining${playerId}`, `Remaining${unit}`, counter ? Math.max(0, counter.total - counter.current) : "-");
         });
-        const total = counts[0] + counts[1];
-        document.getElementById("totalPatches").textContent = `${total} / ${NUM_CELLS * 2}`;
-        document.getElementById("totalRate").textContent = longest > 0 ? (total / (longest / 1000)).toFixed(2) : "0.00";
-        const lead = counts[0] - counts[1];
-        document.getElementById("leader").textContent = lead === 0 ? "Even" : `P${lead > 0 ? "1" : "2"} +${Math.abs(lead)}`;
+        const comparable = progress.every(Boolean) && progress[0].unit === progress[1].unit && progress[0].total === progress[1].total && gameState.players["1"]?.presentation?.stage === gameState.players["2"]?.presentation?.stage;
+        const total = comparable ? progress[0].current + progress[1].current : 0;
+        const patches = comparable && progress[0].unit === "correct";
+        const unit = comparable && !patches ? ` (${progress[0].unit})` : "";
+        renderStat("totalPatches", patches ? "Total patches" : `Total progress${unit}`, comparable ? `${total} / ${progress[0].total * 2}` : "-");
+        renderStat("totalRate", patches ? "Black patches / sec" : "Rate", patches ? (longest > 0 ? (total / (longest / 1000)).toFixed(2) : "0.00") : "-");
+        const lead = comparable ? progress[0].current - progress[1].current : 0;
+        renderStat("leader", `Leader${unit}`, comparable ? (lead === 0 ? "Even" : `P${lead > 0 ? "1" : "2"} +${Math.abs(lead)}`) : "-");
     }
 
     function paintClocks() {
@@ -483,16 +588,18 @@
         }
     }
 
-    function updateBoard(playerId, states) {
-        if (!PLAYER_IDS.includes(playerId) || !Array.isArray(states) || states.length !== NUM_CELLS) return;
+    function updateBoard(playerId, ports) {
+        if (!PLAYER_IDS.includes(playerId) || !Array.isArray(ports) || ports.length !== NUM_CELLS) return;
         const previousStates = players[playerId].states;
-        players[playerId].states = states.slice();
-        states.forEach((state, index) => {
+        players[playerId].states = ports.map((port) => port.feedback);
+        ports.forEach((port, index) => {
             const cell = document.getElementById(`cell-${playerId}-${index}`);
-            cell.classList.toggle("is-patched", state === 2);
-            cell.classList.toggle("is-wrong", state === 1);
-            cell.setAttribute("aria-label", `Port ${index} ${state === 2 ? "patched" : state === 1 ? "wrong" : "open"}`);
-            if (previousStates[index] !== state) {
+            cell.classList.toggle("is-patched", port.feedback === "correct");
+            cell.classList.toggle("is-wrong", port.feedback === "wrong");
+            cell.classList.toggle("is-inactive", !port.required);
+            cell.classList.toggle("is-unknown", port.feedback === "unknown");
+            cell.setAttribute("aria-label", `Port ${index}, ${port.required ? "required" : "not required"}, ${port.feedback}`);
+            if (typeof previousStates[index] === "string" && previousStates[index] !== port.feedback) {
                 cell.classList.remove("cell-change");
                 void cell.offsetWidth;
                 cell.classList.add("cell-change");
@@ -501,7 +608,7 @@
         updateStats();
     }
 
-    function fitBoardCells(board) {
+    function boardCapacity(board) {
         const style = getComputedStyle(board);
         const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
         const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
@@ -509,63 +616,86 @@
         const rowGap = parseFloat(style.rowGap);
         const availableWidth = board.clientWidth - horizontalPadding - (23 * columnGap);
         const availableHeight = board.clientHeight - verticalPadding - rowGap;
-        const portSize = Math.max(1, Math.min(availableWidth / 24, availableHeight / 2));
-        board.style.setProperty("--port-size", `${portSize}px`);
+        return { width: availableWidth / 24, height: availableHeight / 2 };
+    }
+
+    function fitBoardCells(board) {
+        const capacity = boardCapacity(board);
+        const narrow = window.matchMedia("(max-width: 760px)").matches;
+        const width = narrow ? Math.max(18, capacity.width) : Math.max(1, Math.min(capacity.width, capacity.height * 1.12));
+        const height = Math.max(1, Math.min(width, capacity.height));
+        board.style.setProperty("--port-width", `${width}px`);
+        board.style.setProperty("--port-height", `${height}px`);
+    }
+
+    let boardLayoutFrame;
+    function scheduleBoardLayout() {
+        if (boardLayoutFrame) return;
+        boardLayoutFrame = requestAnimationFrame(() => {
+            boardLayoutFrame = undefined;
+            const raceView = document.getElementById("raceView");
+            if (raceView.hidden) return;
+            const boards = Array.from(raceView.querySelectorAll(".board"));
+            delete raceView.dataset.density;
+            // Measure each tier from the natural layout, never from the previous fitted cells.
+            for (const density of ["compact", "tight"]) {
+                if (boards.every((board) => {
+                    const capacity = boardCapacity(board);
+                    return capacity.height * 1.12 >= capacity.width;
+                })) break;
+                raceView.dataset.density = density;
+            }
+            boards.forEach(fitBoardCells);
+        });
     }
 
     function showPhase(phase) {
         const idlePhase = ["ready", "stopped"].includes(phase);
-        document.getElementById("raceView").hidden = idleLeaderboardOpen || !["ready", "racing", "stopped"].includes(phase);
+        document.getElementById("raceView").hidden = Boolean(browsing) || !(["ready", "racing", "stopped"].includes(phase) || (phase === "leaderboard" && closedLeaderboardRaceId === gameState.race_id));
         document.getElementById("nameEntryView").hidden = phase !== "name_entry";
-        document.getElementById("leaderboardView").hidden = !idleLeaderboardOpen && phase !== "leaderboard";
-        document.getElementById("idleActions").hidden = !idlePhase;
-    }
-
-    function renderLeaderboard(rows) {
-        const body = document.getElementById("leaderboardRows");
-        body.replaceChildren();
-        if (rows.length === 0) {
-            const tableRow = document.createElement("tr");
-            const emptyCell = document.createElement("td");
-            emptyCell.colSpan = 4;
-            emptyCell.className = "leaderboard-empty";
-            emptyCell.textContent = "No records yet";
-            tableRow.appendChild(emptyCell);
-            body.appendChild(tableRow);
-            return;
-        }
-        rows.forEach((row) => {
-            const tableRow = document.createElement("tr");
-            tableRow.classList.toggle("is-current-race", Boolean(row.current_race));
-            if (row.current_race) tableRow.setAttribute("aria-current", "true");
-            [row.rank, row.name, formatDuration(row.duration_ms), formatCreatedAt(row.created_at)].forEach((value) => {
-                const cell = document.createElement("td");
-                cell.textContent = String(value);
-                tableRow.appendChild(cell);
-            });
-            body.appendChild(tableRow);
-        });
+        document.getElementById("leaderboardView").hidden = !browsing;
+        document.getElementById("modeButton").hidden = phase !== "ready";
+        document.getElementById("leaderboardButton").hidden = !idlePhase;
     }
 
     function renderGameState(state) {
+        if (lastStateRevision !== null && state.revision < lastStateRevision) return;
+        lastStateRevision = state.revision;
         const priorPhase = gameState.phase;
         const priorRaceId = gameState.race_id;
         const priorActive = gameState.name_entry.active_player;
-        if (!["ready", "stopped"].includes(state.phase)) {
-            cancelIdleLeaderboardRequest();
-            if (idleLeaderboardOpen) closeIdleLeaderboard(false);
-        }
+        const originChanged = gameState.browse_epoch !== state.browse_epoch || gameState.mode?.id !== state.mode.id || priorPhase !== state.phase || priorRaceId !== state.race_id;
+        const closedForOrigin = Boolean(browsing && originChanged);
+        if (browsing && (originChanged || !["ready", "stopped", "leaderboard"].includes(state.phase))) closeLeaderboard({ restoreFocus: false, dismiss: false });
         gameState = state;
+        updateModeOptions(state.available_modes);
+        if (priorPhase !== state.phase) {
+            closeModeSelector({ restoreFocus: false });
+        }
+        document.getElementById("currentMode").textContent = `${state.mode.label}${state.mode.required_port_count === null ? "" : ` (${state.mode.required_port_count})`} `;
+        document.getElementById("modeDescription").textContent = state.mode.description;
+        document.getElementById("modeShortcut").textContent = `Space: ${state.phase === "ready" ? "start" : state.phase === "racing" ? "stop" : "reset"}`;
+        document.getElementById("nameEntryMode").textContent = state.mode.label;
+        document.getElementById("leaderboardMode").textContent = state.mode.label;
+        const modeError = document.getElementById("modeError");
+        modeError.textContent = state.mode_error || "";
+        modeError.hidden = !state.mode_error;
+        if (state.phase === "leaderboard" && !browsing && closedLeaderboardRaceId !== state.race_id) openLeaderboard();
+        if (state.phase !== "leaderboard") closedLeaderboardRaceId = null;
         showPhase(state.phase);
+        if ((priorPhase !== state.phase || closedForOrigin) && state.phase !== "name_entry") document.getElementById(state.phase === "leaderboard" ? "leaderboardTitle" : "game-title").focus();
         PLAYER_IDS.forEach((playerId) => {
             const player = state.players[String(playerId)];
             if (!player) return;
+            updateBoard(playerId, player.presentation?.ports);
+            document.getElementById(`objective${playerId}`).textContent = player.presentation ? [player.presentation.objective, player.presentation.stage].filter(Boolean).join(" - ") : "-";
             players[playerId].durationMs = player.duration_ms;
             clockState.activePlayers[playerId] = player.clock_active;
         });
         clockState.syncedAt = performance.now();
         updateStats();
         ensureClockAnimation();
+        scheduleBoardLayout();
 
         document.querySelectorAll(".result-card").forEach((card, index) => {
             const playerNumber = state.result_order[index];
@@ -589,13 +719,14 @@
             card.classList.toggle("is-resolved", resolved);
         });
         document.getElementById("nameEntryCountdown").textContent = `Leaderboard in ${formatCountdown(state.remaining_seconds)} - empty names are skipped`;
-        if (!idleLeaderboardOpen) {
-            renderLeaderboard(state.leaderboard);
-            const error = document.getElementById("persistenceError");
-            error.textContent = state.persistence_error || "";
-            error.hidden = !state.persistence_error;
-            document.getElementById("leaderboardCountdown").textContent = `Next race in ${formatCountdown(state.remaining_seconds)} - L or Esc to continue`;
+        const error = document.getElementById("persistenceError");
+        error.textContent = browsing?.raceId ? state.persistence_error || "" : "";
+        error.hidden = !error.textContent;
+        if (browsing?.waitingForPersistence && state.persistence_status !== "pending") {
+            browsing.waitingForPersistence = false;
+            requestNextPage();
         }
+        updateLeaderboardCountdown();
 
         const focusedNameInput = document.activeElement instanceof HTMLInputElement && document.activeElement.matches(".name-input:not(:disabled)");
         if (state.phase === "name_entry" && (!focusedNameInput || priorPhase !== state.phase || priorRaceId !== state.race_id || priorActive !== state.name_entry.active_player)) {
@@ -607,6 +738,69 @@
         const codepoints = Array.from(input.value);
         if (codepoints.length > 12) input.value = codepoints.slice(0, 12).join("");
         socket.emit("name_draft", { race_id: gameState.race_id, player_number: Number(input.dataset.playerNumber), draft: input.value });
+    }
+
+    function updateModeOptions(modes) {
+        const container = document.getElementById("modeOptions");
+        modes.forEach((mode) => {
+            let button = Array.from(container.children).find((option) => option.dataset.modeId === mode.id);
+            if (!button) {
+                button = document.createElement("button");
+                button.type = "button";
+                button.className = "leaderboard-button mode-control";
+                button.dataset.modeId = mode.id;
+                const label = document.createElement("strong");
+                label.textContent = mode.label;
+                const description = document.createElement("span");
+                description.textContent = mode.description;
+                button.append(label, description);
+                button.addEventListener("click", () => confirmMode(mode.id));
+                container.appendChild(button);
+            }
+            button.setAttribute("aria-pressed", String(mode.id === gameState.mode.id));
+        });
+    }
+
+    function openModeSelector() {
+        const dialog = document.getElementById("modeDialog");
+        if (gameState.phase !== "ready" || browsing || dialog.open) return;
+        modeDialogGeneration += 1;
+        document.getElementById("modeSelectionError").hidden = true;
+        dialog.showModal();
+        document.querySelector('#modeOptions button[aria-pressed="true"]')?.focus();
+    }
+
+    function closeModeSelector({ restoreFocus = true } = {}) {
+        const dialog = document.getElementById("modeDialog");
+        if (!dialog.open) return;
+        modeDialogGeneration += 1;
+        pendingModeGeneration = null;
+        document.querySelectorAll("#modeOptions button").forEach((button) => { button.disabled = false; });
+        dialog.close();
+        if (restoreFocus && gameState.phase === "ready") document.getElementById("modeButton").focus();
+    }
+
+    function confirmMode(modeId) {
+        if (!document.getElementById("modeDialog").open || pendingModeGeneration !== null || gameState.phase !== "ready") return;
+        const generation = modeDialogGeneration;
+        pendingModeGeneration = generation;
+        socket.emit("select_mode", { mode_id: modeId }, (ack) => {
+            if (generation !== modeDialogGeneration || pendingModeGeneration !== generation) return;
+            pendingModeGeneration = null;
+            if (ack?.accepted) closeModeSelector();
+            else if (gameState.phase !== "ready") closeModeSelector({ restoreFocus: false });
+            else {
+                const error = document.getElementById("modeSelectionError");
+                error.textContent = ack?.error || "Mode selection failed. Try again.";
+                error.hidden = false;
+            }
+        });
+    }
+
+    function moveModeFocus(step) {
+        const options = Array.from(document.querySelectorAll("#modeOptions button"));
+        const index = options.indexOf(document.activeElement);
+        if (index >= 0) options[Math.max(0, Math.min(options.length - 1, index + step))]?.focus();
     }
 
     function submitNames() {
@@ -651,63 +845,224 @@
         }, 1050);
     }
 
-    function updateIdleLeaderboardCountdown() {
-        const remaining = Math.ceil(Math.max(0, idleLeaderboardDeadline - Date.now()) / 1000);
-        document.getElementById("leaderboardCountdown").textContent = `Closing in ${formatCountdown(remaining)} - L or Esc to return`;
+    function newBrowsingState(requestId, modeId, raceId) {
+        return {
+            requestId, modeId, raceId, boundary: null, nextOffset: 0,
+            pendingOffset: null, rows: new Map(), navigationIntent: null,
+            focusGeneration: 0, error: null, pendingTimer: null, restartRequired: false,
+            deadline: raceId === null ? Date.now() + IDLE_LEADERBOARD_TIMEOUT_MS : null,
+            waitingForPersistence: raceId !== null && gameState.persistence_status === "pending",
+        };
     }
 
-    function closeIdleLeaderboard(restorePhase = true) {
-        if (!idleLeaderboardOpen) return;
-        idleLeaderboardOpen = false;
-        clearTimeout(idleLeaderboardTimeout);
-        clearInterval(idleLeaderboardInterval);
-        idleLeaderboardTimeout = undefined;
-        idleLeaderboardInterval = undefined;
-        if (restorePhase) {
-            showPhase(gameState.phase);
-            document.getElementById("leaderboardButton").focus();
+    function leaderboardPlaceholder(message) {
+        const body = document.getElementById("leaderboardRows");
+        let row = body.querySelector(".leaderboard-placeholder");
+        if (!row) {
+            row = document.createElement("tr");
+            row.className = "leaderboard-placeholder";
+            const cell = document.createElement("td");
+            cell.colSpan = 4;
+            cell.className = "leaderboard-empty";
+            row.appendChild(cell);
+            body.appendChild(row);
         }
+        row.firstChild.textContent = message;
     }
 
-    function showIdleLeaderboard(rows, errorMessage) {
-        if (!["ready", "stopped"].includes(gameState.phase)) return;
-        idleLeaderboardOpen = true;
-        idleLeaderboardDeadline = Date.now() + IDLE_LEADERBOARD_TIMEOUT_MS;
-        renderLeaderboard(rows);
-        const error = document.getElementById("persistenceError");
-        error.textContent = errorMessage || "";
-        error.hidden = !errorMessage;
-        updateIdleLeaderboardCountdown();
+    function openLeaderboard() {
+        if (browsing || document.getElementById("modeDialog").open || !["ready", "stopped", "leaderboard"].includes(gameState.phase) || lastStateRevision === null) return;
+        const raceId = gameState.phase === "leaderboard" ? gameState.race_id : null;
+        browsing = newBrowsingState(++leaderboardRequestCounter, gameState.mode.id, raceId);
+        document.getElementById("leaderboardRows").replaceChildren();
+        document.getElementById("leaderboardScroll").scrollTop = 0;
+        document.getElementById("leaderboardPageError").hidden = true;
+        document.getElementById("persistenceError").hidden = true;
+        leaderboardPlaceholder("Loading scores...");
         showPhase(gameState.phase);
         document.getElementById("leaderboardTitle").focus();
-        clearTimeout(idleLeaderboardTimeout);
-        clearInterval(idleLeaderboardInterval);
-        idleLeaderboardTimeout = setTimeout(closeIdleLeaderboard, IDLE_LEADERBOARD_TIMEOUT_MS);
-        idleLeaderboardInterval = setInterval(updateIdleLeaderboardCountdown, 1000);
+        updateLeaderboardCountdown();
+        updatePageControl();
+        requestNextPage();
     }
 
-    function cancelIdleLeaderboardRequest() {
-        pendingLeaderboardRequestId = null;
+    function updatePageControl() {
+        const control = document.getElementById("loadLeaderboardPage");
+        control.hidden = !browsing || (browsing.nextOffset === null && !browsing.error);
+        control.setAttribute("aria-disabled", String(Boolean(browsing?.pendingOffset !== null || browsing?.waitingForPersistence)));
+        control.textContent = browsing?.restartRequired ? "Retry from start" : browsing?.error ? "Retry" : browsing?.pendingOffset !== null || browsing?.waitingForPersistence ? "Loading..." : "Load more";
     }
 
-    function toggleIdleLeaderboard() {
-        if (idleLeaderboardOpen) {
-            closeIdleLeaderboard();
-        } else if (pendingLeaderboardRequestId !== null) {
-            cancelIdleLeaderboardRequest();
-        } else if (["ready", "stopped"].includes(gameState.phase)) {
-            const requestId = ++idleLeaderboardRequestCounter;
-            pendingLeaderboardRequestId = requestId;
-            socket.emit("request_leaderboard", { request_id: requestId });
+    function requestNextPage(navigationIntent = null) {
+        if (!browsing || checkLeaderboardExpiry() || browsing.waitingForPersistence || browsing.restartRequired || browsing.nextOffset === null) return;
+        if (navigationIntent) browsing.navigationIntent = navigationIntent;
+        if (browsing.pendingOffset !== null) return;
+        browsing.pendingOffset = browsing.nextOffset;
+        browsing.error = null;
+        document.getElementById("leaderboardPageError").hidden = true;
+        updatePageControl();
+        const requestId = browsing.requestId;
+        const offset = browsing.pendingOffset;
+        // Recover unanswered requests independently of authoritative browse invalidation.
+        browsing.pendingTimer = setTimeout(() => {
+            if (!browsing || browsing.requestId !== requestId || browsing.pendingOffset !== offset || checkLeaderboardExpiry()) return;
+            browsing.pendingOffset = null;
+            browsing.navigationIntent = null;
+            browsing.restartRequired = true;
+            browsing.error = "Scores did not arrive. Retry to start a fresh snapshot.";
+            const error = document.getElementById("leaderboardPageError");
+            error.textContent = browsing.error;
+            error.hidden = false;
+            updatePageControl();
+        }, 10_000);
+        socket.emit("request_leaderboard", {
+            request_id: browsing.requestId, mode_id: browsing.modeId, race_id: browsing.raceId,
+            boundary: browsing.boundary, offset: browsing.pendingOffset,
+        });
+    }
+
+    function appendLeaderboardPage(data) {
+        if (!browsing || checkLeaderboardExpiry() || browsing.pendingOffset === null || data?.request_id !== browsing.requestId || data.mode_id !== browsing.modeId || data.race_id !== browsing.raceId || data.offset !== browsing.pendingOffset) return;
+        const opening = browsing.boundary === null && browsing.pendingOffset === 0;
+        if (!opening && data.boundary !== browsing.boundary) return;
+        if (data.error) {
+            clearTimeout(browsing.pendingTimer);
+            browsing.pendingOffset = null;
+            browsing.error = data.error;
+            browsing.navigationIntent = null;
+            const error = document.getElementById("leaderboardPageError");
+            error.textContent = data.error;
+            error.hidden = false;
+            if (browsing.rows.size === 0) leaderboardPlaceholder("Could not load scores");
+            updatePageControl();
+            return;
         }
+        if (!Number.isSafeInteger(data.boundary) || data.boundary < 0 || !Array.isArray(data.rows) || !(data.next_offset === null || (Number.isSafeInteger(data.next_offset) && data.next_offset > data.offset))) return;
+        clearTimeout(browsing.pendingTimer);
+        if (opening) browsing.boundary = data.boundary;
+        const body = document.getElementById("leaderboardRows");
+        const appended = [];
+        data.rows.forEach((row) => {
+            if (browsing.rows.has(row.id)) return;
+            const tableRow = document.createElement("tr");
+            tableRow.tabIndex = 0;
+            tableRow.dataset.scoreId = String(row.id);
+            tableRow.classList.toggle("is-current-race", Boolean(row.current_race));
+            if (row.current_race) tableRow.setAttribute("aria-current", "true");
+            [row.rank, row.name, formatDuration(row.duration_ms), formatCreatedAt(row.created_at)].forEach((value) => {
+                const cell = document.createElement("td");
+                cell.textContent = String(value);
+                tableRow.appendChild(cell);
+            });
+            browsing.rows.set(row.id, tableRow);
+            body.appendChild(tableRow);
+            appended.push(tableRow);
+        });
+        if (browsing.rows.size) body.querySelector(".leaderboard-placeholder")?.remove();
+        else leaderboardPlaceholder("No records yet");
+        browsing.nextOffset = data.next_offset;
+        browsing.pendingOffset = null;
+        const intent = browsing.navigationIntent;
+        browsing.navigationIntent = null;
+        const shouldFocus = appended.length && intent?.requestId === browsing.requestId && intent.focusGeneration === browsing.focusGeneration && document.activeElement === intent.sourceElement && !document.getElementById("leaderboardView").hidden;
+        updatePageControl();
+        if (shouldFocus) focusScore(appended[0]);
+    }
+
+    function closeLeaderboard({ restoreFocus = true, dismiss = true } = {}) {
+        if (!browsing) return;
+        const raceId = browsing.raceId;
+        clearTimeout(browsing.pendingTimer);
+        browsing.navigationIntent = null;
+        browsing = null;
+        clearTimeout(activityTimer);
+        activityTimer = undefined;
+        lastActivityAt = -Infinity;
+        scrollIntentUntil = suppressScrollUntil = 0;
+        scrollbarDragging = false;
+        if (raceId !== null) closedLeaderboardRaceId = raceId;
+        showPhase(gameState.phase);
+        if (restoreFocus) document.getElementById("game-title").focus();
+        if (dismiss && raceId !== null) socket.emit("dismiss_leaderboard", { race_id: raceId });
+    }
+
+    function checkLeaderboardExpiry() {
+        if (browsing?.raceId === null && Date.now() >= browsing.deadline) {
+            closeLeaderboard();
+            return true;
+        }
+        return false;
+    }
+
+    function updateLeaderboardCountdown() {
+        if (!browsing || checkLeaderboardExpiry()) return;
+        const idle = browsing.raceId === null;
+        const remaining = idle ? Math.ceil(Math.max(0, browsing.deadline - Date.now()) / 1000) : gameState.remaining_seconds;
+        document.getElementById("leaderboardCountdown").textContent = `${idle ? "Closing" : "Next race"} in ${formatCountdown(remaining)} - L or Esc to ${idle ? "return" : "continue"}`;
+    }
+
+    function sendLeaderboardActivity() {
+        activityTimer = undefined;
+        if (!browsing || checkLeaderboardExpiry()) return;
+        lastActivityAt = performance.now();
+        if (browsing.raceId !== null) socket.emit("leaderboard_activity", { race_id: browsing.raceId });
+    }
+
+    function noteLeaderboardActivity() {
+        if (!browsing || checkLeaderboardExpiry()) return;
+        if (browsing.raceId === null) browsing.deadline = Date.now() + IDLE_LEADERBOARD_TIMEOUT_MS;
+        const wait = 1000 - (performance.now() - lastActivityAt);
+        if (wait <= 0) sendLeaderboardActivity();
+        else if (!activityTimer) activityTimer = setTimeout(sendLeaderboardActivity, wait);
+        updateLeaderboardCountdown();
+    }
+
+    function focusScore(row) {
+        scrollIntentUntil = 0;
+        scrollbarDragging = false;
+        suppressScrollUntil = performance.now() + 250;
+        row.focus({ preventScroll: true });
+        row.scrollIntoView({ block: "nearest" });
+    }
+
+    function scoreNavigationIntent() {
+        return { sourceElement: document.activeElement, focusGeneration: browsing.focusGeneration, requestId: browsing.requestId };
+    }
+
+    function navigateScores(event) {
+        if (!browsing || checkLeaderboardExpiry()) return;
+        const rows = Array.from(browsing.rows.values());
+        const index = rows.indexOf(document.activeElement);
+        if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+        if (index < 0 && document.activeElement.id !== "leaderboardTitle") return;
+        event.preventDefault();
+        noteLeaderboardActivity();
+        if (index < 0) { if (event.key === "ArrowDown") rows[0] && focusScore(rows[0]); return; }
+        const next = index + (event.key === "ArrowDown" ? 1 : -1);
+        if (next >= 0 && next < rows.length) focusScore(rows[next]);
+        else if (next === rows.length && browsing.nextOffset !== null) requestNextPage(scoreNavigationIntent());
+        if (browsing && index >= rows.length - 5 && !browsing.error) requestNextPage();
+    }
+
+    function toggleLeaderboard() {
+        if (document.getElementById("modeDialog").open) return;
+        if (browsing) closeLeaderboard();
+        else if (["ready", "stopped"].includes(gameState.phase)) openLeaderboard();
+    }
+
+    function resetConnectionBaseline() {
+        lastStateRevision = null;
+        closeModeSelector({ restoreFocus: false });
+        closeLeaderboard({ restoreFocus: false, dismiss: false });
+        closedLeaderboardRaceId = null;
     }
 
     PLAYER_IDS.forEach(createBoard);
-    const boardResizeObserver = new ResizeObserver((entries) => entries.forEach((entry) => fitBoardCells(entry.target)));
-    document.querySelectorAll(".board").forEach((board) => {
-        fitBoardCells(board);
-        boardResizeObserver.observe(board);
-    });
+    const boardResizeObserver = new ResizeObserver(scheduleBoardLayout);
+    boardResizeObserver.observe(document.getElementById("raceView"));
+    window.addEventListener("resize", scheduleBoardLayout);
+    document.fonts.ready.then(scheduleBoardLayout);
+    scheduleBoardLayout();
     updateStats();
     document.querySelectorAll(".name-input").forEach((input) => {
         input.addEventListener("input", () => emitNameDraft(input));
@@ -715,15 +1070,13 @@
             document.querySelectorAll(".result-card").forEach((card) => card.classList.toggle("is-active", card.contains(input)));
         });
     });
-    socket.on("table_update", (data) => updateBoard(data.switch_id, data.states));
+    // The server's first full state may arrive before Socket.IO's connect callback.
+    socket.io.on("open", resetConnectionBaseline);
+    socket.on("disconnect", resetConnectionBaseline);
     socket.on("game_state", renderGameState);
-    socket.on("leaderboard_snapshot", (data) => {
-        if (pendingLeaderboardRequestId === null || data?.request_id !== pendingLeaderboardRequestId) return;
-        cancelIdleLeaderboardRequest();
-        showIdleLeaderboard(Array.isArray(data?.rows) ? data.rows : [], data?.error || null);
-    });
+    socket.on("leaderboard_snapshot", appendLeaderboardPage);
     socket.on("clock_update", (data) => {
-        if (data.race_id !== gameState.race_id) return;
+        if (lastStateRevision === null || data.race_id !== gameState.race_id || data.phase !== gameState.phase || data.revision !== lastStateRevision) return;
         PLAYER_IDS.forEach((playerId) => {
             players[playerId].durationMs = data.durations_ms[String(playerId)];
             clockState.activePlayers[playerId] = data.active_players[String(playerId)];
@@ -732,36 +1085,89 @@
         updateStats();
         ensureClockAnimation();
     });
-    document.getElementById("leaderboardButton").addEventListener("click", toggleIdleLeaderboard);
+    document.getElementById("leaderboardButton").addEventListener("click", toggleLeaderboard);
+    document.getElementById("closeLeaderboard").addEventListener("click", () => closeLeaderboard());
+    document.getElementById("loadLeaderboardPage").addEventListener("click", () => {
+        if (!browsing || checkLeaderboardExpiry()) return;
+        noteLeaderboardActivity();
+        if (browsing.restartRequired) {
+            closeLeaderboard({ restoreFocus: false, dismiss: false });
+            openLeaderboard();
+            return;
+        }
+        requestNextPage(scoreNavigationIntent());
+    });
+    document.addEventListener("focusin", () => { if (browsing) browsing.focusGeneration += 1; });
+    const leaderboardScroll = document.getElementById("leaderboardScroll");
+    function markScrollIntent() { scrollIntentUntil = performance.now() + 1000; suppressScrollUntil = 0; }
+    leaderboardScroll.addEventListener("wheel", markScrollIntent, { passive: true });
+    leaderboardScroll.addEventListener("touchmove", markScrollIntent, { passive: true });
+    leaderboardScroll.addEventListener("pointerdown", (event) => {
+        if (event.target === leaderboardScroll) { scrollbarDragging = true; markScrollIntent(); }
+    });
+    function endScrollbarDrag() { if (scrollbarDragging) scrollIntentUntil = 0; scrollbarDragging = false; }
+    document.addEventListener("pointerup", endScrollbarDrag, true);
+    document.addEventListener("pointercancel", endScrollbarDrag, true);
+    // Native scrollbar capture can blur the page before releasing the thumb.
+    window.addEventListener("blur", () => { scrollIntentUntil = 0; });
+    leaderboardScroll.addEventListener("pointermove", (event) => {
+        if (event.buttons && event.target === leaderboardScroll) markScrollIntent();
+        else if (!event.buttons) endScrollbarDrag();
+    }, { passive: true });
+    leaderboardScroll.addEventListener("scroll", () => {
+        if (!browsing || checkLeaderboardExpiry()) return;
+        if ((scrollbarDragging || performance.now() < scrollIntentUntil) && performance.now() >= suppressScrollUntil) noteLeaderboardActivity();
+        if (!browsing.error && leaderboardScroll.scrollHeight - leaderboardScroll.scrollTop - leaderboardScroll.clientHeight <= leaderboardScroll.clientHeight) requestNextPage();
+    }, { passive: true });
+    setInterval(updateLeaderboardCountdown, 1000);
+    document.getElementById("modeButton").addEventListener("click", openModeSelector);
+    document.getElementById("closeModeDialog").addEventListener("click", () => closeModeSelector());
+    document.getElementById("modeDialog").addEventListener("cancel", (event) => { event.preventDefault(); closeModeSelector(); });
     document.addEventListener("keydown", (event) => {
-        if (event.repeat) return;
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
         if (gameState.phase === "name_entry") {
             if (event.key === "Enter") {
                 event.preventDefault();
-                submitNames();
+                if (!event.repeat) submitNames();
             } else if (event.key === "Tab") {
                 event.preventDefault();
                 cycleNameFocus(event.shiftKey);
             }
             return;
         }
+        if (event.target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])")) return;
+        if (document.getElementById("modeDialog").open) {
+            if (["Escape", "m", "M"].includes(event.key)) { event.preventDefault(); if (!event.repeat) closeModeSelector(); }
+            else if (["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(event.key)) { event.preventDefault(); moveModeFocus(["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : -1); }
+            else if (event.key === "Tab") {
+                const controls = [...document.querySelectorAll("#modeOptions button"), document.getElementById("closeModeDialog")];
+                if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls.at(-1).focus(); }
+                else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0].focus(); }
+            } else if (event.code === "Space" || ["KeyL", "KeyV", "KeyS"].includes(event.code)) event.preventDefault();
+            else if (event.key === "Enter" && event.repeat) event.preventDefault();
+            return;
+        }
+        if (browsing) {
+            if (["KeyL"].includes(event.code) || event.key === "Escape" || (event.code === "Space" && browsing.raceId !== null)) { event.preventDefault(); if (!event.repeat) closeLeaderboard(); }
+            else if (event.code === "Space" || ["KeyV", "KeyS"].includes(event.code)) event.preventDefault();
+            else if (["ArrowDown", "ArrowUp"].includes(event.key)) navigateScores(event);
+            else if (["PageDown", "PageUp", "Home", "End"].includes(event.key)) markScrollIntent();
+            else if (event.key === "Tab") noteLeaderboardActivity();
+            return;
+        }
+        if (event.repeat) return;
+        if (event.code === "KeyM") { event.preventDefault(); openModeSelector(); return; }
         if (event.code === "KeyL") {
             event.preventDefault();
             if (gameState.phase === "leaderboard") {
                 socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
             } else {
-                toggleIdleLeaderboard();
+                toggleLeaderboard();
             }
             return;
         }
         if (event.key === "Escape") {
-            if (pendingLeaderboardRequestId !== null) {
-                event.preventDefault();
-                cancelIdleLeaderboardRequest();
-            } else if (idleLeaderboardOpen) {
-                event.preventDefault();
-                closeIdleLeaderboard();
-            } else if (gameState.phase === "leaderboard") {
+            if (gameState.phase === "leaderboard") {
                 event.preventDefault();
                 socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
             }
@@ -771,9 +1177,7 @@
         if (event.code === "KeyS") { event.preventDefault(); fetch("/restart-serial"); return; }
         if (event.code !== "Space") return;
         event.preventDefault();
-        if (idleLeaderboardOpen) {
-            return;
-        } else if (gameState.phase === "leaderboard") {
+        if (gameState.phase === "leaderboard") {
             socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
         } else if (["ready", "racing", "stopped"].includes(gameState.phase)) {
             advanceClockWithSpacebar().catch((error) => console.error("Clock control failed", error));

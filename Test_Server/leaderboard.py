@@ -12,6 +12,7 @@ class NewLeaderboardEntry:
     player_number: int
     name: str
     duration_ms: int
+    mode_id: str
 
 
 @dataclass(frozen=True)
@@ -22,7 +23,14 @@ class RankedLeaderboardEntry:
     name: str
     duration_ms: int
     created_at: str
+    mode_id: str
     rank: int
+
+
+@dataclass(frozen=True)
+class LeaderboardPage:
+    rows: tuple[RankedLeaderboardEntry, ...]
+    next_offset: int | None
 
 
 def default_database_path() -> Path:
@@ -46,7 +54,20 @@ class LeaderboardStore:
 
     def _initialize(self) -> None:
         with self._connect() as connection:
-            connection.executescript(SCHEMA)
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(SCHEMA)
+            columns = {
+                row[1]
+                for row in connection.execute("PRAGMA table_info(leaderboard_entries)")
+            }
+            if "mode_id" not in columns:
+                connection.execute(
+                    "ALTER TABLE leaderboard_entries ADD COLUMN mode_id TEXT NOT NULL DEFAULT 'full-field'"
+                )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS leaderboard_mode_time_idx "
+                "ON leaderboard_entries (mode_id, duration_ms, created_at, id)"
+            )
 
     def insert_entries(self, entries: Sequence[NewLeaderboardEntry]) -> set[int]:
         validated = tuple(self._validate(entry) for entry in entries)
@@ -57,8 +78,8 @@ class LeaderboardStore:
             for item in validated:
                 connection.execute(
                     """INSERT INTO leaderboard_entries
-                       (race_id, player_number, name, duration_ms, created_at)
-                       VALUES (?, ?, ?, ?, ?)
+                       (race_id, player_number, name, duration_ms, created_at, mode_id)
+                       VALUES (?, ?, ?, ?, ?, ?)
                        ON CONFLICT(race_id, player_number) DO NOTHING""",
                     (
                         item.race_id,
@@ -66,6 +87,7 @@ class LeaderboardStore:
                         item.name,
                         item.duration_ms,
                         self.now().isoformat(),
+                        item.mode_id,
                     ),
                 )
             return {
@@ -77,25 +99,50 @@ class LeaderboardStore:
                 )
             }
 
-    def top_entries(self, limit: int = 10) -> list[RankedLeaderboardEntry]:
-        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 0:
-            raise ValueError("limit must be a non-negative integer")
+    def snapshot_boundary(self, mode_id: str) -> int:
+        self._validate_mode(mode_id)
+        with self._connect() as connection:
+            return connection.execute(
+                "SELECT COALESCE(MAX(id), 0) FROM leaderboard_entries WHERE mode_id = ?",
+                (mode_id,),
+            ).fetchone()[0]
+
+    def page_entries(
+        self, mode_id: str, boundary: int, offset: int, limit: int = 50
+    ) -> LeaderboardPage:
+        self._validate_mode(mode_id)
+        if type(boundary) is not int or boundary < 0:
+            raise ValueError("boundary must be a non-negative integer")
+        if type(offset) is not int or offset < 0:
+            raise ValueError("offset must be a non-negative integer")
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError("limit must be an integer between 1 and 50")
         with self._connect() as connection:
             rows = connection.execute(
-                """SELECT id, race_id, player_number, name, duration_ms, created_at, rank
+                """SELECT id, race_id, player_number, name, duration_ms, created_at, mode_id, rank
                    FROM (
-                       SELECT id, race_id, player_number, name, duration_ms, created_at,
-                              RANK() OVER (ORDER BY duration_ms) AS rank
+                       SELECT id, race_id, player_number, name, duration_ms, created_at, mode_id,
+                               RANK() OVER (ORDER BY duration_ms) AS rank
                        FROM leaderboard_entries
+                       WHERE mode_id = ? AND id <= ?
                    )
                    ORDER BY duration_ms, created_at, id
-                   LIMIT ?""",
-                (limit,),
+                   LIMIT ? OFFSET ?""",
+                (mode_id, boundary, limit + 1, offset),
+            ).fetchall()
+            return LeaderboardPage(
+                tuple(RankedLeaderboardEntry(*row) for row in rows[:limit]),
+                offset + limit if len(rows) > limit else None,
             )
-            return [RankedLeaderboardEntry(*row) for row in rows]
+
+    @staticmethod
+    def _validate_mode(mode_id: str) -> None:
+        if not isinstance(mode_id, str) or not mode_id:
+            raise ValueError("mode_id is required")
 
     @staticmethod
     def _validate(entry: NewLeaderboardEntry) -> NewLeaderboardEntry:
+        LeaderboardStore._validate_mode(entry.mode_id)
         if not isinstance(entry.race_id, str) or not entry.race_id:
             raise ValueError("race_id is required")
         if type(entry.player_number) is not int or entry.player_number not in (1, 2):
@@ -121,8 +168,7 @@ CREATE TABLE IF NOT EXISTS leaderboard_entries (
     name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 12),
     duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
     created_at TEXT NOT NULL,
+    mode_id TEXT NOT NULL,
     UNIQUE (race_id, player_number)
 );
-CREATE INDEX IF NOT EXISTS leaderboard_time_idx
-    ON leaderboard_entries (duration_ms, created_at, id);
 """

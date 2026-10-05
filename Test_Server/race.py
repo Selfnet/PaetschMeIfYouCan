@@ -2,11 +2,13 @@ import math
 import threading
 import time
 import uuid
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import asdict, dataclass
 from enum import StrEnum
 
-NUM_CELLS = 48
+from board import GameBoard
+from gamemodes import BUILTIN_MODES, EvaluationContext, ModeRegistry, validate_snapshot
+
 NAME_TIMEOUT_NS = 120 * 1_000_000_000
 LEADERBOARD_TIMEOUT_NS = 60 * 1_000_000_000
 
@@ -28,9 +30,24 @@ class PlayerRaceState:
 @dataclass(frozen=True)
 class ScoreSubmission:
     race_id: str
+    mode_id: str
     player_number: int
     name: str
     duration_ms: int
+
+
+@dataclass(frozen=True)
+class RaceOrigin:
+    race_id: str
+    mode_id: str
+
+
+@dataclass(frozen=True)
+class BrowseOrigin:
+    epoch: int
+    phase: Phase
+    mode_id: str
+    race_id: str | None
 
 
 @dataclass(frozen=True)
@@ -38,6 +55,8 @@ class StateChange:
     changed: bool
     action: str | None = None
     submissions: tuple[ScoreSubmission, ...] = ()
+    origin: RaceOrigin | None = None
+    diagnostic: str | None = None
 
 
 @dataclass
@@ -59,13 +78,42 @@ class RaceStateMachine:
         self,
         clock_ns: Callable[[], int] = time.monotonic_ns,
         race_id_factory: Callable[[], str] = lambda: str(uuid.uuid4()),
+        registry: ModeRegistry = BUILTIN_MODES,
     ) -> None:
         self._clock_ns = clock_ns
         self._race_id_factory = race_id_factory
         self._lock = threading.RLock()
+        self.registry = registry
+        self.selected_mode_id = "full-field"
+        self.registry.get(self.selected_mode_id)
+        self.boards = {1: GameBoard(), 2: GameBoard()}
+        self.context = EvaluationContext(verify=True)
+        self.epoch = 0
+        self.revision = 0
+        self.presentations = {1: None, 2: None}
         self._reset_unlocked()
 
-    def _reset_unlocked(self) -> None:
+    def _change_unlocked(self, action, *, submissions=(), origin=None, diagnostic=None):
+        self.revision += 1
+        return StateChange(True, action, submissions, origin, diagnostic)
+
+    def _preview_unlocked(self):
+        try:
+            mode = self.registry.get(self.selected_mode_id)
+            staged = {
+                number: validate_snapshot(mode.preview(board.snapshot(), self.context))
+                for number, board in self.boards.items()
+            }
+        except Exception as error:  # noqa: BLE001 - mode failures must remain recoverable
+            self.mode_error = "Mode preview failed. Select another mode or reset."
+            self.presentations = {1: None, 2: None}
+            return f"{type(error).__name__}: {error}"
+        self.presentations = staged
+        self.mode_error = None
+        return None
+
+    def _reset_unlocked(self):
+        self.epoch += 1
         self.phase = Phase.READY
         self.race_id: str | None = None
         self.started_ns: int | None = None
@@ -75,37 +123,109 @@ class RaceStateMachine:
         self.name_fields = {1: NameFieldState(), 2: NameFieldState()}
         self.active_name_player: int | None = None
         self.deadline_ns: int | None = None
-        self.leaderboard_rows: list[dict[str, object]] = []
+        self.sessions = {}
+        self.race_mode_id = None
+        self.mode_error = None
+        self.persistence_status = "idle"
         self.persistence_error: str | None = None
+        return self._preview_unlocked()
 
-    def _start_unlocked(self) -> StateChange:
-        self._reset_unlocked()
+    def _failure_unlocked(self, error, now_ns):
+        for player in self.players.values():
+            if player.completed_ns is None and player.manual_stopped_ns is None:
+                player.manual_stopped_ns = now_ns
+        self.phase = Phase.STOPPED
+        self.epoch += 1
+        self.deadline_ns = None
+        self.sessions = {}
+        self.result_order = []
+        self.mode_error = "Mode failed. Reset to try again or select another mode."
+        return self._change_unlocked(
+            "mode_error", diagnostic=f"{type(error).__name__}: {error}"
+        )
+
+    def _start_unlocked(self, now_ns) -> StateChange:
+        if self.mode_error is not None:
+            return StateChange(False)
+        self.epoch += 1
         self.phase = Phase.RACING
         self.race_id = self._race_id_factory()
-        self.started_ns = self._clock_ns()
-        return StateChange(True, "started")
+        self.race_mode_id = self.selected_mode_id
+        self.started_ns = now_ns
+        try:
+            mode = self.registry.get(self.race_mode_id)
+            sessions = {number: mode.new_session() for number in (1, 2)}
+            if sessions[1] is sessions[2]:
+                raise ValueError("mode factory returned a shared session")
+            staged = {
+                number: validate_snapshot(
+                    session.initialize(self.boards[number].snapshot(), self.context, 0)
+                )
+                for number, session in sessions.items()
+            }
+        except Exception as error:  # noqa: BLE001 - mode failures must remain recoverable
+            return self._failure_unlocked(error, now_ns)
+        self.sessions = sessions
+        return self._publish_evaluations_unlocked(staged, now_ns, "started")
+
+    def _publish_evaluations_unlocked(self, staged, now_ns, action=None):
+        changed = action is not None
+        for number, result in staged.items():
+            changed |= self.presentations[number] != result
+            self.presentations[number] = result
+            if result.complete:
+                self.players[number].completed_ns = now_ns
+                self.players[number].manual_stopped_ns = None
+                action = action or "player_completed"
+                changed = True
+        if all(player.completed_ns is not None for player in self.players.values()):
+            return self._enter_name_entry_unlocked(now_ns)
+        return (
+            self._change_unlocked(action or "progress")
+            if changed
+            else StateChange(False)
+        )
+
+    def _evaluate_unlocked(self, method, now_ns, numbers=(1, 2), *, published=False):
+        try:
+            elapsed_ns = max(0, now_ns - self.started_ns)
+            staged = {
+                number: validate_snapshot(
+                    getattr(self.sessions[number], method)(
+                        self.boards[number].snapshot(), self.context, elapsed_ns
+                    )
+                )
+                for number in numbers
+                if self.players[number].completed_ns is None
+            }
+        except Exception as error:  # noqa: BLE001 - mode failures must remain recoverable
+            return self._failure_unlocked(error, now_ns)
+        return self._publish_evaluations_unlocked(
+            staged, now_ns, "updated" if published else None
+        )
 
     def start(self) -> StateChange:
         with self._lock:
             if self.phase != Phase.READY:
                 return StateChange(False)
-            return self._start_unlocked()
+            return self._start_unlocked(self._clock_ns())
 
     def space(self) -> StateChange:
         with self._lock:
+            now_ns = self._clock_ns()
             if self.phase == Phase.READY:
-                return self._start_unlocked()
+                return self._start_unlocked(now_ns)
             if self.phase == Phase.RACING:
-                now_ns = self._clock_ns()
                 for player in self.players.values():
                     if player.completed_ns is None and player.manual_stopped_ns is None:
                         player.manual_stopped_ns = now_ns
                 self.phase = Phase.STOPPED
+                self.epoch += 1
                 self.deadline_ns = None
-                return StateChange(True, "stopped")
+                return self._change_unlocked("stopped")
             if self.phase == Phase.STOPPED:
-                self._reset_unlocked()
-                return StateChange(True, "reset")
+                diagnostic = self._reset_unlocked()
+                return self._change_unlocked("reset", diagnostic=diagnostic)
             return StateChange(False)
 
     def manual_stop(self, player_number: int) -> StateChange:
@@ -124,31 +244,70 @@ class RaceStateMachine:
                 item.manual_stopped_ns is not None for item in self.players.values()
             ):
                 self.phase = Phase.STOPPED
-                return StateChange(True, "stopped")
-            return StateChange(True, "player_stopped")
+                self.epoch += 1
+                return self._change_unlocked("stopped")
+            return self._change_unlocked("player_stopped")
 
-    def observe_cells(self, player_number: int, states: object) -> StateChange:
+    def observe_board(self, player_number: int, values: object) -> StateChange:
         with self._lock:
-            valid_states = (
-                isinstance(states, (list, tuple))
-                and len(states) == NUM_CELLS
-                and all(type(state) is int and state == 2 for state in states)
+            if type(player_number) is not int or player_number not in self.boards:
+                return StateChange(False)
+            before = self.boards[player_number].snapshot()
+            try:
+                observation = self.boards[player_number].update(values)
+            except ValueError:
+                return StateChange(False)
+            now_ns = self._clock_ns()
+            if self.phase == Phase.READY:
+                previous = self.presentations.copy()
+                previous_error = self.mode_error
+                diagnostic = self._preview_unlocked()
+                if (
+                    observation != before
+                    or previous != self.presentations
+                    or previous_error != self.mode_error
+                ):
+                    return self._change_unlocked("board", diagnostic=diagnostic)
+                return StateChange(False)
+            if self.phase == Phase.RACING:
+                return self._evaluate_unlocked(
+                    "observe", now_ns, (player_number,), published=observation != before
+                )
+            return (
+                self._change_unlocked("board")
+                if observation != before
+                else StateChange(False)
             )
-            if (
-                self.phase != Phase.RACING
-                or type(player_number) is not int
-                or player_number not in self.players
-                or not valid_states
-            ):
+
+    def select_mode(self, mode_id) -> StateChange:
+        with self._lock:
+            if self.phase != Phase.READY:
                 return StateChange(False)
-            player = self.players[player_number]
-            if player.completed_ns is not None:
+            try:
+                self.registry.get(mode_id)
+            except ValueError:
                 return StateChange(False)
-            player.completed_ns = self._clock_ns()
-            player.manual_stopped_ns = None
-            if all(item.completed_ns is not None for item in self.players.values()):
-                return self._enter_name_entry_unlocked()
-            return StateChange(True, "player_completed")
+            self.selected_mode_id = mode_id
+            self.epoch += 1
+            diagnostic = self._preview_unlocked()
+            return self._change_unlocked("mode_selected", diagnostic=diagnostic)
+
+    def set_verification(self, verify) -> StateChange:
+        with self._lock:
+            if type(verify) is not bool or verify == self.context.verify:
+                return StateChange(False)
+            self.context = EvaluationContext(verify=verify)
+            now_ns = self._clock_ns()
+            if self.phase == Phase.READY:
+                diagnostic = self._preview_unlocked()
+                return self._change_unlocked("verification", diagnostic=diagnostic)
+            if self.phase == Phase.RACING:
+                return self._evaluate_unlocked("observe", now_ns, published=True)
+            return self._change_unlocked("verification")
+
+    def toggle_verification(self) -> StateChange:
+        with self._lock:
+            return self.set_verification(not self.context.verify)
 
     def _duration_ms_unlocked(self, player_number: int, now_ns: int) -> int:
         if self.started_ns is None:
@@ -161,8 +320,7 @@ class RaceStateMachine:
             endpoint_ns = now_ns
         return max(0, (endpoint_ns - self.started_ns) // 1_000_000)
 
-    def _enter_name_entry_unlocked(self) -> StateChange:
-        now_ns = self._clock_ns()
+    def _enter_name_entry_unlocked(self, now_ns) -> StateChange:
         durations = {
             player_number: self._duration_ms_unlocked(player_number, now_ns)
             for player_number in (1, 2)
@@ -177,7 +335,8 @@ class RaceStateMachine:
         self.active_name_player = self.result_order[0]
         self.deadline_ns = now_ns + NAME_TIMEOUT_NS
         self.phase = Phase.NAME_ENTRY
-        return StateChange(True, "name_entry")
+        self.epoch += 1
+        return self._change_unlocked("name_entry")
 
     def _valid_name_event_unlocked(
         self, race_id: object, player_number: object, draft: object
@@ -195,20 +354,22 @@ class RaceStateMachine:
         self, race_id: object, player_number: object, draft: object
     ) -> StateChange:
         with self._lock:
-            expired = self._expire_if_due_unlocked()
+            now_ns = self._clock_ns()
+            expired = self._expire_if_due_unlocked(now_ns)
             if expired is not None:
                 return expired
             if not self._valid_name_event_unlocked(race_id, player_number, draft):
                 return StateChange(False)
             self.name_fields[player_number].draft = draft
-            self.deadline_ns = self._clock_ns() + NAME_TIMEOUT_NS
-            return StateChange(True, "name_draft")
+            self.deadline_ns = now_ns + NAME_TIMEOUT_NS
+            return self._change_unlocked("name_draft")
 
     def submit_name(
         self, race_id: object, player_number: object, draft: object
     ) -> StateChange:
         with self._lock:
-            expired = self._expire_if_due_unlocked()
+            now_ns = self._clock_ns()
+            expired = self._expire_if_due_unlocked(now_ns)
             if expired is not None:
                 return expired
             if not self._valid_name_event_unlocked(race_id, player_number, draft):
@@ -223,17 +384,17 @@ class RaceStateMachine:
             ]
             if unresolved_players:
                 self.active_name_player = unresolved_players[0]
-                self.deadline_ns = self._clock_ns() + NAME_TIMEOUT_NS
-                return StateChange(True, "next_name")
-            return self._enter_leaderboard_unlocked()
+                self.deadline_ns = now_ns + NAME_TIMEOUT_NS
+                return self._change_unlocked("next_name")
+            return self._enter_leaderboard_unlocked(now_ns)
 
-    def _enter_leaderboard_unlocked(self) -> StateChange:
+    def _enter_leaderboard_unlocked(self, now_ns) -> StateChange:
         if self.race_id is None:
             return StateChange(False)
-        now_ns = self._clock_ns()
         submissions = tuple(
             ScoreSubmission(
                 race_id=self.race_id,
+                mode_id=self.race_mode_id,
                 player_number=player_number,
                 name=self.name_fields[player_number].draft,
                 duration_ms=self._duration_ms_unlocked(player_number, now_ns),
@@ -243,58 +404,114 @@ class RaceStateMachine:
             and self.name_fields[player_number].draft
         )
         self.phase = Phase.LEADERBOARD
+        self.epoch += 1
         self.active_name_player = None
         self.deadline_ns = now_ns + LEADERBOARD_TIMEOUT_NS
-        self.leaderboard_rows = []
+        self.persistence_status = "pending"
         self.persistence_error = None
-        return StateChange(True, "leaderboard", submissions)
+        return self._change_unlocked(
+            "leaderboard",
+            submissions=submissions,
+            origin=RaceOrigin(race_id=self.race_id, mode_id=self.race_mode_id),
+        )
 
     def tick(self) -> StateChange:
         with self._lock:
-            return self._expire_if_due_unlocked() or StateChange(False)
+            now_ns = self._clock_ns()
+            expired = self._expire_if_due_unlocked(now_ns)
+            if expired is not None:
+                return expired
+            if self.phase == Phase.RACING:
+                return self._evaluate_unlocked("tick", now_ns)
+            return StateChange(False)
 
-    def _expire_if_due_unlocked(self) -> StateChange | None:
-        if self.deadline_ns is None or self._clock_ns() < self.deadline_ns:
+    def _expire_if_due_unlocked(self, now_ns) -> StateChange | None:
+        if self.deadline_ns is None or now_ns < self.deadline_ns:
             return None
         if self.phase == Phase.NAME_ENTRY:
             for field in self.name_fields.values():
                 if not field.resolved:
                     field.draft = ""
                     field.resolved = True
-            return self._enter_leaderboard_unlocked()
+            return self._enter_leaderboard_unlocked(now_ns)
         if self.phase == Phase.LEADERBOARD:
-            self._reset_unlocked()
-            return StateChange(True, "reset")
+            diagnostic = self._reset_unlocked()
+            return self._change_unlocked("reset", diagnostic=diagnostic)
         return None
 
-    def set_leaderboard(
-        self,
-        race_id: object,
-        rows: Sequence[dict[str, object]],
-        highlighted_ids: set[int],
-        persistence_error: str | None,
-    ) -> StateChange:
+    def set_persistence(self, origin: RaceOrigin, error: str | None) -> StateChange:
         with self._lock:
+            expired = self._expire_if_due_unlocked(self._clock_ns())
+            if expired is not None:
+                return expired
+            if (
+                type(origin) is not RaceOrigin
+                or self.phase != Phase.LEADERBOARD
+                or origin.race_id != self.race_id
+                or origin.mode_id != self.race_mode_id
+            ):
+                return StateChange(False)
+            self.persistence_error = error
+            self.persistence_status = "saved" if error is None else "error"
+            return self._change_unlocked("persistence", origin=origin)
+
+    def leaderboard_activity(self, race_id) -> StateChange:
+        with self._lock:
+            now_ns = self._clock_ns()
+            expired = self._expire_if_due_unlocked(now_ns)
+            if expired is not None:
+                return expired
             if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
                 return StateChange(False)
-            self.leaderboard_rows = [
-                {**row, "current_race": row.get("id") in highlighted_ids}
-                for row in rows
-            ]
-            self.persistence_error = persistence_error
-            return StateChange(True, "leaderboard_updated")
+            self.deadline_ns = now_ns + LEADERBOARD_TIMEOUT_NS
+            return self._change_unlocked("leaderboard_activity")
+
+    def _browse_origin_unlocked(self):
+        return BrowseOrigin(
+            epoch=self.epoch,
+            phase=self.phase,
+            mode_id=self.selected_mode_id,
+            race_id=self.race_id if self.phase == Phase.LEADERBOARD else None,
+        )
+
+    def capture_browse(self, mode_id, race_id) -> BrowseOrigin | None:
+        """Capture eligibility; recheck after the outside-lock page read."""
+        with self._lock:
+            if self.phase not in (Phase.READY, Phase.STOPPED, Phase.LEADERBOARD):
+                return None
+            if self.phase == Phase.LEADERBOARD and self.persistence_status == "pending":
+                return None
+            origin = self._browse_origin_unlocked()
+            if mode_id != origin.mode_id or race_id != origin.race_id:
+                return None
+            return origin
+
+    def browse_is_current(self, origin) -> tuple[bool, StateChange]:
+        """Return eligibility and any expiry transition for runtime publication."""
+        with self._lock:
+            expired = self._expire_if_due_unlocked(self._clock_ns())
+            current = (
+                type(origin) is BrowseOrigin
+                and self.phase in (Phase.READY, Phase.STOPPED, Phase.LEADERBOARD)
+                and (
+                    self.phase != Phase.LEADERBOARD
+                    or self.persistence_status in ("saved", "error")
+                )
+                and origin == self._browse_origin_unlocked()
+            )
+            return current, expired or StateChange(False)
 
     def dismiss_leaderboard(self, race_id: object) -> StateChange:
         with self._lock:
             if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
                 return StateChange(False)
-            self._reset_unlocked()
-            return StateChange(True, "reset")
+            diagnostic = self._reset_unlocked()
+            return self._change_unlocked("reset", diagnostic=diagnostic)
 
     def reset(self) -> StateChange:
         with self._lock:
-            self._reset_unlocked()
-            return StateChange(True, "reset")
+            diagnostic = self._reset_unlocked()
+            return self._change_unlocked("reset", diagnostic=diagnostic)
 
     def _remaining_seconds_unlocked(self, now_ns: int) -> int | None:
         if self.deadline_ns is None:
@@ -305,6 +522,7 @@ class RaceStateMachine:
         with self._lock:
             now_ns = self._clock_ns()
             return {
+                "revision": self.revision,
                 "race_id": self.race_id,
                 "phase": self.phase.value,
                 "durations_ms": {
@@ -336,10 +554,25 @@ class RaceStateMachine:
                         and player.completed_ns is None
                         and player.manual_stopped_ns is None
                     ),
+                    "presentation": (
+                        asdict(self.presentations[player_number])
+                        if self.presentations[player_number] is not None
+                        else None
+                    ),
                 }
                 for player_number, player in self.players.items()
             }
             return {
+                "revision": self.revision,
+                "mode": next(
+                    asdict(mode)
+                    for mode in self.registry.metadata()
+                    if mode.id == self.selected_mode_id
+                ),
+                "available_modes": [asdict(mode) for mode in self.registry.metadata()],
+                "browse_epoch": self.epoch,
+                "mode_error": self.mode_error,
+                "persistence_status": self.persistence_status,
                 "phase": self.phase.value,
                 "race_id": self.race_id,
                 "players": players,
@@ -357,6 +590,5 @@ class RaceStateMachine:
                     },
                 },
                 "remaining_seconds": self._remaining_seconds_unlocked(now_ns),
-                "leaderboard": [dict(row) for row in self.leaderboard_rows],
                 "persistence_error": self.persistence_error,
             }

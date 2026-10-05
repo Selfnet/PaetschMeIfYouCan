@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -17,9 +18,9 @@ class AdvancingUtcClock:
 
 
 def entry(
-    race_id: str, player: int, name: str, duration_ms: int
+    race_id: str, player: int, name: str, duration_ms: int, mode_id: str = "full-field"
 ) -> NewLeaderboardEntry:
-    return NewLeaderboardEntry(race_id, player, name, duration_ms)
+    return NewLeaderboardEntry(race_id, player, name, duration_ms, mode_id)
 
 
 def test_default_path_uses_service_home_and_environment_override(tmp_path, monkeypatch):
@@ -44,9 +45,12 @@ def test_store_initializes_and_reopens_existing_database(tmp_path):
     second = LeaderboardStore(path, now=clock)
 
     assert len(inserted) == 1
-    assert [(row.name, row.duration_ms) for row in second.top_entries()] == [
-        ("Ada", 1234)
-    ]
+    assert [
+        (row.name, row.duration_ms)
+        for row in second.page_entries(
+            "full-field", second.snapshot_boundary("full-field"), 0
+        ).rows
+    ] == [("Ada", 1234)]
 
 
 def test_insert_is_atomic_and_duplicate_race_player_is_idempotent(tmp_path):
@@ -61,35 +65,46 @@ def test_insert_is_atomic_and_duplicate_race_player_is_idempotent(tmp_path):
     retry_ids = store.insert_entries(submissions)
 
     assert retry_ids == first_ids
-    assert [row.name for row in store.top_entries()] == ["Ada", "Grace"]
+    assert [
+        row.name
+        for row in store.page_entries(
+            "full-field", store.snapshot_boundary("full-field"), 0
+        ).rows
+    ] == ["Ada", "Grace"]
 
 
 @pytest.mark.parametrize(
     "submission",
     [
-        entry("", 1, "Ada", 1),
-        entry(True, 1, "Ada", 1),
-        entry("race", 0, "Ada", 1),
-        entry("race", 3, "Ada", 1),
-        entry("race", True, "Ada", 1),
-        entry("race", 1, "", 1),
-        entry("race", 1, " " * 2, 1),
-        entry("race", 1, "A" * 13, 1),
-        entry("race", 1, "Ada\n", 1),
-        entry("race", 1, "Ada", -1),
-        entry("race", 1, "Ada", True),
+        ("", 1, "Ada", 1),
+        (True, 1, "Ada", 1),
+        ("race", 0, "Ada", 1),
+        ("race", 3, "Ada", 1),
+        ("race", True, "Ada", 1),
+        ("race", 1, "", 1),
+        ("race", 1, " " * 2, 1),
+        ("race", 1, "A" * 13, 1),
+        ("race", 1, "Ada\n", 1),
+        ("race", 1, "Ada", -1),
+        ("race", 1, "Ada", True),
+        ("race", 1, "Ada", 1, ""),
+        ("race", 1, "Ada", 1, None),
+        ("race", 1, "Ada", 1, True),
     ],
 )
 def test_insert_rejects_invalid_rows_without_partial_writes(tmp_path, submission):
     store = LeaderboardStore(tmp_path / "scores.sqlite3", now=AdvancingUtcClock())
 
     with pytest.raises(ValueError):
-        store.insert_entries([entry("valid", 1, "Valid", 10), submission])
+        store.insert_entries([entry("valid", 1, "Valid", 10), entry(*submission)])
 
-    assert store.top_entries() == []
+    assert (
+        store.page_entries("full-field", store.snapshot_boundary("full-field"), 0).rows
+        == ()
+    )
 
 
-def test_top_ten_uses_stable_order_and_competition_ranks(tmp_path):
+def test_limited_page_uses_stable_order_and_competition_ranks(tmp_path):
     store = LeaderboardStore(tmp_path / "scores.sqlite3", now=AdvancingUtcClock())
     store.insert_entries(
         [
@@ -100,7 +115,9 @@ def test_top_ten_uses_stable_order_and_competition_ranks(tmp_path):
         ]
     )
 
-    rows = store.top_entries()
+    rows = store.page_entries(
+        "full-field", store.snapshot_boundary("full-field"), 0, 10
+    ).rows
 
     assert len(rows) == 10
     assert [(row.rank, row.name, row.duration_ms) for row in rows[:3]] == [
@@ -109,3 +126,215 @@ def test_top_ten_uses_stable_order_and_competition_ranks(tmp_path):
         (3, "P2", 200),
     ]
     assert rows[-1].duration_ms == 900
+
+
+@pytest.fixture
+def legacy_database(tmp_path):
+    path = tmp_path / "legacy.sqlite3"
+    with sqlite3.connect(path) as connection:
+        connection.executescript("""
+            CREATE TABLE leaderboard_entries (
+                id INTEGER PRIMARY KEY,
+                race_id TEXT NOT NULL,
+                player_number INTEGER NOT NULL CHECK (player_number IN (1, 2)),
+                name TEXT NOT NULL CHECK (length(name) BETWEEN 1 AND 12),
+                duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
+                created_at TEXT NOT NULL,
+                UNIQUE (race_id, player_number)
+            );
+            CREATE INDEX leaderboard_time_idx
+                ON leaderboard_entries (duration_ms, created_at, id);
+            INSERT INTO leaderboard_entries VALUES
+                (7, 'old-race', 1, 'Ada', 100, '2026-01-01T00:00:00+00:00'),
+                (42, 'old-race', 2, 'Grace', 200, '2026-01-02T00:00:00+00:00');
+        """)
+    return path
+
+
+def test_legacy_migration_preserves_data_and_uniqueness_across_reopens(legacy_database):
+    for _ in range(3):
+        store = LeaderboardStore(legacy_database)
+        rows = store.page_entries(
+            "full-field", store.snapshot_boundary("full-field"), 0
+        ).rows
+        assert [
+            (
+                r.id,
+                r.race_id,
+                r.player_number,
+                r.name,
+                r.duration_ms,
+                r.created_at,
+                r.mode_id,
+                r.rank,
+            )
+            for r in rows
+        ] == [
+            (
+                7,
+                "old-race",
+                1,
+                "Ada",
+                100,
+                "2026-01-01T00:00:00+00:00",
+                "full-field",
+                1,
+            ),
+            (
+                42,
+                "old-race",
+                2,
+                "Grace",
+                200,
+                "2026-01-02T00:00:00+00:00",
+                "full-field",
+                2,
+            ),
+        ]
+        assert store.insert_entries(
+            [entry("old-race", 1, "Changed", 1, "quarter-field")]
+        ) == {7}
+        assert store.snapshot_boundary("quarter-field") == 0
+        with (
+            sqlite3.connect(legacy_database) as connection,
+            pytest.raises(sqlite3.IntegrityError),
+        ):
+            connection.execute(
+                "INSERT INTO leaderboard_entries (race_id, player_number, name, duration_ms, created_at, mode_id) VALUES ('old-race', 1, 'Ada', 1, 'now', 'quarter-field')"
+            )
+
+
+def test_migration_rolls_back_alter_table_when_index_creation_fails(legacy_database):
+    class FailingMigrationStore(LeaderboardStore):
+        def _connect(self):
+            connection = super()._connect()
+            connection.set_authorizer(
+                lambda action, *_: (
+                    sqlite3.SQLITE_DENY
+                    if action == sqlite3.SQLITE_CREATE_INDEX
+                    else sqlite3.SQLITE_OK
+                )
+            )
+            return connection
+
+    with pytest.raises(sqlite3.DatabaseError):
+        FailingMigrationStore(legacy_database)
+
+    with sqlite3.connect(legacy_database) as connection:
+        assert [
+            row[1]
+            for row in connection.execute("PRAGMA table_info(leaderboard_entries)")
+        ] == ["id", "race_id", "player_number", "name", "duration_ms", "created_at"]
+        assert connection.execute(
+            "SELECT id, name FROM leaderboard_entries ORDER BY id"
+        ).fetchall() == [(7, "Ada"), (42, "Grace")]
+    assert LeaderboardStore(legacy_database).snapshot_boundary("full-field") == 42
+
+
+def test_insert_sql_failure_rolls_back_entire_batch(legacy_database):
+    store = LeaderboardStore(legacy_database)
+    with sqlite3.connect(legacy_database) as connection:
+        connection.execute("""CREATE TRIGGER reject_bad BEFORE INSERT ON leaderboard_entries
+            WHEN NEW.race_id = 'bad' BEGIN SELECT RAISE(ABORT, 'forced failure'); END""")
+    with pytest.raises(sqlite3.IntegrityError, match="forced failure"):
+        store.insert_entries([entry("good", 1, "Good", 1), entry("bad", 1, "Bad", 2)])
+    assert store.snapshot_boundary("full-field") == 42
+    assert [r.id for r in store.page_entries("full-field", 42, 0).rows] == [7, 42]
+
+
+def test_pages_preserve_complete_snapshot_ranks_ties_and_mode_isolation(tmp_path):
+    store = LeaderboardStore(
+        tmp_path / "scores.sqlite3", now=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+    )
+    durations = [1000 + i if i < 49 or i > 51 else 1049 for i in range(121)]
+    store.insert_entries(
+        [
+            entry(f"race-{i}", 1, f"P{i}", duration)
+            for i, duration in enumerate(durations)
+        ]
+    )
+    boundary = store.snapshot_boundary("full-field")
+    original = [
+        store.page_entries("full-field", boundary, offset).rows
+        for offset in (0, 50, 100)
+    ]
+    other = LeaderboardStore(store.path)
+    other.insert_entries(
+        [entry("other", 1, "Other", 0, "quarter-field"), entry("later", 1, "Later", 0)]
+    )
+    pages = [
+        store.page_entries("full-field", boundary, offset) for offset in (0, 50, 100)
+    ]
+    assert [p.rows for p in pages] == original
+    assert [len(p.rows) for p in pages] == [50, 50, 21]
+    assert [p.next_offset for p in pages] == [50, 100, None]
+    rows = [row for page in pages for row in page.rows]
+    assert len({r.id for r in rows}) == 121
+    assert [r.name for r in rows] == [f"P{i}" for i in range(121)]
+    assert [r.rank for r in rows] == [
+        1 + sum(d < duration for d in durations) for duration in durations
+    ]
+    assert [r.rank for r in rows[49:53]] == [50, 50, 50, 53]
+    assert all(r.mode_id == "full-field" for r in rows)
+    assert store.page_entries("full-field", boundary, 121).rows == ()
+    assert store.page_entries("full-field", boundary, 999).next_offset is None
+    assert [
+        r.name
+        for r in store.page_entries(
+            "quarter-field", store.snapshot_boundary("quarter-field"), 0
+        ).rows
+    ] == ["Other"]
+
+
+def test_empty_snapshot_stays_empty(tmp_path):
+    store = LeaderboardStore(tmp_path / "scores.sqlite3")
+    boundary = store.snapshot_boundary("quarter-field")
+    assert boundary == 0
+    store.insert_entries([entry("later", 1, "Ada", 1, "quarter-field")])
+    page = store.page_entries("quarter-field", boundary, 0)
+    assert page.rows == ()
+    assert page.next_offset is None
+
+
+@pytest.mark.parametrize("field", ["boundary", "offset", "limit"])
+@pytest.mark.parametrize("value", [True, False, -1, 1.5, "1", None])
+def test_page_rejects_invalid_bounds(tmp_path, field, value):
+    store = LeaderboardStore(tmp_path / "scores.sqlite3")
+    bounds = {"boundary": 0, "offset": 0, "limit": 50}
+    bounds[field] = value
+    with pytest.raises(ValueError):
+        store.page_entries("full-field", **bounds)
+
+
+@pytest.mark.parametrize("limit", [0, 51])
+def test_page_rejects_out_of_range_limits(tmp_path, limit):
+    store = LeaderboardStore(tmp_path / "scores.sqlite3")
+    with pytest.raises(ValueError):
+        store.page_entries("full-field", 0, 0, limit)
+
+
+@pytest.mark.parametrize("mode_id", ["", None, True, 1])
+def test_queries_reject_invalid_modes_before_connecting(tmp_path, mode_id, monkeypatch):
+    store = LeaderboardStore(tmp_path / "scores.sqlite3")
+
+    def unexpected_connection():
+        pytest.fail("invalid mode reached SQL")
+
+    monkeypatch.setattr(store, "_connect", unexpected_connection)
+    with pytest.raises(ValueError):
+        store.snapshot_boundary(mode_id)
+    with pytest.raises(ValueError):
+        store.page_entries(mode_id, 0, 0)
+
+
+def test_modes_are_required_and_retired_identities_remain_readable(tmp_path):
+    with pytest.raises(TypeError):
+        NewLeaderboardEntry("race", 1, "Ada", 1)
+    store = LeaderboardStore(tmp_path / "scores.sqlite3")
+    ids = store.insert_entries([entry("old-mode", 1, "Ada", 0, "retired-mode-v1")])
+    boundary = store.snapshot_boundary("retired-mode-v1")
+    page = store.page_entries("retired-mode-v1", boundary, 0, 1)
+    assert {r.id for r in page.rows} == ids
+    assert page.next_offset is None
+    with pytest.raises(TypeError):
+        store.snapshot_boundary()
