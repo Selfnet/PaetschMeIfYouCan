@@ -51,7 +51,9 @@ class UnavailableLeaderboardStore:
     def snapshot_boundary(self, mode_id, leaderboard_slot=1):
         raise OSError("Leaderboard store is unavailable")
 
-    def page_entries(self, mode_id, boundary, offset, limit=50, leaderboard_slot=1):
+    def page_entries(
+        self, mode_id, boundary, offset, limit=50, leaderboard_slot=1, race_id=None
+    ):
         raise OSError("Leaderboard store is unavailable")
 
 
@@ -212,11 +214,16 @@ class GameRuntime:
                 if not safe_integer(captured_boundary):
                     raise ValueError("invalid snapshot boundary")
             page = self.store.page_entries(
-                mode_id, captured_boundary, offset, 50, leaderboard_slot
+                mode_id, captured_boundary, offset, 50, leaderboard_slot, race_id
             )
             rows = [
                 asdict(row)
-                | {"current_race": race_id is not None and row.race_id == race_id}
+                | {
+                    "current_race": row.race_duration_ms is not None,
+                    "personal_best": race_id is not None
+                    and row.race_id == race_id
+                    and bool(row.best_improved),
+                }
                 for row in page.rows
             ]
             next_offset = page.next_offset

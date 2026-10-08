@@ -128,6 +128,105 @@ def test_limited_page_uses_stable_order_and_competition_ranks(tmp_path):
     assert rows[-1].duration_ms == 900
 
 
+def test_names_collapse_using_best_time_and_unicode_casefold(tmp_path):
+    store = LeaderboardStore(tmp_path / "scores.sqlite3", now=AdvancingUtcClock())
+    store.insert_entries(
+        [
+            entry("old", 1, "Ada", 100),
+            entry("old", 2, "Grace", 200),
+            entry("new", 1, "ADA", 300),
+            entry("new", 2, "ada", 400),
+            entry("unicode-old", 1, "Straße", 500),
+            entry("unicode-new", 2, "STRASSE", 200),
+            entry("accent-old", 1, "Änne", 600),
+            entry("accent-new", 1, "änne", 700),
+        ]
+    )
+    store.insert_entries([entry("new", 2, "ada", 400)])
+    reopened = LeaderboardStore(store.path)
+    rows = reopened.page_entries(
+        "full-field", reopened.snapshot_boundary("full-field"), 0
+    ).rows
+    assert [(r.rank, r.name, r.duration_ms, r.attempts) for r in rows] == [
+        (1, "ada", 100, 3),
+        (2, "Grace", 200, 1),
+        (2, "STRASSE", 200, 2),
+        (4, "änne", 600, 2),
+    ]
+    assert rows[0].race_id == "old"
+    assert rows[0].player_number == 1
+    assert (rows[0].latest_race_id, rows[0].latest_duration_ms) == ("new", 400)
+    with sqlite3.connect(store.path) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM leaderboard_entries"
+        ).fetchone() == (8,)
+
+
+def test_grouped_pages_count_players_and_freeze_best_and_latest_attempts(tmp_path):
+    store = LeaderboardStore(
+        tmp_path / "scores.sqlite3", now=lambda: datetime(2026, 1, 1, tzinfo=UTC)
+    )
+    for prefix, name_prefix, duration_base in [("old", "P", 0), ("new", "p", 1000)]:
+        store.insert_entries(
+            [
+                entry(f"{prefix}-{i}", 1, f"{name_prefix}{i}", duration_base + i)
+                for i in range(60)
+            ]
+        )
+    boundary = store.snapshot_boundary("full-field")
+    first = store.page_entries("full-field", boundary, 0)
+    store.insert_entries(
+        [
+            entry("later", 1, "P55", 0),
+            entry("other-mode", 1, "P55", 0, "quarter-field"),
+            NewLeaderboardEntry("other-slot", 1, "P55", 0, "full-field", 2),
+        ]
+    )
+    second = store.page_entries("full-field", boundary, first.next_offset)
+    assert first.next_offset == 50
+    assert second.next_offset is None
+    rows = first.rows + second.rows
+    assert [(r.rank, r.name, r.duration_ms, r.attempts) for r in rows] == [
+        (i + 1, f"p{i}", i, 2) for i in range(60)
+    ]
+    assert store.page_entries("full-field", boundary, 0) == first
+    assert [r.latest_duration_ms for r in rows] == [1000 + i for i in range(60)]
+    current = store.page_entries("full-field", store.snapshot_boundary("full-field"), 0)
+    improved = next(row for row in current.rows if row.name == "P55")
+    assert (improved.rank, improved.duration_ms, improved.attempts) == (1, 0, 3)
+    for mode, slot in [("quarter-field", 1), ("full-field", 2)]:
+        isolated = store.page_entries(
+            mode, store.snapshot_boundary(mode, slot), 0, leaderboard_slot=slot
+        )
+        assert [(r.name, r.attempts) for r in isolated.rows] == [("P55", 1)]
+
+
+def test_equal_best_uses_latest_matching_timestamp_without_improvement(tmp_path):
+    store = LeaderboardStore(tmp_path / "scores.sqlite3", now=AdvancingUtcClock())
+    store.insert_entries([entry("first", 1, "Ada", 100)])
+    store.insert_entries([entry("equal", 2, "ADA", 100)])
+    store.insert_entries([entry("worse", 1, "ada", 200)])
+    row = store.page_entries(
+        "full-field", store.snapshot_boundary("full-field"), 0
+    ).rows[0]
+    assert (row.race_id, row.duration_ms, row.attempts) == ("equal", 100, 3)
+    assert (row.latest_race_id, row.latest_duration_ms) == ("worse", 200)
+    assert not row.best_improved
+
+
+def test_same_name_both_players_share_row_and_new_personal_best(tmp_path):
+    store = LeaderboardStore(tmp_path / "scores.sqlite3")
+    store.insert_entries([entry("old", 1, "Ada", 200)])
+    store.insert_entries(
+        [entry("current", 1, "ADA", 100), entry("current", 2, "ada", 100)]
+    )
+    row = store.page_entries(
+        "full-field", store.snapshot_boundary("full-field"), 0, race_id="current"
+    ).rows[0]
+    assert (row.duration_ms, row.race_duration_ms, row.attempts) == (100, 100, 3)
+    assert row.best_improved
+
+
 @pytest.fixture
 def legacy_database(tmp_path):
     path = tmp_path / "legacy.sqlite3"

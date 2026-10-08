@@ -290,8 +290,15 @@ def test_invalid_pages_do_not_read(app_bundle, monkeypatch, change):
     assert client.get_received() == []
 
 
-def test_persistence_is_separate_from_pages_and_highlights_origin(app_bundle, clock):
+@pytest.mark.parametrize("previous_time", [None, 1, 1000, 2000])
+def test_persistence_highlights_player_and_detects_personal_best(
+    app_bundle, clock, previous_time
+):
     app, sio, runtime = app_bundle
+    if previous_time is not None:
+        runtime.store.insert_entries(
+            [NewLeaderboardEntry("historical", 1, "ADA", previous_time, "full-field")]
+        )
     race_id = finish_race(runtime, clock)
     client = sio.test_client(app)
     client.get_received()
@@ -302,6 +309,47 @@ def test_persistence_is_separate_from_pages_and_highlights_origin(app_bundle, cl
     page = latest_event(client, "leaderboard_snapshot")
     assert [row["name"] for row in page["rows"]] == ["Ada", "Grace"]
     assert all(row["current_race"] for row in page["rows"])
+    ada, grace = page["rows"]
+    assert ada["attempts"] == (1 if previous_time is None else 2)
+    assert grace["attempts"] == 1
+    assert ada["duration_ms"] == min(
+        previous_time if previous_time is not None else 1000, 1000
+    )
+    assert ada["latest_duration_ms"] == 1000
+    assert ada["race_duration_ms"] == 1000
+    assert ada["personal_best"] is (previous_time is None or previous_time > 1000)
+    assert grace["personal_best"] is True
+    client.emit("dismiss_leaderboard", {"race_id": race_id})
+    client.get_received()
+    client.emit("request_leaderboard", page_request(request_id=2))
+    idle = latest_event(client, "leaderboard_snapshot")
+    assert all(
+        not row["current_race"] and not row["personal_best"] for row in idle["rows"]
+    )
+
+
+@pytest.mark.parametrize("late_time", [500, 1500])
+def test_current_race_details_survive_late_save_from_previous_race(
+    app_bundle, clock, late_time
+):
+    app, sio, runtime = app_bundle
+    race_id = finish_race(runtime, clock)
+    runtime.handle_change(runtime.race.submit_name(race_id, 2, "Grace"))
+    runtime.store.insert_entries(
+        [NewLeaderboardEntry("late-old-race", 1, "ADA", late_time, "full-field")]
+    )
+    client = sio.test_client(app)
+    client.get_received()
+    client.emit("request_leaderboard", page_request(race_id=race_id))
+    ada = next(
+        row
+        for row in latest_event(client, "leaderboard_snapshot")["rows"]
+        if row["name"] == "ADA"
+    )
+    assert ada["current_race"] is True
+    assert ada["race_duration_ms"] == 1000
+    assert ada["duration_ms"] == min(1000, late_time)
+    assert ada["personal_best"] is (late_time > 1000)
 
 
 def run_blocked(operation, entered, release):

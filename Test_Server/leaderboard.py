@@ -27,6 +27,11 @@ class RankedLeaderboardEntry:
     mode_id: str
     rank: int
     leaderboard_slot: int = 1
+    attempts: int = 1
+    latest_race_id: str = ""
+    latest_duration_ms: int = 0
+    best_improved: bool = True
+    race_duration_ms: int | None = None
 
 
 @dataclass(frozen=True)
@@ -52,6 +57,7 @@ class LeaderboardStore:
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=5.0)
         connection.execute("PRAGMA busy_timeout = 5000")
+        connection.create_function("casefold", 1, str.casefold, deterministic=True)
         return connection
 
     def _initialize(self) -> None:
@@ -152,9 +158,12 @@ class LeaderboardStore:
         offset: int,
         limit: int = 50,
         leaderboard_slot: int = 1,
+        race_id: str | None = None,
     ) -> LeaderboardPage:
         self._validate_mode(mode_id)
         self.validate_slot(leaderboard_slot)
+        if race_id is not None and (not isinstance(race_id, str) or not race_id):
+            raise ValueError("race_id must be a non-empty string or None")
         if type(boundary) is not int or boundary < 0:
             raise ValueError("boundary must be a non-negative integer")
         if type(offset) is not int or offset < 0:
@@ -163,16 +172,46 @@ class LeaderboardStore:
             raise ValueError("limit must be an integer between 1 and 50")
         with self._connect() as connection:
             rows = connection.execute(
-                """SELECT id, race_id, player_number, name, duration_ms, created_at, mode_id, rank, leaderboard_slot
-                   FROM (
-                       SELECT id, race_id, player_number, name, duration_ms, created_at, mode_id, leaderboard_slot,
-                               RANK() OVER (ORDER BY duration_ms) AS rank
+                """WITH attempts AS (
+                       SELECT *,
+                              COUNT(*) OVER (PARTITION BY casefold(name)) AS attempts,
+                              FIRST_VALUE(name) OVER (
+                                  PARTITION BY casefold(name) ORDER BY id DESC
+                              ) AS latest_name,
+                              FIRST_VALUE(race_id) OVER (
+                                  PARTITION BY casefold(name) ORDER BY id DESC
+                              ) AS latest_race_id,
+                              FIRST_VALUE(duration_ms) OVER (
+                                  PARTITION BY casefold(name) ORDER BY id DESC
+                              ) AS latest_duration_ms,
+                              ROW_NUMBER() OVER (
+                                  PARTITION BY casefold(name) ORDER BY duration_ms, id DESC
+                              ) AS best
                        FROM leaderboard_entries
                        WHERE mode_id = ? AND leaderboard_slot = ? AND id <= ?
                    )
+                   SELECT id, race_id, player_number, latest_name, duration_ms, created_at,
+                          mode_id, rank, leaderboard_slot, attempts, latest_race_id,
+                          latest_duration_ms,
+                          NOT EXISTS (
+                              SELECT 1 FROM attempts prior
+                              WHERE casefold(prior.name) = casefold(ranked.name)
+                                AND prior.race_id != ranked.race_id
+                                AND prior.duration_ms <= ranked.duration_ms
+                          ),
+                          (SELECT duration_ms FROM attempts current_attempt
+                           WHERE current_attempt.race_id = ?
+                             AND casefold(current_attempt.name) = casefold(ranked.name)
+                           ORDER BY current_attempt.id DESC LIMIT 1)
+                   FROM (
+                       SELECT *,
+                                RANK() OVER (ORDER BY duration_ms) AS rank
+                       FROM attempts
+                       WHERE best = 1
+                   ) ranked
                    ORDER BY duration_ms, created_at, id
                    LIMIT ? OFFSET ?""",
-                (mode_id, leaderboard_slot, boundary, limit + 1, offset),
+                (mode_id, leaderboard_slot, boundary, race_id, limit + 1, offset),
             ).fetchall()
             return LeaderboardPage(
                 tuple(RankedLeaderboardEntry(*row) for row in rows[:limit]),
