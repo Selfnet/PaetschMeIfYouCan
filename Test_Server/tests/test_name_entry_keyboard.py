@@ -66,20 +66,36 @@ console.log(JSON.stringify({emitted, prevented,
 
 
 @pytest.mark.parametrize("order", [[1, 2], [2, 1]])
+@pytest.mark.parametrize("slot", [0, 1])
 @pytest.mark.parametrize(
     "names",
-    [["Ada", "Grace"], ["Ada", ""], ["", "Grace"], ["", ""], ["Ada", "  "]],
+    [
+        ["Ada", "Grace"],
+        ["Ada", ""],
+        ["", "Grace"],
+        ["", ""],
+        ["Ada", "  "],
+        ["  ", "Grace"],
+    ],
 )
-def test_enter_submits_optional_names_with_original_race(order, names):
+def test_enter_advances_or_submits_optional_names_with_original_race(
+    order, names, slot
+):
     result = run_keyboard(
         {
             "order": order,
             "names": names,
-            "focus": order[0],
+            "focus": order[slot],
             "replaceRace": True,
             "keys": [{"key": "Enter"}],
         }
     )
+    if slot == 0 and not names[order[1] - 1].strip():
+        assert result["focus"] == order[1]
+        assert result["emitted"] == []
+        assert result["disabled"] == [False, False]
+        assert result["prevented"] == [True]
+        return
     assert result["emitted"] == [
         {
             "event": "submit_name",
@@ -90,6 +106,31 @@ def test_enter_submits_optional_names_with_original_race(order, names):
         for player in order
     ]
     assert result["prevented"] == [True]
+
+
+@pytest.mark.parametrize("order", [[1, 2], [2, 1]])
+@pytest.mark.parametrize("names", [["Ada", ""], ["", "Grace"], ["", ""], ["  ", "  "]])
+def test_two_enters_finish_name_entry_with_optional_names(order, names):
+    names[order[1] - 1] = "  "
+    result = run_keyboard(
+        {
+            "order": order,
+            "names": names,
+            "focus": order[0],
+            "keys": [{"key": "Enter"}, {"key": "Enter"}],
+        }
+    )
+    assert result["focus"] == order[1]
+    assert result["emitted"] == [
+        {
+            "event": "submit_name",
+            "race_id": "original-race",
+            "player_number": player,
+            "draft": names[player - 1],
+        }
+        for player in order
+    ]
+    assert result["prevented"] == [True, True]
 
 
 @pytest.mark.parametrize("order", [[1, 2], [2, 1]])

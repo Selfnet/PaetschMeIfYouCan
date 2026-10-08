@@ -5,10 +5,11 @@ Ein Geschicklichkeitsspiel mit Spaß am Gerät
 
 This is a required interaction contract. Preserve it when changing the dashboard:
 
-- **Enter:** submit both players' names and proceed to the leaderboard. Names are optional: empty or whitespace-only names skip that player's leaderboard entry.
+- **Enter in the first displayed input:** move to the second input if its name is empty or whitespace-only; otherwise submit both names and proceed to the leaderboard.
+- **Enter in the second displayed input:** submit both names and proceed to the leaderboard, even when either name is blank. Empty or whitespace-only names skip that player's leaderboard entry.
 - **Tab / Shift+Tab:** cycle between the name inputs, including wrapping; never submit names or advance to the leaderboard, even when both names are filled.
 
-These rules apply regardless of which player wins or whether the race is tied. Automatic name-entry timeout is separate from keyboard submission.
+The inputs are displayed in result order (winner first), not fixed player-number order. These rules apply regardless of which player wins or whether the race is tied. Automatic name-entry timeout is separate from keyboard submission.
 
 [Keyboard regression tests](Test_Server/tests/test_name_entry_keyboard.py) execute the dashboard's actual JavaScript handler. Run them when changing name entry or keyboard handling; they do not test live serial hardware.
 
