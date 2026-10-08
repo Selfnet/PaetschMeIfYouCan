@@ -39,13 +39,19 @@ class BrowseToken:
 
 
 class UnavailableLeaderboardStore:
+    def selected_slot(self):
+        raise OSError("Leaderboard store is unavailable")
+
+    def set_selected_slot(self, leaderboard_slot):
+        raise OSError("Leaderboard store is unavailable")
+
     def insert_entries(self, entries):
         raise OSError("Leaderboard store is unavailable")
 
-    def snapshot_boundary(self, mode_id):
+    def snapshot_boundary(self, mode_id, leaderboard_slot=1):
         raise OSError("Leaderboard store is unavailable")
 
-    def page_entries(self, mode_id, boundary, offset, limit=50):
+    def page_entries(self, mode_id, boundary, offset, limit=50, leaderboard_slot=1):
         raise OSError("Leaderboard store is unavailable")
 
 
@@ -77,6 +83,30 @@ class GameRuntime:
             self._publish_change(change)
         self._after_change(change)
 
+    def select_leaderboard_slot(self, leaderboard_slot):
+        with self._publication_lock:
+            error = None
+            accepted = False
+            if type(leaderboard_slot) is not int or not 1 <= leaderboard_slot <= 9:
+                error = "Leaderboard slot must be an integer between 1 and 9"
+            elif self.race.snapshot()["phase"] != Phase.READY:
+                error = "Leaderboard slot selection is only available when ready"
+            else:
+                try:
+                    self.store.set_selected_slot(leaderboard_slot)
+                except (sqlite3.Error, OSError, ValueError):
+                    self.logger.exception("Could not save selected leaderboard slot")
+                    error = "Leaderboard slot could not be saved"
+                else:
+                    change = self.race.select_leaderboard_slot(leaderboard_slot)
+                    self._publish_change(change)
+                    accepted = change.action == "leaderboard_slot_selected"
+            return {
+                "accepted": accepted,
+                "leaderboard_slot": self.race.snapshot()["leaderboard_slot"],
+                "error": error,
+            }
+
     def _publish_change(self, change):
         if change.diagnostic:
             self.logger.error("Mode evaluation failed: %s", change.diagnostic)
@@ -98,6 +128,7 @@ class GameRuntime:
                         player_number=item.player_number,
                         name=item.name,
                         duration_ms=item.duration_ms,
+                        leaderboard_slot=item.leaderboard_slot,
                     )
                     for item in submissions
                 ]
@@ -133,6 +164,7 @@ class GameRuntime:
             data.get(key) for key in ("request_id", "offset", "boundary")
         )
         mode_id, race_id = data.get("mode_id"), data.get("race_id")
+        leaderboard_slot = data.get("leaderboard_slot", 1)
         if (
             not safe_integer(request_id, 1)
             or not safe_integer(offset)
@@ -140,10 +172,12 @@ class GameRuntime:
             or (boundary is None and offset != 0)
             or not isinstance(mode_id, str)
             or (race_id is not None and not isinstance(race_id, str))
+            or type(leaderboard_slot) is not int
+            or not 1 <= leaderboard_slot <= 9
         ):
             return
         with self._publication_lock:
-            origin = self.race.capture_browse(mode_id, race_id)
+            origin = self.race.capture_browse(mode_id, race_id, leaderboard_slot)
             current, change = self.race.browse_is_current(origin)
             self._publish_change(change)
         self._after_change(change)
@@ -172,10 +206,14 @@ class GameRuntime:
         captured_boundary = boundary
         try:
             if boundary is None:
-                captured_boundary = self.store.snapshot_boundary(mode_id)
+                captured_boundary = self.store.snapshot_boundary(
+                    mode_id, leaderboard_slot
+                )
                 if not safe_integer(captured_boundary):
                     raise ValueError("invalid snapshot boundary")
-            page = self.store.page_entries(mode_id, captured_boundary, offset, 50)
+            page = self.store.page_entries(
+                mode_id, captured_boundary, offset, 50, leaderboard_slot
+            )
             rows = [
                 asdict(row)
                 | {"current_race": race_id is not None and row.race_id == race_id}
@@ -200,6 +238,7 @@ class GameRuntime:
                             {
                                 "request_id": request_id,
                                 "mode_id": mode_id,
+                                "leaderboard_slot": leaderboard_slot,
                                 "race_id": race_id,
                                 "boundary": token.boundary,
                                 "offset": offset,
@@ -358,6 +397,11 @@ def register_socket_events(app, socketio, runtime):
         if isinstance(data, dict) and isinstance(data.get("race_id"), str):
             runtime.apply(runtime.race.leaderboard_activity, data["race_id"])
 
+    @socketio.on("select_leaderboard_slot")
+    def select_leaderboard_slot(data=None):
+        slot = data.get("leaderboard_slot") if isinstance(data, dict) else None
+        return runtime.select_leaderboard_slot(slot)
+
     @socketio.on("name_draft")
     def name_draft(data):
         if isinstance(data, dict):
@@ -423,6 +467,12 @@ def create_app(
         except (sqlite3.Error, OSError):
             app.logger.exception("Could not initialize leaderboard scores")
             store = UnavailableLeaderboardStore()
+    try:
+        kwargs["leaderboard_slot"] = store.selected_slot()
+    except (sqlite3.Error, OSError, ValueError):
+        app.logger.exception(
+            "Could not restore selected leaderboard slot; using slot 1"
+        )
     runtime = GameRuntime(
         socketio,
         RaceStateMachine(**kwargs),

@@ -153,14 +153,18 @@ def test_reconnect_has_cached_presentation(app_bundle):
     assert runtime.serial_threads is None
 
 
-def test_overview_exposes_mode_objective_and_recoverable_error(app_bundle):
+def test_overview_exposes_mode_description_slot_controls_and_recoverable_error(
+    app_bundle,
+):
     app, _, _ = app_bundle
     html = app.test_client().get("/").get_data(as_text=True)
     for element_id in (
         "modeButton",
         "currentMode",
-        "objective1",
-        "objective2",
+        "modeDescription",
+        "idleLeaderboardSlot",
+        "viewLeaderboardSlot",
+        "leaderboardSlotHint",
         "modeError",
     ):
         assert f'id="{element_id}"' in html

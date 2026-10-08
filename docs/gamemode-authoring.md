@@ -127,6 +127,12 @@ owns storage and migration: legacy rows without a mode column are assigned
 `full-field`, preserving their IDs and existing data. New modes need no schema
 change; do not retag historical scores to a new ruleset.
 
+Leaderboard slots are a separate event namespace, not mode IDs. The runtime
+captures the slot alongside the mode at race start, and queries filter by both.
+Modes must not select slots or handle persistence. The [leaderboard slot contract](../README.md#leaderboard-slots)
+describes switching, restart persistence, migration, and rollback constraints;
+it does not define mode rules or firmware behavior.
+
 ## Examples And Checks
 
 - [`_evaluate_field` and `_FieldSession`](../Test_Server/gamemodes.py) show static

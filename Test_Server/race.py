@@ -34,12 +34,14 @@ class ScoreSubmission:
     player_number: int
     name: str
     duration_ms: int
+    leaderboard_slot: int = 1
 
 
 @dataclass(frozen=True)
 class RaceOrigin:
     race_id: str
     mode_id: str
+    leaderboard_slot: int = 1
 
 
 @dataclass(frozen=True)
@@ -48,6 +50,7 @@ class BrowseOrigin:
     phase: Phase
     mode_id: str
     race_id: str | None
+    leaderboard_slot: int = 1
 
 
 @dataclass(frozen=True)
@@ -79,12 +82,16 @@ class RaceStateMachine:
         clock_ns: Callable[[], int] = time.monotonic_ns,
         race_id_factory: Callable[[], str] = lambda: str(uuid.uuid4()),
         registry: ModeRegistry = BUILTIN_MODES,
+        leaderboard_slot: int = 1,
     ) -> None:
         self._clock_ns = clock_ns
         self._race_id_factory = race_id_factory
         self._lock = threading.RLock()
         self.registry = registry
         self.selected_mode_id = "full-field"
+        if type(leaderboard_slot) is not int or not 1 <= leaderboard_slot <= 9:
+            raise ValueError("leaderboard_slot must be an integer between 1 and 9")
+        self.leaderboard_slot = leaderboard_slot
         self.registry.get(self.selected_mode_id)
         self.boards = {1: GameBoard(), 2: GameBoard()}
         self.context = EvaluationContext(verify=True)
@@ -125,6 +132,7 @@ class RaceStateMachine:
         self.deadline_ns: int | None = None
         self.sessions = {}
         self.race_mode_id = None
+        self.race_leaderboard_slot = None
         self.mode_error = None
         self.persistence_status = "idle"
         self.persistence_error: str | None = None
@@ -151,6 +159,7 @@ class RaceStateMachine:
         self.phase = Phase.RACING
         self.race_id = self._race_id_factory()
         self.race_mode_id = self.selected_mode_id
+        self.race_leaderboard_slot = self.leaderboard_slot
         self.started_ns = now_ns
         try:
             mode = self.registry.get(self.race_mode_id)
@@ -292,6 +301,20 @@ class RaceStateMachine:
             diagnostic = self._preview_unlocked()
             return self._change_unlocked("mode_selected", diagnostic=diagnostic)
 
+    def select_leaderboard_slot(self, leaderboard_slot) -> StateChange:
+        with self._lock:
+            if (
+                self.phase != Phase.READY
+                or type(leaderboard_slot) is not int
+                or not 1 <= leaderboard_slot <= 9
+            ):
+                return StateChange(False)
+            if leaderboard_slot == self.leaderboard_slot:
+                return StateChange(False, action="leaderboard_slot_selected")
+            self.leaderboard_slot = leaderboard_slot
+            self.epoch += 1
+            return self._change_unlocked("leaderboard_slot_selected")
+
     def set_verification(self, verify) -> StateChange:
         with self._lock:
             if type(verify) is not bool or verify == self.context.verify:
@@ -398,6 +421,7 @@ class RaceStateMachine:
                 player_number=player_number,
                 name=self.name_fields[player_number].draft,
                 duration_ms=self._duration_ms_unlocked(player_number, now_ns),
+                leaderboard_slot=self.race_leaderboard_slot,
             )
             for player_number in self.result_order
             if self.name_fields[player_number].resolved
@@ -412,7 +436,11 @@ class RaceStateMachine:
         return self._change_unlocked(
             "leaderboard",
             submissions=submissions,
-            origin=RaceOrigin(race_id=self.race_id, mode_id=self.race_mode_id),
+            origin=RaceOrigin(
+                race_id=self.race_id,
+                mode_id=self.race_mode_id,
+                leaderboard_slot=self.race_leaderboard_slot,
+            ),
         )
 
     def tick(self) -> StateChange:
@@ -449,6 +477,7 @@ class RaceStateMachine:
                 or self.phase != Phase.LEADERBOARD
                 or origin.race_id != self.race_id
                 or origin.mode_id != self.race_mode_id
+                or origin.leaderboard_slot != self.race_leaderboard_slot
             ):
                 return StateChange(False)
             self.persistence_error = error
@@ -472,9 +501,16 @@ class RaceStateMachine:
             phase=self.phase,
             mode_id=self.selected_mode_id,
             race_id=self.race_id if self.phase == Phase.LEADERBOARD else None,
+            leaderboard_slot=(
+                self.race_leaderboard_slot
+                if self.phase == Phase.LEADERBOARD
+                else self.leaderboard_slot
+            ),
         )
 
-    def capture_browse(self, mode_id, race_id) -> BrowseOrigin | None:
+    def capture_browse(
+        self, mode_id, race_id, leaderboard_slot=1
+    ) -> BrowseOrigin | None:
         """Capture eligibility; recheck after the outside-lock page read."""
         with self._lock:
             if self.phase not in (Phase.READY, Phase.STOPPED, Phase.LEADERBOARD):
@@ -482,7 +518,12 @@ class RaceStateMachine:
             if self.phase == Phase.LEADERBOARD and self.persistence_status == "pending":
                 return None
             origin = self._browse_origin_unlocked()
-            if mode_id != origin.mode_id or race_id != origin.race_id:
+            if (
+                mode_id != origin.mode_id
+                or race_id != origin.race_id
+                or type(leaderboard_slot) is not int
+                or leaderboard_slot != origin.leaderboard_slot
+            ):
                 return None
             return origin
 
@@ -571,6 +612,7 @@ class RaceStateMachine:
                 ),
                 "available_modes": [asdict(mode) for mode in self.registry.metadata()],
                 "browse_epoch": self.epoch,
+                "leaderboard_slot": self.leaderboard_slot,
                 "mode_error": self.mode_error,
                 "persistence_status": self.persistence_status,
                 "phase": self.phase.value,

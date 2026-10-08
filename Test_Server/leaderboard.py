@@ -13,6 +13,7 @@ class NewLeaderboardEntry:
     name: str
     duration_ms: int
     mode_id: str
+    leaderboard_slot: int = 1
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class RankedLeaderboardEntry:
     created_at: str
     mode_id: str
     rank: int
+    leaderboard_slot: int = 1
 
 
 @dataclass(frozen=True)
@@ -64,9 +66,42 @@ class LeaderboardStore:
                 connection.execute(
                     "ALTER TABLE leaderboard_entries ADD COLUMN mode_id TEXT NOT NULL DEFAULT 'full-field'"
                 )
+            if "leaderboard_slot" not in columns:
+                connection.execute(
+                    "ALTER TABLE leaderboard_entries ADD COLUMN leaderboard_slot "
+                    "INTEGER NOT NULL DEFAULT 1 CHECK (leaderboard_slot BETWEEN 1 AND 9)"
+                )
             connection.execute(
-                "CREATE INDEX IF NOT EXISTS leaderboard_mode_time_idx "
-                "ON leaderboard_entries (mode_id, duration_ms, created_at, id)"
+                "CREATE INDEX IF NOT EXISTS leaderboard_slot_mode_time_idx "
+                "ON leaderboard_entries (leaderboard_slot, mode_id, duration_ms, created_at, id)"
+            )
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS leaderboard_settings ("
+                "id INTEGER PRIMARY KEY CHECK (id = 1), "
+                "leaderboard_slot INTEGER NOT NULL CHECK (leaderboard_slot BETWEEN 1 AND 9))"
+            )
+            connection.execute(
+                "INSERT INTO leaderboard_settings (id, leaderboard_slot) VALUES (1, 1) "
+                "ON CONFLICT(id) DO NOTHING"
+            )
+
+    def selected_slot(self) -> int:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT leaderboard_slot FROM leaderboard_settings WHERE id = 1"
+            ).fetchone()
+        if row is None:
+            raise ValueError("leaderboard settings are missing")
+        self.validate_slot(row[0])
+        return row[0]
+
+    def set_selected_slot(self, leaderboard_slot: int) -> None:
+        self.validate_slot(leaderboard_slot)
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO leaderboard_settings (id, leaderboard_slot) VALUES (1, ?) "
+                "ON CONFLICT(id) DO UPDATE SET leaderboard_slot = excluded.leaderboard_slot",
+                (leaderboard_slot,),
             )
 
     def insert_entries(self, entries: Sequence[NewLeaderboardEntry]) -> set[int]:
@@ -78,8 +113,8 @@ class LeaderboardStore:
             for item in validated:
                 connection.execute(
                     """INSERT INTO leaderboard_entries
-                       (race_id, player_number, name, duration_ms, created_at, mode_id)
-                       VALUES (?, ?, ?, ?, ?, ?)
+                       (race_id, player_number, name, duration_ms, created_at, mode_id, leaderboard_slot)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)
                        ON CONFLICT(race_id, player_number) DO NOTHING""",
                     (
                         item.race_id,
@@ -88,6 +123,7 @@ class LeaderboardStore:
                         item.duration_ms,
                         self.now().isoformat(),
                         item.mode_id,
+                        item.leaderboard_slot,
                     ),
                 )
             return {
@@ -99,18 +135,26 @@ class LeaderboardStore:
                 )
             }
 
-    def snapshot_boundary(self, mode_id: str) -> int:
+    def snapshot_boundary(self, mode_id: str, leaderboard_slot: int = 1) -> int:
         self._validate_mode(mode_id)
+        self.validate_slot(leaderboard_slot)
         with self._connect() as connection:
             return connection.execute(
-                "SELECT COALESCE(MAX(id), 0) FROM leaderboard_entries WHERE mode_id = ?",
-                (mode_id,),
+                "SELECT COALESCE(MAX(id), 0) FROM leaderboard_entries "
+                "WHERE mode_id = ? AND leaderboard_slot = ?",
+                (mode_id, leaderboard_slot),
             ).fetchone()[0]
 
     def page_entries(
-        self, mode_id: str, boundary: int, offset: int, limit: int = 50
+        self,
+        mode_id: str,
+        boundary: int,
+        offset: int,
+        limit: int = 50,
+        leaderboard_slot: int = 1,
     ) -> LeaderboardPage:
         self._validate_mode(mode_id)
+        self.validate_slot(leaderboard_slot)
         if type(boundary) is not int or boundary < 0:
             raise ValueError("boundary must be a non-negative integer")
         if type(offset) is not int or offset < 0:
@@ -119,21 +163,26 @@ class LeaderboardStore:
             raise ValueError("limit must be an integer between 1 and 50")
         with self._connect() as connection:
             rows = connection.execute(
-                """SELECT id, race_id, player_number, name, duration_ms, created_at, mode_id, rank
+                """SELECT id, race_id, player_number, name, duration_ms, created_at, mode_id, rank, leaderboard_slot
                    FROM (
-                       SELECT id, race_id, player_number, name, duration_ms, created_at, mode_id,
+                       SELECT id, race_id, player_number, name, duration_ms, created_at, mode_id, leaderboard_slot,
                                RANK() OVER (ORDER BY duration_ms) AS rank
                        FROM leaderboard_entries
-                       WHERE mode_id = ? AND id <= ?
+                       WHERE mode_id = ? AND leaderboard_slot = ? AND id <= ?
                    )
                    ORDER BY duration_ms, created_at, id
                    LIMIT ? OFFSET ?""",
-                (mode_id, boundary, limit + 1, offset),
+                (mode_id, leaderboard_slot, boundary, limit + 1, offset),
             ).fetchall()
             return LeaderboardPage(
                 tuple(RankedLeaderboardEntry(*row) for row in rows[:limit]),
                 offset + limit if len(rows) > limit else None,
             )
+
+    @staticmethod
+    def validate_slot(leaderboard_slot: object) -> None:
+        if type(leaderboard_slot) is not int or not 1 <= leaderboard_slot <= 9:
+            raise ValueError("leaderboard_slot must be an integer between 1 and 9")
 
     @staticmethod
     def _validate_mode(mode_id: str) -> None:
@@ -143,6 +192,7 @@ class LeaderboardStore:
     @staticmethod
     def _validate(entry: NewLeaderboardEntry) -> NewLeaderboardEntry:
         LeaderboardStore._validate_mode(entry.mode_id)
+        LeaderboardStore.validate_slot(entry.leaderboard_slot)
         if not isinstance(entry.race_id, str) or not entry.race_id:
             raise ValueError("race_id is required")
         if type(entry.player_number) is not int or entry.player_number not in (1, 2):
@@ -169,6 +219,7 @@ CREATE TABLE IF NOT EXISTS leaderboard_entries (
     duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
     created_at TEXT NOT NULL,
     mode_id TEXT NOT NULL,
+    leaderboard_slot INTEGER NOT NULL DEFAULT 1 CHECK (leaderboard_slot BETWEEN 1 AND 9),
     UNIQUE (race_id, player_number)
 );
 """
