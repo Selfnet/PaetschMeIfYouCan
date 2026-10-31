@@ -78,7 +78,7 @@ input:focus-visible,
 .stage-header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 24px;
   padding: 18px 40px;
   background: #efefef;
