@@ -5,390 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pätsch me if you can</title>
     <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
-    <style>
-        :root {
-            --paper: #fffdf2;
-            --ink: #090909;
-            --blue: #004dff;
-            --red: #ff1616;
-            --yellow: #fff200;
-            --green: #00c853;
-            --pink: #ff4fd8;
-            --patched: #111;
-            --font-display: "DejaVu Sans Condensed", "Noto Sans", Cantarell, "Liberation Sans", "Arial Black", system-ui, sans-serif;
-            --font-condensed: "DejaVu Sans Condensed", "Noto Sans Condensed", "Liberation Sans Narrow", "Arial Narrow", "Noto Sans", Cantarell, system-ui, sans-serif;
-            --font-mono: "DejaVu Sans Mono", "Liberation Mono", "Noto Sans Mono", "Courier New", monospace;
-            --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-        }
-
-        * { box-sizing: border-box; }
-        [hidden] { display: none !important; }
-
-        body {
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-            color: var(--ink);
-            background: #f2f4f8;
-            font-family: var(--font-display);
-        }
-
-        .page {
-            height: 100vh;
-            max-width: 1800px;
-            margin: auto;
-            display: grid;
-            place-items: center;
-            padding: clamp(6px, 1vh, 16px);
-        }
-
-        .race-stage {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            padding: clamp(8px, 1vh, 18px);
-            border: 12px ridge var(--blue);
-            background:
-                radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.78) 0 6px, transparent 7px),
-                radial-gradient(circle at 76% 12%, rgba(255, 22, 22, 0.55) 0 8px, transparent 9px),
-                repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.08) 0 2px, transparent 2px 18px),
-                var(--paper);
-            box-shadow: 16px 16px 0 #000, -10px -10px 0 var(--pink);
-        }
-
-        .phase-view { min-height: 0; }
-        #raceView { flex: 1 1 auto; display: flex; flex-direction: column; }
-        .post-race-view {
-            flex: 1 1 auto;
-            min-width: 0;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .page:has(.post-race-view:not([hidden])) { grid-template-columns: minmax(0, 1fr); }
-        .race-stage:has(.post-race-view:not([hidden])) { min-width: 0; }
-        .post-race-view > * { min-width: 0; }
-
-        .stage-header {
-            flex: 0 0 auto;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 520px;
-            gap: clamp(8px, 1vh, 20px);
-            align-items: end;
-            min-height: clamp(140px, 17vh, 180px);
-            margin-bottom: clamp(6px, 0.9vh, 14px);
-            padding-right: 360px;
-        }
-
-        .voice-badge {
-            position: absolute;
-            top: clamp(10px, 1.1vh, 18px);
-            right: clamp(12px, 1.3vw, 24px);
-            z-index: 2;
-            width: 290px;
-            min-height: 140px;
-            display: grid;
-            place-items: center;
-            padding: 24px 26px;
-            border: 6px solid #000;
-            border-radius: 999px / 72%;
-            color: var(--yellow);
-            background: var(--red);
-            filter: drop-shadow(7px 7px 0 #000);
-            font-size: 1.25rem;
-            font-weight: 900;
-            line-height: 1.02;
-            text-align: center;
-            text-transform: uppercase;
-            transform: rotate(8deg);
-        }
-
-        .eyebrow {
-            display: inline-block;
-            margin: 0 0 8px;
-            padding: 4px 12px;
-            border: 4px solid #000;
-            color: var(--yellow);
-            background: var(--red);
-            font-size: 1rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            transform: rotate(-2deg);
-        }
-
-        h1,
-        .result-title {
-            margin: 0;
-            color: var(--blue);
-            font-size: clamp(2.4rem, 4.4vw, 5.4rem);
-            font-weight: 900;
-            line-height: 0.88;
-            text-transform: uppercase;
-            text-shadow: 5px 5px 0 var(--yellow), 10px 10px 0 var(--red);
-        }
-
-        .race-summary,
-        .player-stats {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-        }
-
-        .stat-card,
-        .stat {
-            border: 4px solid #000;
-            color: #000;
-            background: #fff;
-            box-shadow: 6px 6px 0 #000;
-        }
-
-        .stat-card { padding: clamp(6px, 0.8vh, 12px) 12px; transform: rotate(1deg); }
-        .stat-card:nth-child(1) { background: var(--green); }
-        .stat-card:nth-child(2) { background: var(--pink); transform: rotate(-1.5deg); }
-        .stat-card:nth-child(3) { background: var(--yellow); }
-        .stat-label { display: block; margin-bottom: 4px; font-family: var(--font-condensed); font-size: clamp(0.7rem, 1.2vh, 0.88rem); text-transform: uppercase; }
-        .stat-value { display: block; font-size: clamp(1.05rem, 2.2vh, 2rem); font-weight: 900; line-height: 1; }
-        .stat-value.is-long { font-size: 1rem; overflow-wrap: anywhere; max-width: 100%; }
-
-        .players {
-            flex: 1 1 auto;
-            display: grid;
-            grid-template-columns: 1fr;
-            grid-template-rows: repeat(2, minmax(0, 1fr));
-            gap: clamp(6px, 1vh, 14px);
-            min-height: 0;
-        }
-
-        .idle-actions {
-            flex: 0 0 auto;
-            display: flex;
-            justify-content: center;
-            padding-top: clamp(6px, 0.8vh, 12px);
-        }
-        .mode-bar { align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .mode-bar__info { min-width: 0; font-family: var(--font-condensed); }
-        .mode-bar__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 49px; }
-        .mode-control:focus-visible { outline: 4px solid var(--blue); outline-offset: 4px; }
-        .slot-control { display: inline-flex; align-items: center; gap: 8px; font: 900 1rem/1 var(--font-condensed); }
-        .slot-control kbd { padding: 4px 7px; border: 3px solid var(--ink); background: #fff; font: 900 0.9rem/1 var(--font-mono); }
-        .slot-control select { min-height: 44px; padding: 6px; border: 3px solid var(--ink); background: var(--yellow); color: var(--ink); font: inherit; }
-        .leaderboard-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 12px; }
-        .result-mode { font-family: var(--font-condensed); font-weight: 900; }
-        #modeDialog { width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; padding: 24px; border: 4px solid var(--ink); background: var(--paper); box-shadow: 5px 5px 0 var(--ink); font-family: var(--font-display); }
-        #modeDialog::backdrop { background: rgb(0 0 0 / 55%); }
-        #modeDialog h2 { margin-top: 0; text-transform: uppercase; }
-        #modeOptions { display: grid; gap: 12px; }
-        #modeOptions button { width: 100%; min-height: 60px; display: block; text-align: left; background: #fff; }
-        #modeOptions button[aria-pressed="true"] { background: var(--yellow); }
-        #modeOptions button span { display: block; margin-top: 6px; font: 1rem/1.3 var(--font-condensed); text-transform: none; }
-
-        .leaderboard-button {
-            min-height: 44px;
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            padding: 6px 20px;
-            border: 4px solid #000;
-            color: #000;
-            background: var(--yellow);
-            box-shadow: 5px 5px 0 #000;
-            font: 900 1rem/1 var(--font-display);
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: transform 140ms var(--ease-out);
-        }
-        .leaderboard-button:active { transform: scale(0.97); }
-        .leaderboard-button kbd { min-width: 28px; padding: 4px 7px; border: 3px solid #000; background: #fff; font: 900 0.9rem/1 var(--font-mono); }
-
-        .player-panel {
-            position: relative;
-            min-height: 0;
-            display: grid;
-            grid-template-rows: auto auto auto minmax(0, 1fr);
-            padding: clamp(6px, 0.9vh, 14px);
-            border: 8px solid #000;
-            background:
-                linear-gradient(90deg, rgba(255, 255, 255, 0.72) 50%, rgba(255, 242, 0, 0.6) 50%) 0 0 / 32px 32px,
-                var(--panel-color);
-            box-shadow: 10px 10px 0 var(--shadow-color);
-        }
-
-        .player-one { --panel-color: #00cfff; --shadow-color: var(--red); --accent: var(--blue); }
-        .player-two { --panel-color: #ff62ce; --shadow-color: var(--blue); --accent: var(--red); }
-        .player-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-bottom: clamp(4px, 0.7vh, 10px); }
-        .player-name { margin: 0; font-size: clamp(1.5rem, 3.3vh, 3rem); line-height: 0.9; text-transform: uppercase; text-shadow: 4px 4px 0 var(--yellow); }
-        .clock-display { min-width: 252px; padding: clamp(6px, 0.8vh, 12px) 12px; border: 6px inset #333; color: #00ff66; background: #000; font-family: var(--font-mono); font-size: clamp(1.45rem, 3.5vh, 2.75rem); font-variant-numeric: tabular-nums; font-weight: 900; line-height: 1; text-align: right; text-shadow: 0 0 10px #00ff66; }
-        .player-stats { gap: clamp(4px, 0.7vh, 10px); margin-bottom: clamp(4px, 0.7vh, 10px); }
-        .stat { padding: clamp(5px, 0.7vh, 10px) 10px; }
-        .stat:nth-child(1) { background: var(--yellow); }
-        .stat:nth-child(2) { background: #ffb3e8; }
-        .stat:nth-child(3) { background: #8cfffb; }
-
-        .switch-caption { margin: 0 0 clamp(4px, 0.8vh, 8px); padding: 3px 8px; border: 3px dashed #000; background: #fff; font-size: clamp(0.72rem, 1.3vh, 0.92rem); font-weight: 900; text-align: center; }
-        .player-panel > .board { grid-row: 4; }
-        .board { --board-gap: clamp(2px, 0.5vh, 5px); --port-width: minmax(0, 1fr); --port-height: minmax(0, 1fr); position: relative; display: grid; grid-template-columns: repeat(24, var(--port-width)); grid-template-rows: repeat(2, var(--port-height)); place-content: center; gap: var(--board-gap); min-height: 0; overflow: hidden; padding: clamp(5px, 0.8vh, 12px); border: 7px solid #111; background: linear-gradient(180deg, #4b4b4b, #1c1c1c 42%, #050505); box-shadow: inset 0 0 0 5px #777, 7px 7px 0 #000; }
-        .patch-cell { grid-column: var(--switch-column); grid-row: var(--switch-row); display: grid; place-items: center; width: 100%; height: 100%; min-width: 0; min-height: 0; border: 2px solid #111; color: #000; background: #f7f7f7; font-family: var(--font-condensed); font-size: clamp(0.75rem, 1.725vh, 1.29rem); font-variant-numeric: tabular-nums; font-weight: 900; line-height: 1; transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), background-color 160ms var(--ease-out); }
-        .patch-cell.is-patched { border-color: #00ff66; color: var(--yellow); background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.14), transparent 25%), linear-gradient(145deg, #2b2b2b, var(--patched) 70%); box-shadow: 0 0 11px #00ff66, inset 0 0 0 2px #000; }
-        .patch-cell.is-wrong { border: 4px solid var(--red); color: var(--red); }
-        .patch-cell.is-unknown { color: #555; background: #ddd; }
-        .patch-cell.is-inactive { color: #aaa; background: #333; box-shadow: none; }
-        .patch-cell.is-inactive.is-wrong { color: #ff8a8a; border-color: #a83c3c; }
-        .patch-cell.cell-change { animation: cell-pop 220ms var(--ease-out); }
-
-        .result-title { margin-bottom: clamp(18px, 3vh, 40px); }
-        .post-race-view > .eyebrow { align-self: flex-start; width: fit-content; transform: translateY(-4px) rotate(-2deg); }
-        .result-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(14px, 2vw, 32px); }
-        .result-card { min-width: 0; display: grid; grid-template-columns: auto auto minmax(0, 1fr); column-gap: clamp(14px, 2vw, 32px); align-items: baseline; padding: clamp(16px, 2.5vw, 36px); border: 8px solid #000; background: #fff; box-shadow: 10px 10px 0 var(--blue); }
-        .result-place, .result-player, .result-time { display: block; }
-        .result-place { font-weight: 900; text-transform: uppercase; }
-        .result-player { font-size: clamp(1.5rem, 4vh, 3.5rem); text-transform: uppercase; }
-        .result-time { font-family: var(--font-mono); font-size: clamp(1.2rem, 3vh, 2.4rem); font-variant-numeric: tabular-nums; }
-        .result-card label { grid-column: 1 / -1; display: block; margin-top: clamp(10px, 1.5vh, 20px); font-size: clamp(1.1rem, 2.4vh, 1.6rem); font-weight: 900; text-transform: uppercase; }
-        .name-input { width: 100%; margin-top: 8px; border: 6px solid #000; padding: 10px; color: #000; background: var(--yellow); font: 900 clamp(1.4rem, 3vw, 3rem)/1.4 var(--font-display); }
-        .result-card.is-active { background: var(--yellow); box-shadow: 12px 12px 0 var(--red); }
-        .result-card.is-resolved { opacity: 0.72; }
-        .leaderboard-table { width: 100%; border-collapse: collapse; background: #fff; font-size: clamp(1rem, 2.2vh, 2rem); }
-        .leaderboard-table th, .leaderboard-table td { border: 4px solid #000; padding: clamp(6px, 1vh, 14px); text-align: left; }
-        .leaderboard-table td:nth-child(n+3) { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-        .leaderboard-table tr.is-current-race { background: var(--yellow); }
-        .latest-attempt { display: block; margin-top: 4px; font-size: 0.7em; white-space: nowrap; }
-        .personal-best-badge { display: inline-block; margin-top: 6px; padding: 4px 7px; border: 3px solid #000; background: var(--pink); color: #000; box-shadow: 3px 3px 0 #000; font: 900 0.7em/1.2 var(--font-mono); transform: rotate(-3deg); }
-        @media (prefers-reduced-motion: no-preference) {
-            .personal-best-badge { animation: pb-pop 260ms cubic-bezier(0.23, 1, 0.32, 1); }
-        }
-        @keyframes pb-pop { from { opacity: 0; transform: scale(0.9) rotate(3deg); } to { opacity: 1; transform: scale(1) rotate(-3deg); } }
-        #leaderboardView { justify-content: flex-start; }
-        #leaderboardView .result-title { flex: 0 0 auto; margin-bottom: 12px; }
-        #leaderboardView .result-mode { margin: 0 0 12px; }
-        #closeLeaderboard { align-self: flex-start; flex: 0 0 auto; margin-bottom: 12px; }
-        .leaderboard-scroll { flex: 1 1 auto; min-width: 0; max-width: 100%; min-height: 0; overflow: auto; }
-        .leaderboard-table tr:focus-visible { outline: 4px solid var(--blue); outline-offset: -6px; }
-        #loadLeaderboardPage { margin: 12px 0 8px; }
-        .leaderboard-empty { text-align: center !important; }
-        .phase-footer { flex: 0 0 auto; min-width: 0; overflow-wrap: anywhere; margin: auto 0 0; padding-top: 14px; font-weight: 900; text-align: center; }
-        .persistence-error { border: 4px solid #000; padding: 8px 12px; color: #fff; background: var(--red); }
-
-        .spacebar-indicator {
-            position: fixed;
-            inset: 0;
-            z-index: 20;
-            display: grid;
-            place-items: center;
-            padding: 24px;
-            pointer-events: none;
-            opacity: 0;
-            transform: scale(0.92);
-        }
-        .spacebar-indicator.is-visible { animation: spacebar-flash 1050ms var(--ease-out) both; }
-        .spacebar-indicator__card {
-            width: min(92vw, 920px);
-            padding: clamp(22px, 4vw, 52px);
-            border: clamp(8px, 1.2vw, 16px) solid #000;
-            color: #000;
-            background: var(--yellow);
-            box-shadow: clamp(10px, 2vw, 24px) clamp(10px, 2vw, 24px) 0 #000;
-            text-align: center;
-            text-transform: uppercase;
-            transform: rotate(-2deg);
-        }
-        .spacebar-indicator__kicker { display: block; margin-bottom: 0.18em; font-family: var(--font-condensed); font-size: clamp(1.1rem, 3vw, 2.4rem); font-weight: 900; line-height: 1; }
-        .spacebar-indicator__action { display: block; color: var(--red); font-size: clamp(5rem, 18vw, 15rem); font-weight: 900; line-height: 0.82; text-shadow: 0.06em 0.06em 0 var(--blue); }
-        .spacebar-indicator[data-action="stopped"] .spacebar-indicator__card { background: #fff; }
-        .spacebar-indicator[data-action="stopped"] .spacebar-indicator__action { color: var(--blue); text-shadow: 0.06em 0.06em 0 var(--yellow); }
-        .spacebar-indicator[data-action="reset"] .spacebar-indicator__card { color: #fff; background: var(--red); }
-        .spacebar-indicator[data-action="reset"] .spacebar-indicator__action { color: #fff; text-shadow: 0.06em 0.06em 0 #000; }
-
-        @media (hover: hover) and (pointer: fine) {
-            .patch-cell:hover { z-index: 1; transform: scale(1.14) rotate(-4deg); }
-        }
-
-        @keyframes cell-pop {
-            0% { filter: brightness(1.45); transform: scale(0.88) rotate(3deg); }
-            100% { filter: brightness(1); transform: scale(1) rotate(0deg); }
-        }
-
-        @keyframes spacebar-flash {
-            0% { opacity: 0; transform: scale(0.82) rotate(2deg); }
-            14% { opacity: 1; transform: scale(1.03) rotate(0deg); }
-            72% { opacity: 1; transform: scale(1) rotate(0deg); }
-            100% { opacity: 0; transform: scale(1.08) rotate(-1deg); }
-        }
-
-        @media (max-width: 1400px) {
-            .stage-header { grid-template-columns: 1fr; padding-right: 300px; }
-        }
-
-        @media (max-width: 760px) {
-            body { overflow: auto; }
-            .stage-header, .race-summary, .player-top, .player-stats, .result-cards { grid-template-columns: 1fr; }
-            .stage-header { padding-right: 0; padding-top: 120px; }
-            .voice-badge { width: 200px; min-height: 100px; }
-            .result-card { grid-template-columns: 1fr; }
-            .result-player { margin-top: 12px; }
-            .result-time { margin-top: 8px; }
-            .clock-display { min-width: 0; text-align: left; }
-            .race-stage { min-height: 100vh; padding: 14px; box-shadow: 7px 7px 0 #000; }
-        }
-
-        @media (max-height: 820px) {
-            .voice-badge { top: -4px; width: 210px; min-height: 80px; padding: 12px 14px; font-size: 0.85rem; }
-            .stage-header { min-height: 105px; padding-right: 222px; }
-            .eyebrow, .switch-caption { display: none; }
-        }
-
-        @media (max-width: 760px) and (max-height: 820px) {
-            .stage-header { padding-right: 0; padding-top: 100px; }
-        }
-
-        @media (min-width: 761px) and (max-height: 720px) {
-            #nameEntryView { justify-content: safe center; overflow-y: auto; padding: 0 14px 14px 0; }
-            #nameEntryView > * { flex: 0 0 auto; }
-            #nameEntryView .result-title { font-size: 2.8rem; margin-bottom: 12px; }
-            #nameEntryView .result-mode { margin: 0 0 12px; }
-            #nameEntryView .result-cards { gap: 14px; }
-            #nameEntryView .result-card { padding: 12px; }
-            #nameEntryView .result-card label { margin-top: 6px; }
-            #nameEntryView .name-input { margin-top: 6px; padding: 6px; font-size: 1.8rem; line-height: 1.2; }
-            #nameEntryView .phase-footer { padding-top: 10px; }
-        }
-
-        #raceView[data-density] .stat { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 10px; padding: 4px 10px; }
-        #raceView[data-density] .stat .stat-label { margin: 0; }
-        #raceView[data-density] .player-top, #raceView[data-density] .player-stats { margin-bottom: 4px; }
-        #raceView[data-density] .clock-display { padding: 4px 8px; min-width: 230px; }
-        #raceView[data-density] .switch-caption { margin-bottom: 4px; padding: 2px 8px; }
-        #raceView[data-density="tight"] .stage-header { min-height: 90px; gap: 6px; margin-bottom: 6px; }
-        #raceView[data-density="tight"] h1 { font-size: 3rem; }
-        #raceView[data-density="tight"] .voice-badge { top: -4px; width: 210px; min-height: 64px; padding: 6px 12px; font-size: 0.75rem; transform: rotate(5deg); }
-        #raceView[data-density="tight"] .stat-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; padding: 4px 8px; }
-        #raceView[data-density="tight"] .stat-card .stat-label { margin: 0; }
-        #raceView[data-density="tight"] .eyebrow, #raceView[data-density="tight"] .switch-caption { display: none; }
-        #raceView[data-density="tight"] .player-panel { padding: 5px; }
-        #raceView[data-density="tight"] .players { gap: 6px; }
-        #raceView[data-density="tight"] .board { --board-gap: 2px; padding: 5px; }
-        #raceView[data-density="tight"] .idle-actions { padding-top: 6px; }
-
-        @media (max-width: 760px) {
-            .page { height: auto; min-height: 100vh; }
-            .race-stage { height: auto; overflow: visible; }
-            .voice-badge { position: static; align-self: flex-end; margin: 16px; }
-            .stage-header { padding-top: 0; min-height: 0; }
-            .players { grid-template-rows: repeat(2, auto); }
-            .board { min-height: 82px; overflow-x: auto; justify-content: safe center; }
-            #raceView[data-density] .clock-display { min-width: 0; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .spacebar-indicator.is-visible { animation-timing-function: ease-out; }
-            .patch-cell.cell-change { animation: none; }
-            .patch-cell { transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease; }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
 <body>
 <div id="spacebarIndicator" class="spacebar-indicator" aria-live="assertive" aria-atomic="true" hidden>
@@ -397,81 +14,114 @@
         <span id="spacebarAction" class="spacebar-indicator__action">Go</span>
     </div>
 </div>
+<header class="stage-header">
+    <h1 id="game-title" tabindex="-1">Pätsch me if you can</h1>
+    <img class="brand-logo" src="{{ url_for('static', filename='dashboard/selfnet.svg') }}" alt="Selfnet" width="186" height="56">
+</header>
 <main class="page">
     <section class="race-stage" aria-labelledby="game-title">
         <div id="raceView" class="phase-view">
-            <div class="voice-badge">Voice Controled: Loudly shout "Patch Me If You Can!" to start game!</div>
-            <header class="stage-header">
-                <div>
-                    <p class="eyebrow">Selfnet e.V. presents</p>
-                    <h1 id="game-title" tabindex="-1">Pätsch me if you can</h1>
-                </div>
-                <div class="race-summary" aria-label="Race statistics">
-                    <div class="stat-card"><span class="stat-label">Total patches</span><span id="totalPatches" class="stat-value">0 / 96</span></div>
-                    <div class="stat-card"><span class="stat-label">Black patches / sec</span><span id="totalRate" class="stat-value">0.00</span></div>
-                    <div class="stat-card"><span class="stat-label">Leader</span><span id="leader" class="stat-value">Even</span></div>
-                </div>
-            </header>
             <div class="players">
                 <article class="player-panel player-one" aria-labelledby="player-one-title">
-                    <div class="player-top"><h2 id="player-one-title" class="player-name">Player 1</h2><div id="clockDisplay1" class="clock-display">00:00.000</div></div>
-                    <div class="player-stats"><div class="stat"><span class="stat-label">Patches</span><span id="patchCount1" class="stat-value">0 / 48</span></div><div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate1" class="stat-value">0.00</span></div><div class="stat"><span class="stat-label">Remaining</span><span id="remaining1" class="stat-value">48</span></div></div>
-                    <p class="switch-caption">1-1 patches, as fast as you can. Grab another person and let's fucking gooooo</p>
-                    <div id="statusBoard1" class="board" role="grid" aria-label="Player 1 patch board"></div>
+                    <div class="player-top">
+                        <div><h2 id="player-one-title" class="player-name">Player 1</h2></div>
+                        <div class="player-stats">
+                            <div class="stat stat-primary"><span class="stat-label">Patches</span><span id="patchCount1" class="stat-value">0 / 48</span></div>
+                            <div class="stat"><span class="stat-label">Remaining</span><span id="remaining1" class="stat-value">48</span></div>
+                            <div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate1" class="stat-value">0.00</span></div>
+                        </div>
+                        <div id="clockDisplay1" class="clock-display" aria-label="Player 1 elapsed time">00:00.000</div>
+                    </div>
+                    <p class="player-objective"><strong id="playerStage1" class="player-stage" hidden></strong><span id="playerObjective1"></span></p>
+                    <div class="board-scroll" tabindex="0" role="region" aria-label="Player 1 physical port layout">
+                        <div id="statusBoard1" class="board" role="list" aria-label="Player 1 patch board"></div>
+                    </div>
                 </article>
                 <article class="player-panel player-two" aria-labelledby="player-two-title">
-                    <div class="player-top"><h2 id="player-two-title" class="player-name">Player 2</h2><div id="clockDisplay2" class="clock-display">00:00.000</div></div>
-                    <div class="player-stats"><div class="stat"><span class="stat-label">Patches</span><span id="patchCount2" class="stat-value">0 / 48</span></div><div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate2" class="stat-value">0.00</span></div><div class="stat"><span class="stat-label">Remaining</span><span id="remaining2" class="stat-value">48</span></div></div>
-                    <p class="switch-caption">Different human, same kinda switch. Grab cables, sit across from each other, press the spacebar and 1:1 patch as fast as you can go!</p>
-                    <div id="statusBoard2" class="board" role="grid" aria-label="Player 2 patch board"></div>
+                    <div class="player-top">
+                        <div><h2 id="player-two-title" class="player-name">Player 2</h2></div>
+                        <div class="player-stats">
+                            <div class="stat stat-primary"><span class="stat-label">Patches</span><span id="patchCount2" class="stat-value">0 / 48</span></div>
+                            <div class="stat"><span class="stat-label">Remaining</span><span id="remaining2" class="stat-value">48</span></div>
+                            <div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate2" class="stat-value">0.00</span></div>
+                        </div>
+                        <div id="clockDisplay2" class="clock-display" aria-label="Player 2 elapsed time">00:00.000</div>
+                    </div>
+                    <p class="player-objective"><strong id="playerStage2" class="player-stage" hidden></strong><span id="playerObjective2"></span></p>
+                    <div class="board-scroll" tabindex="0" role="region" aria-label="Player 2 physical port layout">
+                        <div id="statusBoard2" class="board" role="list" aria-label="Player 2 patch board"></div>
+                    </div>
                 </article>
             </div>
-            <p id="modeError" class="persistence-error" role="alert" hidden></p>
-            <p id="slotSelectionError" class="persistence-error" role="alert" hidden></p>
-            <div id="idleActions" class="idle-actions mode-bar">
-                <div class="mode-bar__info"><strong id="currentMode"></strong><span id="modeDescription"></span></div>
-                <div class="mode-bar__actions">
-                <button id="modeButton" class="leaderboard-button mode-control" type="button"><kbd aria-hidden="true">M</kbd><span>Mode</span></button>
-                <button id="leaderboardButton" class="leaderboard-button" type="button"><kbd aria-hidden="true">L</kbd><span>Leaderboard</span></button>
-                <label class="slot-control"><kbd aria-hidden="true">1-9</kbd><span>Leaderboard slot</span><select id="idleLeaderboardSlot" class="leaderboard-slot" aria-label="Leaderboard slot">
-                    {% for slot in range(1, 10) %}<option value="{{ slot }}">{{ slot }}</option>{% endfor %}
-                </select></label>
-                <span id="modeShortcut"></span>
+            <div class="race-summary" aria-label="Race statistics">
+                <div class="port-legend" aria-label="Port states">
+                    <span><i class="legend-correct" aria-hidden="true">&#10003;</i>Correct</span>
+                    <span><i class="legend-open" aria-hidden="true"></i>Open</span>
+                    <span><i class="legend-wrong" aria-hidden="true">&#215;</i>Wrong</span>
+                    <span><i class="legend-unknown" aria-hidden="true">?</i>Unknown</span>
+                    <span><i class="legend-inactive" aria-hidden="true"></i>Not required</span>
+                </div>
+                <div class="summary-stats">
+                    <div class="stat-card"><span class="stat-label">Total patches</span><span id="totalPatches" class="stat-value">0 / 96</span></div>
+                    <div class="stat-card"><span class="stat-label">Patches / sec</span><span id="totalRate" class="stat-value">0.00</span></div>
+                    <div class="stat-card"><span class="stat-label">Leader</span><span id="leader" class="stat-value">Even</span></div>
                 </div>
             </div>
         </div>
 
         <section id="nameEntryView" class="phase-view post-race-view" aria-labelledby="resultTitle" hidden>
-            <p class="eyebrow">Race complete</p>
             <h2 id="resultTitle" class="result-title">you were able to success</h2>
-            <p id="nameEntryMode" class="result-mode"></p>
+            <p id="nameEntryMode" class="result-mode sr-only"></p>
             <div id="resultCards" class="result-cards">
-                <article class="result-card" data-result-slot="0"><span class="result-place">Winner</span><strong class="result-player">Player 1</strong><output class="result-time">00:00.000</output><label>Name for the leaderboard<input id="nameInput1" class="name-input" type="text" data-max-codepoints="12" autocomplete="off" spellcheck="false"></label></article>
-                <article class="result-card" data-result-slot="1"><span class="result-place">Second place</span><strong class="result-player">Player 2</strong><output class="result-time">00:00.000</output><label>Name for the leaderboard<input id="nameInput2" class="name-input" type="text" data-max-codepoints="12" autocomplete="off" spellcheck="false"></label></article>
+                <article class="result-card" data-result-slot="0">
+                    <div class="result-heading"><h3 class="result-player">Player 1</h3><span class="result-place">Winner</span><output class="result-time">00:00.000</output></div>
+                    <div class="result-entry"><label for="nameInput1">Leaderboard name <span>(optional)</span></label><input id="nameInput1" class="name-input" type="text" data-max-codepoints="12" autocomplete="off" spellcheck="false"></div>
+                </article>
+                <article class="result-card" data-result-slot="1">
+                    <div class="result-heading"><h3 class="result-player">Player 2</h3><span class="result-place">Second place</span><output class="result-time">00:00.000</output></div>
+                    <div class="result-entry"><label for="nameInput2">Leaderboard name <span>(optional)</span></label><input id="nameInput2" class="name-input" type="text" data-max-codepoints="12" autocomplete="off" spellcheck="false"></div>
+                </article>
             </div>
-            <p id="nameEntryCountdown" class="phase-footer" aria-live="polite"></p>
+            <div class="name-entry-actions"><button id="submitNamesButton" class="leaderboard-button primary" type="button">View leaderboard</button></div>
         </section>
 
         <section id="leaderboardView" class="phase-view post-race-view" aria-labelledby="leaderboardTitle" hidden>
-            <p class="eyebrow">Fastest patchers</p>
             <h2 id="leaderboardTitle" class="result-title" tabindex="-1">Leaderboard</h2>
-            <p id="leaderboardMode" class="result-mode"></p>
+            <p id="leaderboardMode" class="result-mode sr-only"></p>
             <p id="persistenceError" class="persistence-error" role="status" hidden></p>
-            <button id="closeLeaderboard" class="leaderboard-button mode-control" type="button">Close</button>
-            <div id="leaderboardScroll" class="leaderboard-scroll" role="region" aria-label="Leaderboard scores">
-                <table class="leaderboard-table"><thead><tr><th>Rank</th><th>Name</th><th>Best time</th><th>Attempts</th><th>Set at</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
+            <div id="leaderboardScroll" class="leaderboard-scroll" role="region" aria-label="Leaderboard scores" tabindex="0">
+                <table class="leaderboard-table"><thead><tr><th scope="col">Rank</th><th scope="col">Name</th><th scope="col">Best time</th><th scope="col">Attempts</th><th scope="col">Set at</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
                 <p id="leaderboardPageError" role="status" hidden></p>
                 <button id="loadLeaderboardPage" class="leaderboard-button mode-control" type="button">Load more</button>
             </div>
-            <div class="leaderboard-actions">
-                <label class="slot-control"><kbd aria-hidden="true">1-9</kbd><span>Leaderboard slot</span><select id="viewLeaderboardSlot" class="leaderboard-slot" aria-label="Leaderboard slot">
-                    {% for slot in range(1, 10) %}<option value="{{ slot }}">{{ slot }}</option>{% endfor %}
-                </select></label>
-                <span id="leaderboardSlotHint"></span>
-                <p id="leaderboardSlotError" class="persistence-error" role="alert" hidden></p>
-            </div>
-            <p id="leaderboardCountdown" class="phase-footer" aria-live="polite"></p>
         </section>
+        <footer id="idleActions" class="game-controls">
+            <div class="footer-errors"><p id="modeError" class="persistence-error" role="alert" hidden></p></div>
+            <div class="mode-bar__info"><strong id="currentMode"></strong><span id="gameStatus" role="status">Connecting</span><span id="modeDescription"></span></div>
+            <div class="mode-bar__actions" role="group" aria-label="Game controls">
+                <button id="modeButton" class="leaderboard-button mode-control" type="button" disabled><kbd aria-hidden="true">M</kbd><span>Game modes</span></button>
+                <button id="leaderboardButton" class="leaderboard-button" type="button" disabled><kbd aria-hidden="true">L</kbd><span>Leaderboard</span></button>
+                <button id="closeLeaderboard" class="leaderboard-button mode-control" type="button" hidden><kbd aria-hidden="true">L</kbd><span>Back to game</span></button>
+                <div id="idleSlotControl" class="slot-setting">
+                    <label class="slot-control"><kbd aria-hidden="true">1-9</kbd><span>Leaderboard slot</span><select id="idleLeaderboardSlot" class="leaderboard-slot" aria-label="Leaderboard slot" disabled>
+                        {% for slot in range(1, 10) %}<option value="{{ slot }}">{{ slot }}</option>{% endfor %}
+                    </select></label>
+                    <p id="slotSelectionError" class="persistence-error" role="alert" hidden></p>
+                </div>
+                <div id="viewSlotControl" class="slot-setting" hidden>
+                    <label class="slot-control"><kbd aria-hidden="true">1-9</kbd><span>Leaderboard slot</span><select id="viewLeaderboardSlot" class="leaderboard-slot" aria-label="Leaderboard slot" aria-describedby="leaderboardSlotHint" disabled>
+                        {% for slot in range(1, 10) %}<option value="{{ slot }}">{{ slot }}</option>{% endfor %}
+                    </select></label>
+                    <p id="leaderboardSlotError" class="persistence-error" role="alert" hidden></p>
+                </div>
+            </div>
+            <div class="footer-hints">
+                <p id="modeShortcut"></p>
+                <p id="nameEntryCountdown" class="phase-footer" hidden></p>
+                <p id="leaderboardCountdown" class="phase-footer" hidden></p>
+                <p id="leaderboardSlotHint" hidden></p>
+            </div>
+        </footer>
     </section>
 </main>
 <dialog id="modeDialog" aria-labelledby="modeDialogTitle">
@@ -556,6 +206,11 @@
         const progress = PLAYER_IDS.map(progressFor);
         const longest = Math.max(...PLAYER_IDS.map(currentDurationMs));
         PLAYER_IDS.forEach((playerId) => {
+            const presentation = gameState.players[String(playerId)]?.presentation;
+            document.getElementById(`playerObjective${playerId}`).textContent = presentation?.objective || "Waiting for board";
+            const stage = document.getElementById(`playerStage${playerId}`);
+            stage.textContent = presentation?.stage || "";
+            stage.hidden = !presentation?.stage;
             const counter = progressFor(playerId);
             const patches = counter?.unit === "correct";
             const unit = counter && !patches ? ` (${counter.unit})` : "";
@@ -570,7 +225,7 @@
         const patches = comparable && progress[0].unit === "correct";
         const unit = comparable && !patches ? ` (${progress[0].unit})` : "";
         renderStat("totalPatches", patches ? "Total patches" : `Total progress${unit}`, comparable ? `${total} / ${progress[0].total * 2}` : "-");
-        renderStat("totalRate", patches ? "Black patches / sec" : "Rate", patches ? (longest > 0 ? (total / (longest / 1000)).toFixed(2) : "0.00") : "-");
+        renderStat("totalRate", patches ? "Patches / sec" : "Rate", patches ? (longest > 0 ? (total / (longest / 1000)).toFixed(2) : "0.00") : "-");
         const lead = comparable ? progress[0].current - progress[1].current : 0;
         renderStat("leader", `Leader${unit}`, comparable ? (lead === 0 ? "Even" : `P${lead > 0 ? "1" : "2"} +${Math.abs(lead)}`) : "-");
     }
@@ -595,22 +250,18 @@
         for (let port = 0; port < NUM_CELLS; port += 1) {
             const cell = document.createElement("div");
             cell.id = `cell-${playerId}-${port}`;
-            cell.className = "patch-cell";
+            cell.className = "patch-cell is-unknown";
             cell.textContent = port;
             cell.style.setProperty("--switch-column", Math.floor(port / 2) + 1);
             cell.style.setProperty("--switch-row", (port % 2) + 1);
-            cell.setAttribute("role", "gridcell");
-            cell.setAttribute("aria-colindex", Math.floor(port / 2) + 1);
-            cell.setAttribute("aria-rowindex", (port % 2) + 1);
-            cell.setAttribute("aria-label", `Port ${port} open`);
-            cell.addEventListener("animationend", () => cell.classList.remove("cell-change"));
+            cell.setAttribute("role", "listitem");
+            cell.setAttribute("aria-label", `Port ${port}, unknown`);
             board.appendChild(cell);
         }
     }
 
     function updateBoard(playerId, ports) {
         if (!PLAYER_IDS.includes(playerId) || !Array.isArray(ports) || ports.length !== NUM_CELLS) return;
-        const previousStates = players[playerId].states;
         players[playerId].states = ports.map((port) => port.feedback);
         ports.forEach((port, index) => {
             const cell = document.getElementById(`cell-${playerId}-${index}`);
@@ -619,54 +270,8 @@
             cell.classList.toggle("is-inactive", !port.required);
             cell.classList.toggle("is-unknown", port.feedback === "unknown");
             cell.setAttribute("aria-label", `Port ${index}, ${port.required ? "required" : "not required"}, ${port.feedback}`);
-            if (typeof previousStates[index] === "string" && previousStates[index] !== port.feedback) {
-                cell.classList.remove("cell-change");
-                void cell.offsetWidth;
-                cell.classList.add("cell-change");
-            }
         });
         updateStats();
-    }
-
-    function boardCapacity(board) {
-        const style = getComputedStyle(board);
-        const horizontalPadding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-        const verticalPadding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-        const columnGap = parseFloat(style.columnGap);
-        const rowGap = parseFloat(style.rowGap);
-        const availableWidth = board.clientWidth - horizontalPadding - (23 * columnGap);
-        const availableHeight = board.clientHeight - verticalPadding - rowGap;
-        return { width: availableWidth / 24, height: availableHeight / 2 };
-    }
-
-    function fitBoardCells(board) {
-        const capacity = boardCapacity(board);
-        const narrow = window.matchMedia("(max-width: 760px)").matches;
-        const width = narrow ? Math.max(18, capacity.width) : Math.max(1, Math.min(capacity.width, capacity.height * 1.12));
-        const height = Math.max(1, Math.min(width, capacity.height));
-        board.style.setProperty("--port-width", `${width}px`);
-        board.style.setProperty("--port-height", `${height}px`);
-    }
-
-    let boardLayoutFrame;
-    function scheduleBoardLayout() {
-        if (boardLayoutFrame) return;
-        boardLayoutFrame = requestAnimationFrame(() => {
-            boardLayoutFrame = undefined;
-            const raceView = document.getElementById("raceView");
-            if (raceView.hidden) return;
-            const boards = Array.from(raceView.querySelectorAll(".board"));
-            delete raceView.dataset.density;
-            // Measure each tier from the natural layout, never from the previous fitted cells.
-            for (const density of ["compact", "tight"]) {
-                if (boards.every((board) => {
-                    const capacity = boardCapacity(board);
-                    return capacity.height * 1.12 >= capacity.width;
-                })) break;
-                raceView.dataset.density = density;
-            }
-            boards.forEach(fitBoardCells);
-        });
     }
 
     function showPhase(phase) {
@@ -674,8 +279,19 @@
         document.getElementById("raceView").hidden = Boolean(browsing) || !(["ready", "racing", "stopped"].includes(phase) || (phase === "leaderboard" && closedLeaderboardRaceId === gameState.race_id));
         document.getElementById("nameEntryView").hidden = phase !== "name_entry";
         document.getElementById("leaderboardView").hidden = !browsing;
-        document.getElementById("modeButton").hidden = phase !== "ready";
-        document.getElementById("leaderboardButton").hidden = !idlePhase;
+        document.getElementById("modeButton").disabled = lastStateRevision === null || phase !== "ready" || Boolean(browsing);
+        document.getElementById("leaderboardButton").hidden = Boolean(browsing);
+        document.getElementById("leaderboardButton").disabled = lastStateRevision === null || !idlePhase;
+        document.getElementById("closeLeaderboard").hidden = !browsing;
+        document.getElementById("idleSlotControl").hidden = Boolean(browsing);
+        document.getElementById("viewSlotControl").hidden = !browsing;
+        document.getElementById("nameEntryCountdown").hidden = phase !== "name_entry";
+        document.getElementById("leaderboardCountdown").hidden = !browsing;
+        document.getElementById("leaderboardSlotHint").hidden = !browsing;
+        document.getElementById("gameStatus").textContent = lastStateRevision === null ? "Connecting" : ({ ready: "Ready", racing: "Racing", stopped: "Stopped", name_entry: "Finished", leaderboard: "Finished" }[phase] || phase);
+        const shortcut = document.getElementById("modeShortcut");
+        shortcut.hidden = Boolean(browsing) || lastStateRevision === null;
+        shortcut.textContent = phase === "name_entry" ? "Enter: next / save - Tab: switch player" : `Space: ${phase === "ready" ? "start" : phase === "racing" ? "stop" : phase === "leaderboard" ? "continue" : "reset"}`;
     }
 
     function renderGameState(state) {
@@ -696,7 +312,6 @@
         }
         document.getElementById("currentMode").textContent = `${state.mode.label}${state.mode.required_port_count === null ? "" : ` (${state.mode.required_port_count})`} `;
         document.getElementById("modeDescription").textContent = state.mode.description;
-        document.getElementById("modeShortcut").textContent = `Space: ${state.phase === "ready" ? "start" : state.phase === "racing" ? "stop" : "reset"}`;
         document.getElementById("nameEntryMode").textContent = `${state.mode.label} - Slot ${state.leaderboard_slot}`;
         document.getElementById("leaderboardMode").textContent = `${state.mode.label} - Slot ${state.leaderboard_slot}`;
         updateLeaderboardSlotControls();
@@ -718,7 +333,6 @@
         clockState.syncedAt = performance.now();
         updateStats();
         ensureClockAnimation();
-        scheduleBoardLayout();
 
         document.querySelectorAll(".result-card").forEach((card, index) => {
             const playerNumber = state.result_order[index];
@@ -861,6 +475,12 @@
             inputs[1].focus();
             return;
         }
+        submitAllNames();
+    }
+
+    function submitAllNames() {
+        if (gameState.phase !== "name_entry") return;
+        const inputs = Array.from(document.querySelectorAll(".name-input:not(:disabled)"));
         const raceId = gameState.race_id;
         inputs.forEach((input) => {
             socket.emit("submit_name", { race_id: raceId, player_number: Number(input.dataset.playerNumber), draft: input.value });
@@ -1129,14 +749,10 @@
         closeModeSelector({ restoreFocus: false });
         closeLeaderboard({ restoreFocus: false, dismiss: false });
         closedLeaderboardRaceId = null;
+        showPhase(gameState.phase);
     }
 
     PLAYER_IDS.forEach(createBoard);
-    const boardResizeObserver = new ResizeObserver(scheduleBoardLayout);
-    boardResizeObserver.observe(document.getElementById("raceView"));
-    window.addEventListener("resize", scheduleBoardLayout);
-    document.fonts.ready.then(scheduleBoardLayout);
-    scheduleBoardLayout();
     updateStats();
     document.querySelectorAll(".name-input").forEach((input) => {
         input.addEventListener("input", () => emitNameDraft(input));
@@ -1159,6 +775,7 @@
         updateStats();
         ensureClockAnimation();
     });
+    document.getElementById("submitNamesButton").addEventListener("click", submitAllNames);
     document.getElementById("leaderboardButton").addEventListener("click", toggleLeaderboard);
     document.getElementById("closeLeaderboard").addEventListener("click", () => closeLeaderboard());
     document.getElementById("loadLeaderboardPage").addEventListener("click", () => {
