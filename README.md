@@ -21,6 +21,26 @@ After a race, that player's row is highlighted even when the new time is worse. 
 
 All attempt history remains in SQLite; grouping does not delete or rewrite scores and requires no database migration. A paginated browse freezes the best times, latest attempts, and counts at its opening snapshot. [Leaderboard regression tests](Test_Server/tests/test_leaderboard.py) cover case-insensitive grouping, best-time ranking, attempt counts, and snapshot pagination; [transport tests](Test_Server/tests/test_app.py) cover current-race highlighting and personal-best detection. Neither covers physical hardware or browser layout.
 
+### Failed Score Saves
+
+If saving fails while results are open, **Retry saving** resends the captured race,
+names, times, mode and slot. Automatic return pauses until saving succeeds, then
+the leaderboard refreshes and its normal 60-second countdown restarts. Repeated
+retries do not add attempts, including when a previous write committed before
+reporting an error. Name-entry timeouts and skipped blank names are unchanged.
+
+Back to game, L, Escape and Space require confirmation before abandoning failed
+results. Leaving and reset are blocked during a pending retry. Confirmation gives
+up recovery; it does not remove any scores already written. Browser refresh or
+reconnection restores recovery from server state, but **restarting the backend
+loses unsaved results held in memory**. This is not a durable retry queue.
+
+[Recovery tests](Test_Server/tests/test_score_recovery.py) cover identity,
+concurrent requests, idempotence and timeout boundaries;
+[recovery UI tests](Test_Server/tests/test_score_recovery_ui.py) execute the actual
+dashboard handlers for confirmation, refresh and page invalidation. Neither
+replaces browser layout checks or tests live hardware.
+
 ## Leaderboard Slots
 
 Use **1-9**, including the numeric keypad, or the slot selector to choose a leaderboard while the game is ready. The shortcut also works while browsing the idle leaderboard, which refreshes to the selected slot. Slot switching is disabled during a race, name entry, post-race results, and the mode dialog. Digits typed into name inputs remain part of the name.

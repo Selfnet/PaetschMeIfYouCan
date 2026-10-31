@@ -47,7 +47,7 @@ restoring a database would discard scores recorded since that backup.
   controlled time, board observations, pagination delays and page errors for
   deterministic browser checks. It uses a separate database, not preview data.
 - The [game README](../README.md) owns required name-entry keyboard behavior,
-  leaderboard grouping and slot semantics. The preview must retain those
+  leaderboard grouping, failed-save recovery and slot semantics. The preview must retain those
   contracts; simulation is not proof of hardware or deployed kiosk behavior.
 
 Preview approval is not deployment approval. Keep the deployed service and its

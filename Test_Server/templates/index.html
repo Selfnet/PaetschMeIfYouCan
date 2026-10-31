@@ -101,6 +101,7 @@
             <div class="mode-bar__actions" role="group" aria-label="Game controls">
                 <button id="modeButton" class="leaderboard-button mode-control" type="button" disabled><kbd aria-hidden="true">M</kbd><span>Game modes</span></button>
                 <button id="leaderboardButton" class="leaderboard-button" type="button" disabled><kbd aria-hidden="true">L</kbd><span>Leaderboard</span></button>
+                <button id="retryScores" class="leaderboard-button primary" type="button" hidden>Retry saving</button>
                 <button id="closeLeaderboard" class="leaderboard-button mode-control" type="button" hidden><kbd aria-hidden="true">L</kbd><span>Back to game</span></button>
                 <div id="idleSlotControl" class="slot-setting">
                     <label class="slot-control"><kbd aria-hidden="true">1-9</kbd><span>Leaderboard slot</span><select id="idleLeaderboardSlot" class="leaderboard-slot" aria-label="Leaderboard slot" disabled>
@@ -161,6 +162,7 @@
     let modeDialogGeneration = 0;
     let pendingModeGeneration = null;
     let pendingLeaderboardSlot = null;
+    let pendingScoreRetry = null;
     let gameState = {
         phase: "ready", race_id: null, leaderboard_slot: 1, players: {}, result_order: [], tie: false,
         name_entry: { active_player: null, drafts: {}, resolved: {} },
@@ -306,6 +308,7 @@
         const closedForOrigin = Boolean(browsing && originChanged);
         if (browsing && (originChanged || !["ready", "stopped", "leaderboard"].includes(state.phase))) closeLeaderboard({ restoreFocus: false, dismiss: false });
         gameState = state;
+        if (pendingScoreRetry && (state.race_id !== pendingScoreRetry.race_id || state.browse_epoch !== pendingScoreRetry.browse_epoch || state.persistence_status !== "error")) pendingScoreRetry = null;
         updateModeOptions(state.available_modes);
         if (priorPhase !== state.phase) {
             closeModeSelector({ restoreFocus: false });
@@ -356,9 +359,7 @@
             card.classList.toggle("is-resolved", resolved);
         });
         document.getElementById("nameEntryCountdown").textContent = `Leaderboard in ${formatCountdown(state.remaining_seconds)} - empty names are skipped`;
-        const error = document.getElementById("persistenceError");
-        error.textContent = browsing?.raceId ? state.persistence_error || "" : "";
-        error.hidden = !error.textContent;
+        renderScoreRecovery();
         if (browsing?.waitingForPersistence && state.persistence_status !== "pending") {
             browsing.waitingForPersistence = false;
             requestNextPage();
@@ -375,6 +376,31 @@
         const codepoints = Array.from(input.value);
         if (codepoints.length > 12) input.value = codepoints.slice(0, 12).join("");
         socket.emit("name_draft", { race_id: gameState.race_id, player_number: Number(input.dataset.playerNumber), draft: input.value });
+    }
+
+    function renderScoreRecovery() {
+        const recovering = gameState.phase === "leaderboard" && Boolean(gameState.persistence_error);
+        const pending = pendingScoreRetry !== null || (recovering && gameState.persistence_status === "pending");
+        const error = document.getElementById("persistenceError");
+        error.textContent = browsing?.raceId && recovering ? pending ? "Retrying score save..." : gameState.persistence_error : "";
+        error.hidden = !error.textContent;
+        const retry = document.getElementById("retryScores");
+        retry.hidden = !browsing?.raceId || !recovering;
+        retry.disabled = lastStateRevision === null || pending || gameState.persistence_status !== "error";
+        retry.textContent = pending ? "Saving..." : "Retry saving";
+        document.getElementById("closeLeaderboard").disabled = lastStateRevision === null || pending;
+    }
+
+    function retryScores() {
+        if (lastStateRevision === null || pendingScoreRetry !== null || gameState.phase !== "leaderboard" || gameState.persistence_status !== "error") return;
+        const attempt = { race_id: gameState.race_id, browse_epoch: gameState.browse_epoch };
+        pendingScoreRetry = attempt;
+        renderScoreRecovery();
+        socket.timeout(10_000).emit("retry_scores", attempt, () => {
+            if (pendingScoreRetry !== attempt) return;
+            pendingScoreRetry = null;
+            renderScoreRecovery();
+        });
     }
 
     function updateModeOptions(modes) {
@@ -561,6 +587,7 @@
         document.getElementById("leaderboardTitle").focus();
         updateLeaderboardCountdown();
         updatePageControl();
+        renderScoreRecovery();
         requestNextPage();
     }
 
@@ -662,6 +689,18 @@
     }
 
     function closeLeaderboard({ restoreFocus = true, dismiss = true } = {}) {
+        if (dismiss && gameState.phase === "leaderboard") {
+            if (lastStateRevision === null || pendingScoreRetry !== null) return;
+            const request = { race_id: gameState.race_id };
+            if (gameState.persistence_error) {
+                if (gameState.persistence_status === "pending") return;
+                if (!window.confirm("Scores have not been saved. Leave these results and give up retrying?")) return;
+                request.discard_unsaved = true;
+                request.browse_epoch = gameState.browse_epoch;
+            }
+            socket.emit("dismiss_leaderboard", request);
+            return;
+        }
         if (!browsing) return;
         const raceId = browsing.raceId;
         clearTimeout(browsing.pendingTimer);
@@ -672,7 +711,7 @@
         lastActivityAt = -Infinity;
         scrollIntentUntil = suppressScrollUntil = 0;
         scrollbarDragging = false;
-        if (raceId !== null) closedLeaderboardRaceId = raceId;
+        if (dismiss && raceId !== null) closedLeaderboardRaceId = raceId;
         showPhase(gameState.phase);
         if (restoreFocus) document.getElementById("game-title").focus();
         if (dismiss && raceId !== null) socket.emit("dismiss_leaderboard", { race_id: raceId });
@@ -690,6 +729,10 @@
         if (!browsing || checkLeaderboardExpiry()) return;
         const idle = browsing.raceId === null;
         const remaining = idle ? Math.ceil(Math.max(0, browsing.deadline - Date.now()) / 1000) : gameState.remaining_seconds;
+        if (!idle && remaining === null) {
+            document.getElementById("leaderboardCountdown").textContent = "Automatic return paused until scores are saved";
+            return;
+        }
         document.getElementById("leaderboardCountdown").textContent = `${idle ? "Closing" : "Next race"} in ${formatCountdown(remaining)} - L or Esc to ${idle ? "return" : "continue"}`;
     }
 
@@ -745,11 +788,13 @@
     function resetConnectionBaseline() {
         lastStateRevision = null;
         pendingLeaderboardSlot = null;
+        pendingScoreRetry = null;
         updateLeaderboardSlotControls();
         closeModeSelector({ restoreFocus: false });
         closeLeaderboard({ restoreFocus: false, dismiss: false });
         closedLeaderboardRaceId = null;
         showPhase(gameState.phase);
+        renderScoreRecovery();
     }
 
     PLAYER_IDS.forEach(createBoard);
@@ -778,6 +823,7 @@
     document.getElementById("submitNamesButton").addEventListener("click", submitAllNames);
     document.getElementById("leaderboardButton").addEventListener("click", toggleLeaderboard);
     document.getElementById("closeLeaderboard").addEventListener("click", () => closeLeaderboard());
+    document.getElementById("retryScores").addEventListener("click", retryScores);
     document.getElementById("loadLeaderboardPage").addEventListener("click", () => {
         if (!browsing || checkLeaderboardExpiry()) return;
         noteLeaderboardActivity();
@@ -847,6 +893,7 @@
             return;
         }
         if (browsing) {
+            if (event.code === "Space" && event.target === document.getElementById("retryScores")) return;
             if (["KeyL"].includes(event.code) || event.key === "Escape" || (event.code === "Space" && browsing.raceId !== null)) { event.preventDefault(); if (!event.repeat) closeLeaderboard(); }
             else if (event.code === "Space" || ["KeyV", "KeyS"].includes(event.code)) event.preventDefault();
             else if (["ArrowDown", "ArrowUp"].includes(event.key)) navigateScores(event);
@@ -859,7 +906,7 @@
         if (event.code === "KeyL") {
             event.preventDefault();
             if (gameState.phase === "leaderboard") {
-                socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
+                closeLeaderboard();
             } else {
                 toggleLeaderboard();
             }
@@ -868,7 +915,7 @@
         if (event.key === "Escape") {
             if (gameState.phase === "leaderboard") {
                 event.preventDefault();
-                socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
+                closeLeaderboard();
             }
             return;
         }
@@ -877,7 +924,7 @@
         if (event.code !== "Space") return;
         event.preventDefault();
         if (gameState.phase === "leaderboard") {
-            socket.emit("dismiss_leaderboard", { race_id: gameState.race_id });
+            closeLeaderboard();
         } else if (["ready", "racing", "stopped"].includes(gameState.phase)) {
             advanceClockWithSpacebar().catch((error) => console.error("Clock control failed", error));
         }

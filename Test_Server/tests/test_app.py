@@ -505,7 +505,12 @@ def test_database_failures_are_recoverable(app_bundle, clock, monkeypatch, failu
     assert runtime.race.snapshot()["persistence_status"] == (
         "error" if failure == "insert" else "saved"
     )
-    runtime.handle_change(runtime.race.reset())
+    runtime.apply(
+        runtime.race.dismiss_leaderboard,
+        race_id,
+        True,
+        runtime.race.snapshot()["browse_epoch"],
+    )
     runtime.observe_board(1, [255] * 48)
     runtime.observe_board(2, [255] * 48)
     runtime.handle_change(runtime.race.start())

@@ -116,7 +116,7 @@ class GameRuntime:
             self.emit_state()
 
     def _after_change(self, change):
-        if change.action == "leaderboard":
+        if change.action in ("leaderboard", "retry_scores"):
             self._persist(change.origin, change.submissions)
 
     def _persist(self, origin, submissions):
@@ -430,9 +430,25 @@ def register_socket_events(app, socketio, runtime):
             )
 
     @socketio.on("dismiss_leaderboard")
-    def dismiss(data):
+    def dismiss(data=None):
         if isinstance(data, dict):
-            runtime.apply(runtime.race.dismiss_leaderboard, data.get("race_id"))
+            change = runtime.apply(
+                runtime.race.dismiss_leaderboard,
+                data.get("race_id"),
+                data.get("discard_unsaved"),
+                data.get("browse_epoch"),
+            )
+            return {"accepted": change.action == "reset"}
+        return {"accepted": False}
+
+    @socketio.on("retry_scores")
+    def retry_scores(data=None):
+        if not isinstance(data, dict):
+            return {"accepted": False}
+        change = runtime.apply(
+            runtime.race.retry_scores, data.get("race_id"), data.get("browse_epoch")
+        )
+        return {"accepted": change.action == "retry_scores"}
 
     @socketio.on("request_leaderboard")
     def request_leaderboard(data=None):

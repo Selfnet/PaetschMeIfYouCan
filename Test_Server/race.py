@@ -136,6 +136,8 @@ class RaceStateMachine:
         self.mode_error = None
         self.persistence_status = "idle"
         self.persistence_error: str | None = None
+        self._score_submissions: tuple[ScoreSubmission, ...] = ()
+        self._score_origin: RaceOrigin | None = None
         return self._preview_unlocked()
 
     def _failure_unlocked(self, error, now_ns):
@@ -433,14 +435,16 @@ class RaceStateMachine:
         self.deadline_ns = now_ns + LEADERBOARD_TIMEOUT_NS
         self.persistence_status = "pending"
         self.persistence_error = None
+        self._score_submissions = submissions
+        self._score_origin = RaceOrigin(
+            race_id=self.race_id,
+            mode_id=self.race_mode_id,
+            leaderboard_slot=self.race_leaderboard_slot,
+        )
         return self._change_unlocked(
             "leaderboard",
             submissions=submissions,
-            origin=RaceOrigin(
-                race_id=self.race_id,
-                mode_id=self.race_mode_id,
-                leaderboard_slot=self.race_leaderboard_slot,
-            ),
+            origin=self._score_origin,
         )
 
     def tick(self) -> StateChange:
@@ -480,9 +484,37 @@ class RaceStateMachine:
                 or origin.leaderboard_slot != self.race_leaderboard_slot
             ):
                 return StateChange(False)
+            if error is not None:
+                self.deadline_ns = None
+            elif self.persistence_error is not None:
+                self.deadline_ns = self._clock_ns() + LEADERBOARD_TIMEOUT_NS
+            if error is None:
+                self._score_submissions = ()
+                self._score_origin = None
             self.persistence_error = error
             self.persistence_status = "saved" if error is None else "error"
             return self._change_unlocked("persistence", origin=origin)
+
+    def retry_scores(self, race_id, browse_epoch) -> StateChange:
+        with self._lock:
+            if (
+                self.phase != Phase.LEADERBOARD
+                or self.persistence_status != "error"
+                or not isinstance(race_id, str)
+                or race_id != self.race_id
+                or type(browse_epoch) is not int
+                or browse_epoch != self.epoch
+                or self._score_origin is None
+            ):
+                return StateChange(False)
+            self.persistence_status = "pending"
+            # Keep the error until completion so recovery cannot be dismissed mid-write.
+            self.epoch += 1
+            return self._change_unlocked(
+                "retry_scores",
+                submissions=self._score_submissions,
+                origin=self._score_origin,
+            )
 
     def leaderboard_activity(self, race_id) -> StateChange:
         with self._lock:
@@ -491,6 +523,8 @@ class RaceStateMachine:
             if expired is not None:
                 return expired
             if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
+                return StateChange(False)
+            if self.persistence_error is not None:
                 return StateChange(False)
             self.deadline_ns = now_ns + LEADERBOARD_TIMEOUT_NS
             return self._change_unlocked("leaderboard_activity")
@@ -542,15 +576,26 @@ class RaceStateMachine:
             )
             return current, expired or StateChange(False)
 
-    def dismiss_leaderboard(self, race_id: object) -> StateChange:
+    def dismiss_leaderboard(
+        self, race_id: object, discard_unsaved=False, browse_epoch=None
+    ) -> StateChange:
         with self._lock:
             if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
+                return StateChange(False)
+            if self.persistence_error is not None and (
+                self.persistence_status == "pending"
+                or discard_unsaved is not True
+                or type(browse_epoch) is not int
+                or browse_epoch != self.epoch
+            ):
                 return StateChange(False)
             diagnostic = self._reset_unlocked()
             return self._change_unlocked("reset", diagnostic=diagnostic)
 
     def reset(self) -> StateChange:
         with self._lock:
+            if self.persistence_error is not None:
+                return StateChange(False)
             diagnostic = self._reset_unlocked()
             return self._change_unlocked("reset", diagnostic=diagnostic)
 

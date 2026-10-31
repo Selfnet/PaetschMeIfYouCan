@@ -224,7 +224,11 @@ def test_persistence_status_and_dismiss(clock):
     assert state["persistence_status"] == "error"
     assert state["persistence_error"] == "Scores could not be saved"
     assert not machine.dismiss_leaderboard("old-race").changed
-    assert machine.dismiss_leaderboard(race_id).action == "reset"
+    assert not machine.dismiss_leaderboard(race_id).changed
+    assert (
+        machine.dismiss_leaderboard(race_id, True, state["browse_epoch"]).action
+        == "reset"
+    )
 
 
 def test_prepatched_quarter_field_finishes_both_at_zero(clock):
