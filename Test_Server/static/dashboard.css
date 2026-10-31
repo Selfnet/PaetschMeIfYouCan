@@ -78,7 +78,7 @@ input:focus-visible,
 .stage-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 24px;
   padding: 18px 40px;
   background: #efefef;
@@ -92,7 +92,6 @@ input:focus-visible,
   height: 56px;
   object-fit: contain;
   flex: 0 0 auto;
-  align-self: flex-start;
 }
 .page {
   width: calc(100% - 64px);

@@ -76,6 +76,17 @@ const document = {getElementById: element};
     return json.loads(result.stdout)
 
 
+def test_header_reading_order_puts_selfnet_before_game_title(dashboard):
+    _, html = dashboard
+    branding = [
+        item
+        for item in html.elements
+        if (item.get("alt") == "Selfnet" or item.get("id") == "game-title")
+        and any(tag == "header" for tag, _ in item["parents"])
+    ]
+    assert [item["tag"] for item in branding] == ["img", "h1"]
+
+
 def test_dashboard_brand_and_css_assets_are_served_locally(dashboard):
     client, html = dashboard
     logos = [item for item in html.elements if item["tag"] == "img"]
