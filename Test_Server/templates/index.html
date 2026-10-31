@@ -28,7 +28,7 @@
                         <div class="player-stats">
                             <div class="stat stat-primary"><span class="stat-label">Patches</span><span id="patchCount1" class="stat-value">0 / 48</span></div>
                             <div class="stat"><span class="stat-label">Remaining</span><span id="remaining1" class="stat-value">48</span></div>
-                            <div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate1" class="stat-value">0.00</span></div>
+                            <div class="stat"><span class="stat-label">Patches / min</span><span id="patchRate1" class="stat-value">0.00</span></div>
                         </div>
                         <div id="clockDisplay1" class="clock-display" aria-label="Player 1 elapsed time">00:00.000</div>
                     </div>
@@ -43,7 +43,7 @@
                         <div class="player-stats">
                             <div class="stat stat-primary"><span class="stat-label">Patches</span><span id="patchCount2" class="stat-value">0 / 48</span></div>
                             <div class="stat"><span class="stat-label">Remaining</span><span id="remaining2" class="stat-value">48</span></div>
-                            <div class="stat"><span class="stat-label">Patches / sec</span><span id="patchRate2" class="stat-value">0.00</span></div>
+                            <div class="stat"><span class="stat-label">Patches / min</span><span id="patchRate2" class="stat-value">0.00</span></div>
                         </div>
                         <div id="clockDisplay2" class="clock-display" aria-label="Player 2 elapsed time">00:00.000</div>
                     </div>
@@ -63,7 +63,7 @@
                 </div>
                 <div class="summary-stats">
                     <div class="stat-card"><span class="stat-label">Total patches</span><span id="totalPatches" class="stat-value">0 / 96</span></div>
-                    <div class="stat-card"><span class="stat-label">Patches / sec</span><span id="totalRate" class="stat-value">0.00</span></div>
+                    <div class="stat-card"><span class="stat-label">Patches / min</span><span id="totalRate" class="stat-value">0.00</span></div>
                     <div class="stat-card"><span class="stat-label">Leader</span><span id="leader" class="stat-value">Even</span></div>
                 </div>
             </div>
@@ -216,10 +216,10 @@
             const counter = progressFor(playerId);
             const patches = counter?.unit === "correct";
             const unit = counter && !patches ? ` (${counter.unit})` : "";
-            const duration = currentDurationMs(playerId) / 1000;
+            const durationMinutes = currentDurationMs(playerId) / 60000;
             document.getElementById(`clockDisplay${playerId}`).textContent = formatDuration(currentDurationMs(playerId));
             renderStat(`patchCount${playerId}`, patches ? "Patches" : `Progress${unit}`, counter ? `${counter.current} / ${counter.total}` : "-");
-            renderStat(`patchRate${playerId}`, patches ? "Patches / sec" : "Rate", patches ? (duration > 0 ? (counter.current / duration).toFixed(2) : "0.00") : "-");
+            renderStat(`patchRate${playerId}`, patches ? "Patches / min" : "Rate", patches ? (durationMinutes > 0 ? (counter.current / durationMinutes).toFixed(2) : "0.00") : "-");
             renderStat(`remaining${playerId}`, `Remaining${unit}`, counter ? Math.max(0, counter.total - counter.current) : "-");
         });
         const comparable = progress.every(Boolean) && progress[0].unit === progress[1].unit && progress[0].total === progress[1].total && gameState.players["1"]?.presentation?.stage === gameState.players["2"]?.presentation?.stage;
@@ -227,7 +227,7 @@
         const patches = comparable && progress[0].unit === "correct";
         const unit = comparable && !patches ? ` (${progress[0].unit})` : "";
         renderStat("totalPatches", patches ? "Total patches" : `Total progress${unit}`, comparable ? `${total} / ${progress[0].total * 2}` : "-");
-        renderStat("totalRate", patches ? "Patches / sec" : "Rate", patches ? (longest > 0 ? (total / (longest / 1000)).toFixed(2) : "0.00") : "-");
+        renderStat("totalRate", patches ? "Patches / min" : "Rate", patches ? (longest > 0 ? (total / (longest / 60000)).toFixed(2) : "0.00") : "-");
         const lead = comparable ? progress[0].current - progress[1].current : 0;
         renderStat("leader", `Leader${unit}`, comparable ? (lead === 0 ? "Even" : `P${lead > 0 ? "1" : "2"} +${Math.abs(lead)}`) : "-");
     }
