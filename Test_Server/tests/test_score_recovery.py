@@ -75,6 +75,7 @@ def test_retry_saves_original_identity_and_refreshes_frozen_browse(
     request = page_request(mode_id="quarter-field", leaderboard_slot=4, race_id=race_id)
     client.emit("request_leaderboard", request)
     old = latest_event(client, "leaderboard_snapshot")
+    assert old["target_score_id"] is None
     assert old["rows"][0]["attempts"] == 1
     assert old["rows"][0]["current_race"] is False
     # Neither later client edits nor namespace controls can alter the saved attempt.
@@ -105,7 +106,9 @@ def test_retry_saves_original_identity_and_refreshes_frozen_browse(
     )
     assert client.get_received() == []
     client.emit("request_leaderboard", request | {"request_id": 2})
-    rows = latest_event(client, "leaderboard_snapshot")["rows"]
+    refreshed = latest_event(client, "leaderboard_snapshot")
+    rows = refreshed["rows"]
+    assert refreshed["target_score_id"] == rows[0]["id"]
     assert [(r["name"], r["race_duration_ms"], r["attempts"]) for r in rows] == [
         ("Ada", 1000, 2),
         ("Grace", 1100, 1),

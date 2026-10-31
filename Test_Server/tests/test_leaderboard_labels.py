@@ -3,7 +3,12 @@ from tests.test_dashboard import run_dashboard
 
 def test_leaderboard_labels_keep_tied_ranks_and_personal_best_flags():
     result = run_dashboard(
-        ["formatDuration", "formatCreatedAt", "appendLeaderboardPage"],
+        [
+            "formatDuration",
+            "formatCreatedAt",
+            "appendLeaderboardPage",
+            "positionRaceResult",
+        ],
         """
 const browsing = {requestId: 1, modeId: "full-field", leaderboardSlot: 1,
     raceId: "race-1", boundary: null, pendingOffset: 0, rows: new Map()};

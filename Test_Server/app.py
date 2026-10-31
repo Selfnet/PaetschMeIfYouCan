@@ -205,6 +205,7 @@ class GameRuntime:
                     return
                 token.opening = True
         rows, next_offset, error = [], None, None
+        target_score_id = None
         captured_boundary = boundary
         try:
             if boundary is None:
@@ -227,6 +228,7 @@ class GameRuntime:
                 for row in page.rows
             ]
             next_offset = page.next_offset
+            target_score_id = page.target_score_id
         except (sqlite3.Error, OSError, ValueError):
             self.logger.exception("Could not load leaderboard page")
             error = "Leaderboard could not be loaded"
@@ -250,6 +252,7 @@ class GameRuntime:
                                 "boundary": token.boundary,
                                 "offset": offset,
                                 "next_offset": next_offset,
+                                "target_score_id": target_score_id,
                                 "rows": rows,
                                 "error": error,
                             },

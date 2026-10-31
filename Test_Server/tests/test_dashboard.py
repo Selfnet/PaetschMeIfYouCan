@@ -61,7 +61,7 @@ def run_dashboard(functions, script, data=None):
 const data = JSON.parse(process.argv[1]);
 const elements = {};
 function element(id) {
-    return elements[id] ||= {textContent: "", hidden: false, disabled: false,
+    return elements[id] ||= {textContent: "", hidden: false, disabled: false, style: {},
         previousElementSibling: {textContent: ""},
         classList: {toggle() {}}, setAttribute(name, value) { this[name] = value; }};
 }

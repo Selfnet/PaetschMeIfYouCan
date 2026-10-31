@@ -23,6 +23,33 @@ After a race, that player's row is highlighted even when the new time is worse. 
 
 All attempt history remains in SQLite; grouping does not delete or rewrite scores and requires no database migration. A paginated browse freezes the best times, latest attempts, and counts at its opening snapshot. [Leaderboard regression tests](Test_Server/tests/test_leaderboard.py) cover case-insensitive grouping, best-time ranking, attempt counts, and snapshot pagination; [transport tests](Test_Server/tests/test_app.py) cover current-race highlighting and personal-best detection. Neither covers physical hardware or browser layout.
 
+### Explicit Requirement: Post-Race Score Position
+
+When players finish and the post-race leaderboard opens after name entry,
+automatically scroll to the faster player from this race and place that
+player's score row at the top of the visible list. Choose by this race's time,
+not historical personal-best rank. Players must immediately see their placing
+without manually searching or scrolling, including beyond the first page.
+Preserve the actual leaderboard order and ranks; this requirement changes the
+initial scroll position, not the standings.
+
+This is an explicit user requirement. The jump happens once per result view;
+manual navigation takes precedence. Ties choose Player 1. If the faster player
+skips their name, use the other saved participant; if both skip, stay at the top.
+Case-insensitive matching uses the participant's grouped personal-best row.
+[Positioning tests](Test_Server/tests/test_result_position.py) cover winner
+selection, pagination, ties, skipped names and manual-scroll preservation;
+they do not replace native-browser geometry checks.
+
+### Explicit Decision: Current Race Time
+
+The post-race leaderboard must still show the current race time. The main time
+and rank remain the player's personal best. If this race was slower, show its
+time separately as **This race** beneath the best; if it matched or improved
+the best, the main time already shows this race's time. Do not replace or hide
+the current result just because an older personal best is faster. Idle browsing
+does not show this post-race detail.
+
 ### Failed Score Saves
 
 If saving fails while results are open, **Retry saving** resends the captured race,

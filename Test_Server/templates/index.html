@@ -93,6 +93,7 @@
                 <table class="leaderboard-table"><thead><tr><th scope="col">Rank</th><th scope="col">Name</th><th scope="col">Best time</th><th scope="col">Attempts</th><th scope="col">Set at</th></tr></thead><tbody id="leaderboardRows"></tbody></table>
                 <p id="leaderboardPageError" role="status" hidden></p>
                 <button id="loadLeaderboardPage" class="leaderboard-button mode-control" type="button">Load more</button>
+                <div id="leaderboardTail" aria-hidden="true"></div>
             </div>
         </section>
         <footer id="idleActions" class="game-controls">
@@ -564,6 +565,7 @@
             focusGeneration: 0, error: null, pendingTimer: null, restartRequired: false,
             deadline: raceId === null ? Date.now() + IDLE_LEADERBOARD_TIMEOUT_MS : null,
             waitingForPersistence: raceId !== null && gameState.persistence_status === "pending",
+            positionPending: raceId !== null,
         };
     }
 
@@ -587,6 +589,7 @@
         const raceId = gameState.phase === "leaderboard" ? gameState.race_id : null;
         browsing = newBrowsingState(++leaderboardRequestCounter, gameState.mode.id, raceId);
         document.getElementById("leaderboardRows").replaceChildren();
+        document.getElementById("leaderboardTail").style.height = "0px";
         document.getElementById("leaderboardScroll").scrollTop = 0;
         document.getElementById("leaderboardPageError").hidden = true;
         document.getElementById("persistenceError").hidden = true;
@@ -694,6 +697,27 @@
         const shouldFocus = appended.length && intent?.requestId === browsing.requestId && intent.focusGeneration === browsing.focusGeneration && document.activeElement === intent.sourceElement && !document.getElementById("leaderboardView").hidden;
         updatePageControl();
         if (shouldFocus) focusScore(appended[0]);
+        positionRaceResult(data.target_score_id);
+    }
+
+    function positionRaceResult(targetId) {
+        if (!browsing?.positionPending) return;
+        if (targetId == null) { browsing.positionPending = false; return; }
+        const row = browsing.rows.get(targetId);
+        if (!row) {
+            if (browsing.nextOffset !== null) requestNextPage();
+            else browsing.positionPending = false;
+            return;
+        }
+        browsing.positionPending = false;
+        const scroll = document.getElementById("leaderboardScroll");
+        const headerHeight = scroll.querySelector("thead").getBoundingClientRect().height;
+        const top = Math.max(0, scroll.scrollTop + row.getBoundingClientRect().top - scroll.getBoundingClientRect().top - headerHeight);
+        // Leave enough room to top-align even the last score beneath the header.
+        document.getElementById("leaderboardTail").style.height = `${Math.max(0, top + scroll.clientHeight - scroll.scrollHeight)}px`;
+        suppressScrollUntil = performance.now() + 250;
+        row.focus({ preventScroll: true });
+        scroll.scrollTop = top;
     }
 
     function closeLeaderboard({ restoreFocus = true, dismiss = true } = {}) {
@@ -761,6 +785,7 @@
     }
 
     function focusScore(row) {
+        if (browsing) browsing.positionPending = false;
         scrollIntentUntil = 0;
         scrollbarDragging = false;
         suppressScrollUntil = performance.now() + 250;
@@ -777,6 +802,7 @@
         const rows = Array.from(browsing.rows.values());
         const index = rows.indexOf(document.activeElement);
         if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+        browsing.positionPending = false;
         if (index < 0 && document.activeElement.id !== "leaderboardTitle") return;
         event.preventDefault();
         noteLeaderboardActivity();
@@ -845,10 +871,15 @@
     });
     document.addEventListener("focusin", () => { if (browsing) browsing.focusGeneration += 1; });
     const leaderboardScroll = document.getElementById("leaderboardScroll");
-    function markScrollIntent() { scrollIntentUntil = performance.now() + 1000; suppressScrollUntil = 0; }
+    function markScrollIntent() {
+        if (browsing) browsing.positionPending = false;
+        scrollIntentUntil = performance.now() + 1000;
+        suppressScrollUntil = 0;
+    }
     leaderboardScroll.addEventListener("wheel", markScrollIntent, { passive: true });
     leaderboardScroll.addEventListener("touchmove", markScrollIntent, { passive: true });
     leaderboardScroll.addEventListener("pointerdown", (event) => {
+        if (browsing) browsing.positionPending = false;
         if (event.target === leaderboardScroll) { scrollbarDragging = true; markScrollIntent(); }
     });
     function endScrollbarDrag() { if (scrollbarDragging) scrollIntentUntil = 0; scrollbarDragging = false; }
@@ -907,7 +938,7 @@
             else if (event.code === "Space" || ["KeyV", "KeyS"].includes(event.code)) event.preventDefault();
             else if (["ArrowDown", "ArrowUp"].includes(event.key)) navigateScores(event);
             else if (["PageDown", "PageUp", "Home", "End"].includes(event.key)) markScrollIntent();
-            else if (event.key === "Tab") noteLeaderboardActivity();
+            else if (event.key === "Tab") { browsing.positionPending = false; noteLeaderboardActivity(); }
             return;
         }
         if (event.repeat) return;

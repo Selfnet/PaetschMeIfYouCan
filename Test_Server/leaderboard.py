@@ -38,6 +38,7 @@ class RankedLeaderboardEntry:
 class LeaderboardPage:
     rows: tuple[RankedLeaderboardEntry, ...]
     next_offset: int | None
+    target_score_id: int | None = None
 
 
 def default_database_path() -> Path:
@@ -171,6 +172,21 @@ class LeaderboardStore:
         if type(limit) is not int or not 1 <= limit <= 50:
             raise ValueError("limit must be an integer between 1 and 50")
         with self._connect() as connection:
+            target = None
+            if race_id is not None:
+                target = connection.execute(
+                    """WITH scoped AS (
+                           SELECT * FROM leaderboard_entries
+                           WHERE mode_id = ? AND leaderboard_slot = ? AND id <= ?
+                       )
+                       SELECT id FROM scoped
+                       WHERE casefold(name) = (
+                           SELECT casefold(name) FROM scoped WHERE race_id = ?
+                           ORDER BY duration_ms, player_number LIMIT 1
+                       )
+                       ORDER BY duration_ms, id DESC LIMIT 1""",
+                    (mode_id, leaderboard_slot, boundary, race_id),
+                ).fetchone()
             rows = connection.execute(
                 """WITH attempts AS (
                        SELECT *,
@@ -216,6 +232,7 @@ class LeaderboardStore:
             return LeaderboardPage(
                 tuple(RankedLeaderboardEntry(*row) for row in rows[:limit]),
                 offset + limit if len(rows) > limit else None,
+                target[0] if target else None,
             )
 
     @staticmethod

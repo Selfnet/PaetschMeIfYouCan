@@ -538,6 +538,9 @@ kbd {
   border-bottom: 1px solid #c4c4c4;
 }
 .leaderboard-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   padding-block: 10px;
   background: #e6e6e6;
   font-size: 14px;

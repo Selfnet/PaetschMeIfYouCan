@@ -310,6 +310,7 @@ def test_persistence_highlights_player_and_detects_personal_best(
     assert [row["name"] for row in page["rows"]] == ["Ada", "Grace"]
     assert all(row["current_race"] for row in page["rows"])
     ada, grace = page["rows"]
+    assert page["target_score_id"] == ada["id"]
     assert ada["attempts"] == (1 if previous_time is None else 2)
     assert grace["attempts"] == 1
     assert ada["duration_ms"] == min(
@@ -323,6 +324,7 @@ def test_persistence_highlights_player_and_detects_personal_best(
     client.get_received()
     client.emit("request_leaderboard", page_request(request_id=2))
     idle = latest_event(client, "leaderboard_snapshot")
+    assert idle["target_score_id"] is None
     assert all(
         not row["current_race"] and not row["personal_best"] for row in idle["rows"]
     )
