@@ -570,7 +570,9 @@ kbd {
 }
 .personal-best-badge {
   display: inline-block;
-  color: var(--green);
+  color: #000;
+  background: var(--orange);
+  padding: 2px 6px;
   font-size: 13px;
   font-weight: 700;
   margin-left: 20px;

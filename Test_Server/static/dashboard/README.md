@@ -3,9 +3,11 @@
 These assets are copied unchanged from Selfnet's existing sites. The game serves
 them locally and does not depend on those sites being reachable.
 
-- `selfnet.svg`: the full wordmark from Selfnet's `www/www.selfnet.de-2016`
-  repository, `site/static/images/Selfnet_Logo.svg`. Preserve the original
-  proportions and artwork color; this is not the cropped SIAM flag.
+- `selfnet.svg`: the full wordmark from [Selfnet's blog repository](https://git.selfnet.de/www/blog),
+  `src/assets/logos/selfnet.svg` at `22ca293`. Preserve the original proportions,
+  alignment and artwork color; this is not the cropped SIAM flag. The bundled
+  [blog license](../../../docs/licenses/Selfnet-blog-MIT.txt) retains the source
+  repository's copyright and redistribution notice, not game behavior.
 - `bkgrnd.jpg`: SIAM's concrete background from `support/siam`,
   `src/siam/static/img/bkgrnd.jpg`.
 - `Marvel-Regular.ttf` and `Marvel-Bold.ttf`: SIAM's display fonts from

@@ -655,7 +655,7 @@
             tableRow.dataset.scoreId = String(row.id);
             tableRow.classList.toggle("is-current-race", Boolean(row.current_race));
             if (row.current_race) tableRow.setAttribute("aria-current", "true");
-            [row.rank, row.name, formatDuration(row.duration_ms), row.attempts, formatCreatedAt(row.created_at)].forEach((value) => {
+            [row.rank === 1 ? "Top of Rack" : row.rank, row.name, formatDuration(row.duration_ms), row.attempts, formatCreatedAt(row.created_at)].forEach((value) => {
                 const cell = document.createElement("td");
                 cell.textContent = String(value);
                 tableRow.appendChild(cell);
@@ -669,7 +669,7 @@
             if (row.personal_best) {
                 const badge = document.createElement("span");
                 badge.className = "personal-best-badge";
-                badge.textContent = "NEW PB!";
+                badge.textContent = "New PB!";
                 badge.setAttribute("aria-label", "New personal best!");
                 tableRow.children[1].appendChild(badge);
             }

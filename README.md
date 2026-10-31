@@ -17,7 +17,9 @@ The inputs are displayed in result order (winner first), not fixed player-number
 
 Each leaderboard shows one row per case-insensitive name, separately for each game mode and slot. Ranks compare each player's **best time**; equal times share a rank. The name uses the latest spelling, and **Set at** is the best attempt's timestamp (the latest matching attempt for equal best times). The **Attempts** column counts all saved scores for that name in the same mode and slot, including historical scores. Blank names are still skipped, and retrying a score save does not add an attempt.
 
-After a race, that player's row is highlighted even when the new time is worse. A worse time appears as **This race** beneath the best time without changing the rank. A first score or strictly improved best earns a **NEW PB!** badge; matching an existing best does not. Idle browsing does not show current-race details or badges.
+First place, including tied first places, is displayed as **Top of Rack**; other ranks remain numeric.
+
+After a race, that player's row is highlighted even when the new time is worse. A worse time appears as **This race** beneath the best time without changing the rank. A first score or strictly improved best earns a compact orange **New PB!** badge; matching an existing best does not. Idle browsing does not show current-race details or badges.
 
 All attempt history remains in SQLite; grouping does not delete or rewrite scores and requires no database migration. A paginated browse freezes the best times, latest attempts, and counts at its opening snapshot. [Leaderboard regression tests](Test_Server/tests/test_leaderboard.py) cover case-insensitive grouping, best-time ranking, attempt counts, and snapshot pagination; [transport tests](Test_Server/tests/test_app.py) cover current-race highlighting and personal-best detection. Neither covers physical hardware or browser layout.
 
