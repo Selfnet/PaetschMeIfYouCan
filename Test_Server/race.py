@@ -15,6 +15,7 @@ LEADERBOARD_TIMEOUT_NS = 60 * 1_000_000_000
 
 class Phase(StrEnum):
     READY = "ready"
+    MAINTENANCE = "maintenance"
     RACING = "racing"
     STOPPED = "stopped"
     NAME_ENTRY = "name_entry"
@@ -83,6 +84,7 @@ class RaceStateMachine:
         race_id_factory: Callable[[], str] = lambda: str(uuid.uuid4()),
         registry: ModeRegistry = BUILTIN_MODES,
         leaderboard_slot: int = 1,
+        maintenance_requested: bool = False,
     ) -> None:
         self._clock_ns = clock_ns
         self._race_id_factory = race_id_factory
@@ -92,6 +94,9 @@ class RaceStateMachine:
         if type(leaderboard_slot) is not int or not 1 <= leaderboard_slot <= 9:
             raise ValueError("leaderboard_slot must be an integer between 1 and 9")
         self.leaderboard_slot = leaderboard_slot
+        if type(maintenance_requested) is not bool:
+            raise ValueError("maintenance_requested must be a boolean")
+        self.maintenance_requested = maintenance_requested
         self.registry.get(self.selected_mode_id)
         self.boards = {1: GameBoard(), 2: GameBoard()}
         self.context = EvaluationContext(verify=True)
@@ -121,7 +126,7 @@ class RaceStateMachine:
 
     def _reset_unlocked(self):
         self.epoch += 1
-        self.phase = Phase.READY
+        self.phase = Phase.MAINTENANCE if self.maintenance_requested else Phase.READY
         self.race_id: str | None = None
         self.started_ns: int | None = None
         self.players = {1: PlayerRaceState(), 2: PlayerRaceState()}
@@ -215,6 +220,18 @@ class RaceStateMachine:
             staged, now_ns, "updated" if published else None
         )
 
+    def set_maintenance(self, enabled) -> StateChange:
+        with self._lock:
+            if type(enabled) is not bool:
+                return StateChange(False)
+            if enabled == self.maintenance_requested:
+                return StateChange(False, action="maintenance_set")
+            self.maintenance_requested = enabled
+            if self.phase in (Phase.READY, Phase.MAINTENANCE):
+                self.phase = Phase.MAINTENANCE if enabled else Phase.READY
+                self.epoch += 1
+            return self._change_unlocked("maintenance_set")
+
     def start(self) -> StateChange:
         with self._lock:
             if self.phase != Phase.READY:
@@ -269,7 +286,7 @@ class RaceStateMachine:
             except ValueError:
                 return StateChange(False)
             now_ns = self._clock_ns()
-            if self.phase == Phase.READY:
+            if self.phase in (Phase.READY, Phase.MAINTENANCE):
                 previous = self.presentations.copy()
                 previous_error = self.mode_error
                 diagnostic = self._preview_unlocked()
@@ -467,6 +484,8 @@ class RaceStateMachine:
                     field.resolved = True
             return self._enter_leaderboard_unlocked(now_ns)
         if self.phase == Phase.LEADERBOARD:
+            if self.maintenance_requested and self.persistence_status == "pending":
+                return None
             diagnostic = self._reset_unlocked()
             return self._change_unlocked("reset", diagnostic=diagnostic)
         return None
@@ -582,6 +601,8 @@ class RaceStateMachine:
         with self._lock:
             if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
                 return StateChange(False)
+            if self.maintenance_requested and self.persistence_status == "pending":
+                return StateChange(False)
             if self.persistence_error is not None and (
                 self.persistence_status == "pending"
                 or discard_unsaved is not True
@@ -594,7 +615,9 @@ class RaceStateMachine:
 
     def reset(self) -> StateChange:
         with self._lock:
-            if self.persistence_error is not None:
+            if self.persistence_error is not None or (
+                self.maintenance_requested and self.persistence_status == "pending"
+            ):
                 return StateChange(False)
             diagnostic = self._reset_unlocked()
             return self._change_unlocked("reset", diagnostic=diagnostic)
@@ -658,6 +681,7 @@ class RaceStateMachine:
                 "available_modes": [asdict(mode) for mode in self.registry.metadata()],
                 "browse_epoch": self.epoch,
                 "leaderboard_slot": self.leaderboard_slot,
+                "maintenance_requested": self.maintenance_requested,
                 "mode_error": self.mode_error,
                 "persistence_status": self.persistence_status,
                 "phase": self.phase.value,

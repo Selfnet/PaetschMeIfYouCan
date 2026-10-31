@@ -211,6 +211,7 @@ def test_refresh_and_retry_reopen_results_with_new_page_identity():
     result = run_dashboard(
         [
             "renderGameState",
+            "renderMaintenance",
             "openLeaderboard",
             "closeLeaderboard",
             "newBrowsingState",

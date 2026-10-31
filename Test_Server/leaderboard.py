@@ -87,6 +87,15 @@ class LeaderboardStore:
                 "id INTEGER PRIMARY KEY CHECK (id = 1), "
                 "leaderboard_slot INTEGER NOT NULL CHECK (leaderboard_slot BETWEEN 1 AND 9))"
             )
+            settings_columns = {
+                row[1]
+                for row in connection.execute("PRAGMA table_info(leaderboard_settings)")
+            }
+            if "maintenance_requested" not in settings_columns:
+                connection.execute(
+                    "ALTER TABLE leaderboard_settings ADD COLUMN maintenance_requested "
+                    "INTEGER NOT NULL DEFAULT 0 CHECK (maintenance_requested IN (0, 1))"
+                )
             connection.execute(
                 "INSERT INTO leaderboard_settings (id, leaderboard_slot) VALUES (1, 1) "
                 "ON CONFLICT(id) DO NOTHING"
@@ -110,6 +119,26 @@ class LeaderboardStore:
                 "ON CONFLICT(id) DO UPDATE SET leaderboard_slot = excluded.leaderboard_slot",
                 (leaderboard_slot,),
             )
+
+    def maintenance_requested(self) -> bool:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT maintenance_requested FROM leaderboard_settings WHERE id = 1"
+            ).fetchone()
+        if row is None or row[0] not in (0, 1):
+            raise ValueError("maintenance setting is missing or invalid")
+        return bool(row[0])
+
+    def set_maintenance_requested(self, enabled: bool) -> None:
+        if type(enabled) is not bool:
+            raise ValueError("maintenance setting must be a boolean")
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE leaderboard_settings SET maintenance_requested = ? WHERE id = 1",
+                (enabled,),
+            )
+            if cursor.rowcount != 1:
+                raise ValueError("maintenance setting is missing")
 
     def insert_entries(self, entries: Sequence[NewLeaderboardEntry]) -> set[int]:
         validated = tuple(self._validate(entry) for entry in entries)

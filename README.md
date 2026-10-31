@@ -80,6 +80,49 @@ The database remains at `LEADERBOARD_DB` or `~/.local/share/patchmeifyoucan/lead
 
 [Slot persistence and transport tests](Test_Server/tests/test_leaderboard_slots.py) cover migration, isolation, restart restoration, failed settings writes, race identity, and stale page rejection; they do not exercise physical hardware. [Slot keyboard tests](Test_Server/tests/test_leaderboard_slot_keyboard.py) execute the actual dashboard shortcut and selection helpers, including modifier, focus, and phase guards; they do not replace browser layout checks.
 
+## Maintenance Mode
+
+Use the **Maintenance mode** checkbox at `/control` to enable or disable it.
+The control page reports **Off**, **Queued** or **Active**. Enabling while ready
+activates immediately, including idle leaderboard browsing. During a race,
+stopped game, name entry or post-race results, it waits for the normal return to
+ready. It never stops a race or dismisses results itself. Uncheck it to cancel
+a queued request. A stopped game still needs its normal reset.
+
+While active, every connected dashboard is darkened behind large lowercase
+**maintenance mode** text in Selfnet orange and Comic Sans. Dashboard controls
+and shortcuts cannot start a game or dismiss the overlay. Disable maintenance
+from `/control` to return to ready. Serial observations continue for diagnostics.
+Maintenance is an operator convenience on the existing trusted game network,
+not authentication or an authorization boundary.
+
+The request is saved in SQLite before it is accepted and is restored across
+browser refreshes and backend restarts. A queued request becomes active on
+backend restart because races are memory-only. **Do not restart to force queued
+maintenance:** it would lose the current race or unsaved results. Failed score
+saves still require retry or explicit abandonment; queued maintenance waits for
+in-flight saves as well. Failed maintenance-setting writes leave the live setting
+unchanged and show an error on `/control`.
+
+Explicit operator policy: if the setting cannot be read at backend startup,
+log the error and **allow play with maintenance off**, preserving operation
+without the database. A readable saved setting is required for restart
+persistence. Migration only adds a default-off settings column; it does not
+change scores or the selected slot. Pre-maintenance source ignores this setting,
+so a source rollback will no longer block games. Take a fresh database backup
+before deployment; maintenance does not itself authorize deployment or restart.
+
+Comic Sans must be installed on each dashboard device through a licensed font
+distribution. It is referenced as a local font, not bundled in this repository.
+Do not treat a CSS font-family declaration as proof it rendered: check the actual
+font on the kiosk before deployment. Without it the browser uses its cursive
+fallback, which does not satisfy the requested appearance.
+
+[Maintenance tests](Test_Server/tests/test_maintenance.py) cover queued
+transitions, persistence, recovery and concurrent writes; [UI tests](Test_Server/tests/test_maintenance_ui.py)
+exercise the actual overlay, operator and keyboard handlers. Neither verifies
+physical hardware, installed fonts or native-browser layout.
+
 ## Development
 
 The shared footer keeps instructions visible in every game view. Its leftmost

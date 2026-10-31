@@ -138,6 +138,9 @@
     <p>Arrows: browse | Enter: select | Esc / M: cancel</p>
     <button id="closeModeDialog" class="leaderboard-button mode-control" type="button">Close</button>
 </dialog>
+<dialog id="maintenanceOverlay" aria-labelledby="maintenanceTitle">
+    <p id="maintenanceTitle" tabindex="-1" autofocus>maintenance mode</p>
+</dialog>
 
 <script>
     const socket = io();
@@ -282,9 +285,15 @@
         updateStats();
     }
 
+    function renderMaintenance(phase) {
+        const overlay = document.getElementById("maintenanceOverlay");
+        if (phase === "maintenance" && !overlay.open) overlay.showModal();
+        else if (phase !== "maintenance" && overlay.open) overlay.close();
+    }
+
     function showPhase(phase) {
         const idlePhase = ["ready", "stopped"].includes(phase);
-        document.getElementById("raceView").hidden = Boolean(browsing) || !(["ready", "racing", "stopped"].includes(phase) || (phase === "leaderboard" && closedLeaderboardRaceId === gameState.race_id));
+        document.getElementById("raceView").hidden = Boolean(browsing) || !(["ready", "racing", "stopped", "maintenance"].includes(phase) || (phase === "leaderboard" && closedLeaderboardRaceId === gameState.race_id));
         document.getElementById("nameEntryView").hidden = phase !== "name_entry";
         document.getElementById("leaderboardView").hidden = !browsing;
         document.getElementById("modeButton").disabled = lastStateRevision === null || phase !== "ready" || Boolean(browsing);
@@ -296,7 +305,7 @@
         document.getElementById("nameEntryCountdown").hidden = phase !== "name_entry";
         document.getElementById("leaderboardCountdown").hidden = !browsing;
         document.getElementById("leaderboardSlotHint").hidden = !browsing;
-        document.getElementById("gameStatus").textContent = lastStateRevision === null ? "Connecting" : ({ ready: "Ready", racing: "Racing", stopped: "Stopped", name_entry: "Finished", leaderboard: "Finished" }[phase] || phase);
+        document.getElementById("gameStatus").textContent = lastStateRevision === null ? "Connecting" : ({ ready: "Ready", racing: "Racing", stopped: "Stopped", name_entry: "Finished", leaderboard: "Finished", maintenance: "Maintenance" }[phase] || phase);
         document.getElementById("clockButton").hidden = Boolean(browsing) || !["ready", "racing", "stopped"].includes(phase);
         document.getElementById("clockButton").disabled = lastStateRevision === null;
         document.getElementById("clockAction").textContent = ({ready: "Start", racing: "Stop", stopped: "Reset"})[phase] || "Start";
@@ -334,7 +343,8 @@
         if (reopenForSlot) openLeaderboard();
         if (state.phase !== "leaderboard") closedLeaderboardRaceId = null;
         showPhase(state.phase);
-        if ((priorPhase !== state.phase || closedForOrigin) && state.phase !== "name_entry") document.getElementById(state.phase === "leaderboard" ? "leaderboardTitle" : "game-title").focus();
+        renderMaintenance(state.phase);
+        if ((priorPhase !== state.phase || closedForOrigin) && !["name_entry", "maintenance"].includes(state.phase)) document.getElementById(state.phase === "leaderboard" ? "leaderboardTitle" : "game-title").focus();
         PLAYER_IDS.forEach((playerId) => {
             const player = state.players[String(playerId)];
             if (!player) return;
@@ -903,8 +913,10 @@
     });
     document.getElementById("closeModeDialog").addEventListener("click", () => closeModeSelector());
     document.getElementById("modeDialog").addEventListener("cancel", (event) => { event.preventDefault(); closeModeSelector(); });
+    document.getElementById("maintenanceOverlay").addEventListener("cancel", (event) => event.preventDefault());
     document.addEventListener("keydown", (event) => {
         if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+        if (gameState.phase === "maintenance") { event.preventDefault(); return; }
         if (gameState.phase === "name_entry") {
             if (event.key === "Enter") {
                 event.preventDefault();

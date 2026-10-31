@@ -39,6 +39,12 @@ class BrowseToken:
 
 
 class UnavailableLeaderboardStore:
+    def maintenance_requested(self):
+        raise OSError("Leaderboard store is unavailable")
+
+    def set_maintenance_requested(self, enabled):
+        raise OSError("Leaderboard store is unavailable")
+
     def selected_slot(self):
         raise OSError("Leaderboard store is unavailable")
 
@@ -108,6 +114,25 @@ class GameRuntime:
                 "leaderboard_slot": self.race.snapshot()["leaderboard_slot"],
                 "error": error,
             }
+
+    def set_maintenance(self, enabled):
+        with self._publication_lock:
+            if type(enabled) is not bool:
+                return {
+                    "accepted": False,
+                    "error": "Expected a boolean maintenance setting",
+                }
+            try:
+                self.store.set_maintenance_requested(enabled)
+            except (sqlite3.Error, OSError, ValueError):
+                self.logger.exception("Could not save maintenance setting")
+                return {
+                    "accepted": False,
+                    "error": "Maintenance setting could not be saved",
+                }
+            change = self.race.set_maintenance(enabled)
+            self._publish_change(change)
+            return {"accepted": True, "error": None}
 
     def _publish_change(self, change):
         if change.diagnostic:
@@ -402,6 +427,11 @@ def register_socket_events(app, socketio, runtime):
             else "Mode selection is not available",
         }
 
+    @socketio.on("set_maintenance")
+    def set_maintenance(data=None):
+        enabled = data.get("enabled") if isinstance(data, dict) else None
+        return runtime.set_maintenance(enabled)
+
     @socketio.on("leaderboard_activity")
     def leaderboard_activity(data=None):
         if isinstance(data, dict) and isinstance(data.get("race_id"), str):
@@ -499,6 +529,10 @@ def create_app(
         app.logger.exception(
             "Could not restore selected leaderboard slot; using slot 1"
         )
+    try:
+        kwargs["maintenance_requested"] = store.maintenance_requested()
+    except (sqlite3.Error, OSError, ValueError):
+        app.logger.exception("Could not restore maintenance setting; allowing play")
     runtime = GameRuntime(
         socketio,
         RaceStateMachine(**kwargs),

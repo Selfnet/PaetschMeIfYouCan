@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pätsch me if you can - Control</title>
-
+    <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
 </head>
 <body>
 
@@ -11,8 +13,59 @@
 <button id="stopBtn2">Stop Player 2</button>
 <button id="resetBtn">Reset Clock</button>
 <button id="restartSerial">Restart Serial</button>
+<fieldset>
+    <legend>Maintenance</legend>
+    <label><input id="maintenanceToggle" type="checkbox" disabled> Maintenance mode</label>
+    <p id="maintenanceStatus" role="status">Connecting</p>
+    <p id="maintenanceError" role="alert" hidden></p>
+</fieldset>
 
 <script>
+    const socket = io();
+    let maintenanceState = null;
+    let pendingMaintenance = null;
+    const maintenanceToggle = document.getElementById("maintenanceToggle");
+    const maintenanceError = document.getElementById("maintenanceError");
+
+    function renderMaintenanceControl() {
+        maintenanceToggle.disabled = maintenanceState === null || pendingMaintenance !== null;
+        maintenanceToggle.checked = Boolean(maintenanceState?.maintenance_requested);
+        document.getElementById("maintenanceStatus").textContent = !maintenanceState ? "Connecting"
+            : maintenanceState.phase === "maintenance" ? "Active"
+            : maintenanceState.maintenance_requested ? "Queued until the current game and results finish" : "Off";
+    }
+
+    function resetMaintenanceConnection() {
+        maintenanceState = null;
+        pendingMaintenance = null;
+        renderMaintenanceControl();
+    }
+
+    socket.io.on("open", resetMaintenanceConnection);
+    socket.on("disconnect", resetMaintenanceConnection);
+    socket.on("game_state", (state) => {
+        if (maintenanceState && state.revision < maintenanceState.revision) return;
+        maintenanceState = state;
+        renderMaintenanceControl();
+    });
+    maintenanceToggle.addEventListener("change", () => {
+        if (!maintenanceState || pendingMaintenance !== null) return;
+        const enabled = maintenanceToggle.checked;
+        const attempt = {};
+        pendingMaintenance = attempt;
+        maintenanceError.hidden = true;
+        renderMaintenanceControl();
+        socket.timeout(10_000).emit("set_maintenance", { enabled }, (error, ack) => {
+            if (pendingMaintenance !== attempt) return;
+            pendingMaintenance = null;
+            if (error || !ack?.accepted) {
+                maintenanceError.textContent = error ? "Could not confirm maintenance setting. Check the connection and try again." : ack?.error || "Maintenance setting could not be saved";
+                maintenanceError.hidden = false;
+            }
+            renderMaintenanceControl();
+        });
+    });
+
     document.getElementById("startBtn").addEventListener("click", () => {
         fetch("/start-clock");
     });
