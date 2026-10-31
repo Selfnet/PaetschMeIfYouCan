@@ -33,6 +33,10 @@ The database remains at `LEADERBOARD_DB` or `~/.local/share/patchmeifyoucan/lead
 
 ## Development
 
+[Local preview](docs/local-preview.md) runs the real game with simulated boards
+and an isolated, disposable leaderboard. Use it to try the dashboard without
+hardware; it does not change or deploy to the game PC.
+
 [Dashboard assets](Test_Server/static/dashboard/README.md) records the original
 Selfnet/SIAM sources and font license, not game behavior or deployment.
 

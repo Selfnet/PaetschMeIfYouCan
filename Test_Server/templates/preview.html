@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Patchme local preview</title>
+    <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: #262626;
+        background: #eee;
+        font:
+          16px/1.4 Helvetica,
+          Arial,
+          sans-serif;
+      }
+      header {
+        padding: 12px 20px;
+        border-bottom: 3px solid #ff5d1c;
+      }
+      h1 {
+        display: inline;
+        font-size: 20px;
+        margin-right: 16px;
+      }
+      p {
+        margin: 6px 0;
+      }
+      .controls,
+      .player {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .controls {
+        margin-top: 12px;
+        gap: 12px 24px;
+      }
+      button,
+      a {
+        color: #262626;
+      }
+      button {
+        font: inherit;
+        padding: 6px 12px;
+        cursor: pointer;
+      }
+      :focus-visible {
+        outline: 3px solid #b23c00;
+        outline-offset: 2px;
+      }
+      iframe {
+        width: 100%;
+        height: calc(100vh - 170px);
+        min-height: 640px;
+        border: 0;
+        display: block;
+      }
+      #error {
+        color: #a52424;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Local preview</h1>
+      <a href="/" target="patchme-game">Open game in its own tab</a>
+      <p>
+        Simulated boards and disposable sample scores. Nothing connects to the
+        game PC.
+      </p>
+      <div class="controls">
+        <button id="start" type="button">Start race</button>
+        <button id="reset" type="button">Reset and unplug</button>
+        {% for player in (1, 2) %}
+        <div
+          class="player"
+          role="group"
+          aria-label="Player {{ player }} simulation"
+        >
+          <strong>Player {{ player }}</strong>
+          <button data-player="{{ player }}" data-action="patch" type="button">
+            Patch 6
+          </button>
+          <button data-player="{{ player }}" data-action="wrong" type="button">
+            Wrong cable
+          </button>
+          <button data-player="{{ player }}" data-action="finish" type="button">
+            Finish
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      <p id="error" role="alert" hidden></p>
+    </header>
+    <iframe id="game" src="/" title="Patchme game preview"></iframe>
+    <script>
+      const socket = io();
+      let state;
+      socket.on("game_state", (next) => {
+        state = next;
+      });
+      async function act(path, body) {
+        const error = document.getElementById("error");
+        error.hidden = true;
+        try {
+          const response = await fetch(
+            path,
+            body === undefined
+              ? {}
+              : {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(body),
+                },
+          );
+          if (!response.ok)
+            throw new Error(`Preview action failed (${response.status})`);
+          document.getElementById("game").contentWindow.focus();
+        } catch (failure) {
+          error.textContent = failure.message;
+          error.hidden = false;
+        }
+      }
+      document
+        .getElementById("start")
+        .addEventListener("click", () => act("/start-clock"));
+      document
+        .getElementById("reset")
+        .addEventListener("click", () => act("/preview/reset", {}));
+      document.querySelectorAll("[data-player]").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (!state) return;
+          const player = Number(button.dataset.player);
+          const progress = state.players[String(player)].presentation?.progress;
+          const total = state.mode.required_port_count || 48;
+          const count = progress?.current || 0;
+          act("/preview/board", {
+            player,
+            count:
+              button.dataset.action === "finish"
+                ? total
+                : button.dataset.action === "patch"
+                  ? Math.min(total, count + 6)
+                  : count,
+            wrong: button.dataset.action === "wrong",
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
