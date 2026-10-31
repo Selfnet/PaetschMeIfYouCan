@@ -55,6 +55,12 @@ The database remains at `LEADERBOARD_DB` or `~/.local/share/patchmeifyoucan/lead
 
 ## Development
 
+The shared footer keeps instructions visible in every game view. Its leftmost
+control, **Space**, can be clicked or activated with the Space key to start, stop
+or reset the clock. It is hidden during name entry and leaderboard browsing.
+[Dashboard tests](Test_Server/tests/test_dashboard.py) cover phase-dependent
+controls; they do not replace native-browser keyboard or layout checks.
+
 [Local preview](docs/local-preview.md) runs the real game with simulated boards
 and an isolated, disposable leaderboard. Use it to try the dashboard without
 hardware; it does not change or deploy to the game PC.

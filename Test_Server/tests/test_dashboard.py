@@ -115,7 +115,14 @@ def test_dashboard_brand_and_css_assets_are_served_locally(dashboard):
 
 @pytest.mark.parametrize(
     "control",
-    ["modeButton", "leaderboardButton", "idleLeaderboardSlot", "viewLeaderboardSlot"],
+    [
+        "modeButton",
+        "leaderboardButton",
+        "idleLeaderboardSlot",
+        "viewLeaderboardSlot",
+        "gameInstructions",
+        "clockButton",
+    ],
 )
 def test_game_controls_belong_to_shared_footer(dashboard, control):
     _, html = dashboard
@@ -161,6 +168,45 @@ console.log(JSON.stringify(elements));
     assert result["closeLeaderboard"]["hidden"] is not browsing
     assert result["nameEntryCountdown"]["hidden"] is (phase != "name_entry")
     assert result["leaderboardCountdown"]["hidden"] is not browsing
+    assert result["clockButton"]["hidden"] is (
+        browsing or phase not in {"ready", "racing", "stopped"}
+    )
+    if not result["clockButton"]["hidden"]:
+        assert (
+            result["clockAction"]["textContent"]
+            == {"ready": "Start", "racing": "Stop", "stopped": "Reset"}[phase]
+        )
+    assert result["modeShortcut"]["hidden"] is (browsing or phase != "name_entry")
+
+
+@pytest.mark.parametrize(
+    "phase", ["ready", "racing", "stopped", "name_entry", "leaderboard"]
+)
+@pytest.mark.parametrize("browsing_open", [False, True])
+def test_clock_button_uses_space_action_only_in_playable_views(phase, browsing_open):
+    binding = next(
+        (
+            line
+            for line in TEMPLATE.read_text().splitlines()
+            if 'getElementById("clockButton").addEventListener' in line
+        ),
+        "",
+    )
+    result = run_dashboard(
+        [],
+        """
+const gameState = {phase: data.phase};
+const browsing = data.browsing ? {} : null;
+const lastStateRevision = 1;
+let calls = 0, click = () => {};
+async function advanceClockWithSpacebar() { calls++; }
+element("clockButton").addEventListener = (_, callback) => { click = callback; };
+"""
+        + binding
+        + "\nclick();\nconsole.log(JSON.stringify(calls));",
+        {"phase": phase, "browsing": browsing_open},
+    )
+    assert result == int(not browsing_open and phase in {"ready", "racing", "stopped"})
 
 
 def test_port_layout_exposes_all_physical_ports_as_read_only_list_items():

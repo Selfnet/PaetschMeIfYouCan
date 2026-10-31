@@ -98,7 +98,12 @@
         <footer id="idleActions" class="game-controls">
             <div class="footer-errors"><p id="modeError" class="persistence-error" role="alert" hidden></p></div>
             <div class="mode-bar__info"><strong id="currentMode"></strong><span id="gameStatus" role="status">Connecting</span><span id="modeDescription"></span></div>
+            <aside id="gameInstructions" class="game-instructions" aria-labelledby="instructionsTitle">
+                <strong id="instructionsTitle">Instructions:</strong>
+                <p>Sit across from each other. Your job is to 1:1 patch as fast as you can, against the other player. Press space to start the clock and let's fucking goooooo</p>
+            </aside>
             <div class="mode-bar__actions" role="group" aria-label="Game controls">
+                <button id="clockButton" class="leaderboard-button" type="button" disabled><kbd aria-hidden="true">Space</kbd><span id="clockAction">Start</span></button>
                 <button id="modeButton" class="leaderboard-button mode-control" type="button" disabled><kbd aria-hidden="true">M</kbd><span>Game modes</span></button>
                 <button id="leaderboardButton" class="leaderboard-button" type="button" disabled><kbd aria-hidden="true">L</kbd><span>Leaderboard</span></button>
                 <button id="retryScores" class="leaderboard-button primary" type="button" hidden>Retry saving</button>
@@ -291,9 +296,12 @@
         document.getElementById("leaderboardCountdown").hidden = !browsing;
         document.getElementById("leaderboardSlotHint").hidden = !browsing;
         document.getElementById("gameStatus").textContent = lastStateRevision === null ? "Connecting" : ({ ready: "Ready", racing: "Racing", stopped: "Stopped", name_entry: "Finished", leaderboard: "Finished" }[phase] || phase);
+        document.getElementById("clockButton").hidden = Boolean(browsing) || !["ready", "racing", "stopped"].includes(phase);
+        document.getElementById("clockButton").disabled = lastStateRevision === null;
+        document.getElementById("clockAction").textContent = ({ready: "Start", racing: "Stop", stopped: "Reset"})[phase] || "Start";
         const shortcut = document.getElementById("modeShortcut");
-        shortcut.hidden = Boolean(browsing) || lastStateRevision === null;
-        shortcut.textContent = phase === "name_entry" ? "Enter: next / save - Tab: switch player" : `Space: ${phase === "ready" ? "start" : phase === "racing" ? "stop" : phase === "leaderboard" ? "continue" : "reset"}`;
+        shortcut.hidden = Boolean(browsing) || lastStateRevision === null || phase !== "name_entry";
+        shortcut.textContent = "Enter: next / save - Tab: switch player";
     }
 
     function renderGameState(state) {
@@ -821,6 +829,7 @@
         ensureClockAnimation();
     });
     document.getElementById("submitNamesButton").addEventListener("click", submitAllNames);
+    document.getElementById("clockButton").addEventListener("click", () => { if (lastStateRevision !== null && !browsing && ["ready", "racing", "stopped"].includes(gameState.phase)) advanceClockWithSpacebar().catch((error) => console.error("Clock control failed", error)); });
     document.getElementById("leaderboardButton").addEventListener("click", toggleLeaderboard);
     document.getElementById("closeLeaderboard").addEventListener("click", () => closeLeaderboard());
     document.getElementById("retryScores").addEventListener("click", retryScores);

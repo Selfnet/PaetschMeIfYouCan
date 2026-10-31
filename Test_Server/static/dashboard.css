@@ -323,8 +323,17 @@ input:focus-visible,
   border-top: 1px solid var(--line);
 }
 .mode-bar__info {
-  flex: 1 1 240px;
+  flex: 0 1 240px;
   min-width: 0;
+  overflow-wrap: anywhere;
+}
+.game-instructions {
+  flex: 1 1 360px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 #modeDescription {
