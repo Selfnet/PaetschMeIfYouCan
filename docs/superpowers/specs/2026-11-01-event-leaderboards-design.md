@@ -1,7 +1,8 @@
 # Scheduled Event Leaderboards
 
-Status: specification for review. Implementation and deployment are not authorized
-by this document. Baseline: `9db48eb`.
+Status: approved and implemented after separate user authorization. Historical
+baseline: `9db48eb`. Current behavior and regression references live in the
+[README](../../../README.md#event-leaderboards); deployment approval is separate.
 
 ## Intent And Agreed Decisions
 

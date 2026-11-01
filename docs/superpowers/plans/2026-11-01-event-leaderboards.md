@@ -1,5 +1,9 @@
 # Scheduled Event Leaderboards Implementation Plan
 
+Completed on 2026-11-01. Release `83aff3d` was reviewed, pushed and deployed after
+an idle-only backup. All 908 tests passed; migration preserved all 299 live attempts
+and settings. Deployment/rollback records live in the parent `AGENTS.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add independent scheduled event leaderboards, safe race-start score
@@ -178,36 +182,36 @@ handlers, README contracts, and the approved spec.
 **Produces:** All Data And Policy and Runtime And Transport contracts above.
 This backend milestone is not deployed until the UI task is complete.
 
-- [ ] Write `tests/test_event_policy.py` with literal UTC expectations for starts
+- [x] Write `tests/test_event_policy.py` with literal UTC expectations for starts
   before/at/end, adjacent events, Berlin conversion/DST rejection, offline expiry,
   and manual choice after expiry. For example, event `[10:00Z,12:00Z)` resolves to
   its ID at `10:00Z`, and to numbered slot 1 at `12:00Z` when the choice is older.
-- [ ] Run `uv run pytest -q tests/test_event_policy.py`; record the expected RED
+- [x] Run `uv run pytest -q tests/test_event_policy.py`; record the expected RED
   evidence before implementing the policy module, then implement and rerun GREEN.
-- [ ] Write `tests/test_event_storage.py` using actual disposable legacy SQLite
+- [x] Write `tests/test_event_storage.py` using actual disposable legacy SQLite
   schemas. Assert exact score/settings preservation, distinct empty same-name
   events, independent mode/PB scope, atomic invalid/stale/overlap rejection,
   rename/edit/end/cancel eligibility, and same-slot timestamp renewal.
-- [ ] Run the storage tests RED, implement transactional migration/catalog CRUD
+- [x] Run the storage tests RED, implement transactional migration/catalog CRUD
   and generic score queries, then run them GREEN. Do not leave a slot/event-ID
   compatibility wrapper that confuses the new identity model.
-- [ ] Write `tests/test_event_runtime.py` covering both start routes and Space,
+- [x] Write `tests/test_event_runtime.py` covering both start routes and Space,
   last-tick/start-boundary races, serialized concurrent operator edits, locked
   old-client selection, cross-boundary names/retries, multi-client independent
   browsing, and restart across an entire event followed by fresh same-slot choice.
   Assert actual saved rows and transport payloads, not mock-call existence.
-- [ ] Add recovery tests for a blocked initial write followed by failure while
+- [x] Add recovery tests for a blocked initial write followed by failure while
   dismiss/reset/timeout are attempted. Assert results stay recoverable, then retry
   stores both original identities even after End now or expiry.
-- [ ] Run focused tests RED; implement runtime routing, captured race IDs, browse
+- [x] Run focused tests RED; implement runtime routing, captured race IDs, browse
   independence, policy broadcasts and storage retry. Reuse existing locks and
   background loop; do not introduce a second game lifecycle.
-- [ ] Add unknown-startup-storage -> repair -> in-process-retry tests, and a
+- [x] Add unknown-startup-storage -> repair -> in-process-retry tests, and a
   mid-race reload test preserving race origin and maintenance. Exercise malformed
   IDs/booleans/revisions/time values and stale pages without production resources.
-- [ ] Adapt legacy backend tests to the explicitly changed contracts; retain tests
+- [x] Adapt legacy backend tests to the explicitly changed contracts; retain tests
   for old slot associations and idempotence. Update preview fixtures to generic IDs.
-- [ ] Run `uv run pytest -q` and `uvx ruff check .` / `uvx ruff format --check .`
+- [x] Run `uv run pytest -q` and `uvx ruff check .` / `uvx ruff format --check .`
   from `Test_Server`. Report exact results and TDD evidence. Parent reviews the
   diff before committing `feat: add scheduled leaderboard routing`.
 
@@ -224,36 +228,36 @@ controller instead of inventing a second transport shape.
 **Produces:** Complete named/numbered navigation, E archive picker, event controls,
 quiet leader highlight, and updated behavior documentation.
 
-- [ ] Write/extend `tests/test_event_ui.py` executing actual JavaScript with the
+- [x] Write/extend `tests/test_event_ui.py` executing actual JavaScript with the
   existing Node test pattern. Pin title selection, L/0/E/digit guards, archive
   request generations, local view changes without scoring changes while locked,
   same stored-slot reselection after expiry, and persistence-error visibility on
   other boards. Observe RED before implementing helpers/listeners.
-- [ ] Wire next-race policy and captured-race metadata separately from local
+- [x] Wire next-race policy and captured-race metadata separately from local
   browsing. Numbered selection outside events still calls the server scoring
   command; event-locked and stopped/result navigation only changes the view.
   Replace slot-based request/response matching with the generic leaderboard ID.
-- [ ] Add the Past events dialog and pointer control. Use newest-ended-first
+- [x] Add the Past events dialog and pointer control. Use newest-ended-first
   server ordering, name plus Berlin range, arrows/Enter, Escape/E close, focus
   restoration, empty/loading/error states and generation-safe replies. Prevent
   underlying shortcuts while open, and preserve normal inactivity handling.
-- [ ] Add Current event/0 navigation, correct named/numbered titles and compact
+- [x] Add Current event/0 navigation, correct named/numbered titles and compact
   score-destination status. Post-race default is always the captured board; show
   retry/abandonment controls independently of the board being browsed. Rename
   updates must not discard score pagination or steal focus.
-- [ ] Write control-form tests RED for create/edit/end/cancel, time/name errors,
+- [x] Write control-form tests RED for create/edit/end/cancel, time/name errors,
   stale revisions, failed/timed-out acknowledgements, and storage retry. Implement
   a straightforward form and event list using existing button/fieldset patterns.
   Use browser-local form values as Berlin input, never automatic local-zone conversion.
-- [ ] Remove the bright `border-left` accent and leading-state border color from
+- [x] Remove the bright `border-left` accent and leading-state border color from
   `.player-lead`; retain the existing subtle background/text leading indication.
   Verify ties clear the leading state and no layout shifts are introduced.
-- [ ] Adapt existing UI tests/fixtures for the new protocol while preserving name
+- [x] Adapt existing UI tests/fixtures for the new protocol while preserving name
   entry, maintenance, live-rate, winner positioning and generic-mode behavior.
-- [ ] Update README with event and keyboard contracts plus test links; correct
+- [x] Update README with event and keyboard contracts plus test links; correct
   preview migration wording and mode-authoring score-identity guidance without
   changing deployment records before an actual deployment.
-- [ ] Run `uv run pytest -q`, frontend syntax checks, Python lint and diff checks.
+- [x] Run `uv run pytest -q`, frontend syntax checks, Python lint and diff checks.
   Parent reviews the diff before committing `feat(ui): add event leaderboard controls`.
 
 ### Task 3: Integrated Verification And Release Review
@@ -265,19 +269,19 @@ if evidence requires them. Review the entire branch against `437395f`.
 **Consumes:** The combined backend and frontend, completed task reports and reviews.
 **Produces:** Verified release revision and migration evidence, without live writes.
 
-- [ ] Run the full suite and lint/syntax checks independently. Rehearse migration
+- [x] Run the full suite and lint/syntax checks independently. Rehearse migration
   against a disposable legacy fixture and verify every mapped row plus settings,
   integrity, and idempotent second startup.
-- [ ] Start the existing disposable local preview on loopback; verify its actual
+- [x] Start the existing disposable local preview on loopback; verify its actual
   listener. Exercise scheduled/Start now events, slot-lock browsing, name entry,
   late saves, expiry fallback, duplicate names, historical E navigation, picker
   focus, two-client independence, failed-save recovery, and maintenance.
-- [ ] Verify native-browser layout at 1920x1080, 1366x768 and 390x844, including a
+- [x] Verify native-browser layout at 1920x1080, 1366x768 and 390x844, including a
   long event name and long archive. Check console errors and both leading players
   without the orange accent bar. Use no production database for synthetic races.
-- [ ] Dispatch a broad fresh-context code review against the spec and user follow-up.
+- [x] Dispatch a broad fresh-context code review against the spec and user follow-up.
   Address concrete findings with focused failing regressions and scoped re-review.
-- [ ] Update plan progress, commit reviewed corrections, and fast-forward canonical
+- [x] Update plan progress, commit reviewed corrections, and fast-forward canonical
   main only if its worktree is clean and unchanged. Push the reviewed release to
   the verified origin under the user's standing publication preferences.
 
@@ -290,22 +294,22 @@ parent `AGENTS.md` after success. No broad `justfile` refactor.
 credential handling. Reuse op-cache handle if needed; never print secrets.
 **Produces:** Running deployed release, verified scores/settings, rollback evidence.
 
-- [ ] Read fresh live phase over Socket.IO. Wait for `ready`; never dismiss results
+- [x] Read fresh live phase over Socket.IO. Wait for `ready`; never dismiss results
   or reset a race to create an idle window. Verify target/source and exclusions.
-- [ ] Independently review the deployment guard and migration comparison helpers.
+- [x] Independently review the deployment guard and migration comparison helpers.
   Recheck idle immediately before stopping the backend. Take a fresh SQLite online
   backup and source archive while stopped, verify integrity, copy off-machine, and
   verify checksums before changing deployed files.
-- [ ] Sync the exact reviewed checkout while stopped, excluding `.git`, worktrees,
+- [x] Sync the exact reviewed checkout while stopped, excluding `.git`, worktrees,
   planning directories, credentials, databases and caches. Start the service to
   migrate; if it fails, inspect safely without discarding scores or improvising a
   source-only rollback.
-- [ ] Compare every legacy score field and mapped numbered association with the
+- [x] Compare every legacy score field and mapped numbered association with the
   backup, verify selected numbered slot/maintenance, database integrity, and no
   invented production events. Use itemized checksum rsync and served asset checks.
-- [ ] Fresh idle check before refreshing/relaunching the kiosk with its explicit
+- [x] Fresh idle check before refreshing/relaunching the kiosk with its explicit
   loopback game URL. Verify service stability, serial handles, browser connection,
   actual kiosk screenshot and operator page, without synthetic scoring or events.
-- [ ] Record deployed revision and backup ownership/location in parent `AGENTS.md`;
+- [x] Record deployed revision and backup ownership/location in parent `AGENTS.md`;
   document source-only rollback incompatibility. Stop disposable previews. Report
   release, verification, any deviations, and remaining limitations concisely.
