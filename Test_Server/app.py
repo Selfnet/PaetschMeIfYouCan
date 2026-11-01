@@ -176,6 +176,15 @@ class GameRuntime:
                         revision=self.policy.revision + 1,
                     )
                     self.emit_state()
+                    self.socketio.emit(
+                        "leaderboard_selected",
+                        {
+                            "leaderboard": board_metadata(
+                                resolve_destination(self.policy, now)
+                            ),
+                            "revision": self.policy.revision,
+                        },
+                    )
                     accepted = True
             return {
                 "accepted": accepted,
@@ -326,7 +335,8 @@ class GameRuntime:
 
     def emit_state(self, to=None):
         with self._publication_lock:
-            policy = self._policy_payload()
+            now = utc_time(self.now_utc())
+            policy = self._policy_payload(now)
             if policy != self._published_policy:
                 self.race.policy_changed()
                 self._published_policy = policy
@@ -338,6 +348,7 @@ class GameRuntime:
             else:
                 self._race_board = self._board(identity) or self._race_board
             snapshot["leaderboard_policy"] = policy
+            snapshot["server_now"] = now.isoformat()
             snapshot["race_leaderboard"] = board_metadata(self._race_board)
             if snapshot["race_id"] != self._pace_race_id:
                 self._pace_race_id = snapshot["race_id"]

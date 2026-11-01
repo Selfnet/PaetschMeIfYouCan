@@ -143,10 +143,9 @@ input:focus-visible,
 }
 .player-top {
   display: grid;
-  grid-template-columns: minmax(140px, 0.6fr) minmax(220px, 1fr) minmax(
-      140px,
-      0.6fr
-    ) auto;
+  grid-template-columns:
+    minmax(140px, 0.6fr) minmax(220px, 1fr) minmax(140px, 0.6fr)
+    auto;
   align-items: center;
   gap: 24px;
 }
@@ -189,7 +188,6 @@ input:focus-visible,
 .player-lead {
   min-width: 0;
   padding: 8px 12px;
-  border-left: 4px solid transparent;
   color: var(--secondary);
   font-variant-numeric: tabular-nums;
 }
@@ -201,7 +199,6 @@ input:focus-visible,
   overflow-wrap: anywhere;
 }
 .player-lead.is-leading {
-  border-color: var(--orange);
   background: #ffe1d4;
   color: var(--ink);
 }
@@ -370,6 +367,12 @@ input:focus-visible,
   color: var(--secondary);
   font-size: 14px;
 }
+#scoreDestination {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
 #gameStatus {
   margin-left: 16px;
   font-weight: 700;
@@ -464,6 +467,7 @@ kbd {
 .result-title {
   font: 700 48px/1.15 var(--display);
   margin: 30px 0;
+  overflow-wrap: anywhere;
 }
 .result-cards {
   display: grid;
@@ -637,7 +641,8 @@ kbd {
   color: #79201d;
 }
 
-#modeDialog {
+#modeDialog,
+#pastEventsDialog {
   width: min(620px, calc(100% - 32px));
   max-height: calc(100svh - 32px);
   overflow: auto;
@@ -647,10 +652,12 @@ kbd {
   border: 1px solid #777;
   border-top: 6px solid var(--orange);
 }
-#modeDialog::backdrop {
+#modeDialog::backdrop,
+#pastEventsDialog::backdrop {
   background: rgb(0 0 0 / 45%);
 }
-#modeDialog h2 {
+#modeDialog h2,
+#pastEventsDialog h2 {
   margin-bottom: 20px;
   font: 700 36px/1.15 var(--display);
 }
@@ -678,6 +685,29 @@ kbd {
 }
 #modeSelectionError {
   color: var(--red);
+}
+#pastEventOptions {
+  display: grid;
+  gap: 10px;
+  margin-block: 16px;
+}
+#pastEventOptions button {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+#pastEventOptions span {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--secondary);
+}
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
 }
 #maintenanceOverlay {
   position: fixed;

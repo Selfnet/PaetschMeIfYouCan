@@ -11,7 +11,7 @@ def run_slot_keyboard(scenario):
     source = TEMPLATE.read_text()
     helpers = source.split("    function updateLeaderboardSlotControls() {", 1)[
         1
-    ].split("    function submitNames() {", 1)[0]
+    ].split("    function boardLabel(", 1)[0]
     handler = source.split('    document.addEventListener("keydown", (event) => {', 1)[
         1
     ].split("\n    });", 1)[0]
@@ -23,19 +23,23 @@ const elements = {};
 const document = {
     querySelectorAll() { return controls; },
     getElementById(id) {
-        if (!elements[id]) elements[id] = {open: Boolean(scenario.modal)};
+        if (!elements[id]) elements[id] = {open: id === "modeDialog" && Boolean(scenario.modal)};
         return elements[id];
     },
 };
-const gameState = {phase: scenario.phase || "ready", leaderboard_slot: scenario.current || 1};
+const numbered = Array.from({length: 9}, (_, i) => ({id: 101 + i, slot: i + 1}));
+const gameState = {phase: scenario.phase || "ready", leaderboard_policy: {
+    available: true, numbered, active_event: null, next: numbered[(scenario.current || 1) - 1]}};
 const lastStateRevision = scenario.disconnected ? null : 1;
 let pendingLeaderboardSlot = scenario.pending ? {} : null;
-const browsing = scenario.browsing ? {raceId: null} : null;
-const socket = {emit(event, data, callback) {
+let browsing = scenario.browsing ? {raceId: null, board: gameState.leaderboard_policy.next} : null;
+function openLeaderboard(board) { browsing = {raceId: null, board}; updateLeaderboardSlotControls(); }
+function noteLeaderboardActivity() {}
+const socket = {timeout() { return this; }, emit(event, data, callback) {
     emitted.push({event, ...data});
     if (scenario.ack) {
-        if (scenario.ack.accepted) gameState.leaderboard_slot = data.leaderboard_slot;
-        callback(scenario.ack);
+        if (scenario.ack.accepted) gameState.leaderboard_policy.next = numbered[data.leaderboard_slot - 1];
+        callback(null, scenario.ack);
     }
 }};
 """
@@ -56,7 +60,7 @@ for (const key of scenario.keys || [scenario.key]) {
 }
 console.log(JSON.stringify({emitted, prevented, controls,
     pending: pendingLeaderboardSlot !== null, elements,
-    selected: gameState.leaderboard_slot,
+    selected: gameState.leaderboard_policy.next.slot,
 }));
 """
     result = subprocess.run(
@@ -99,7 +103,7 @@ def test_digits_do_not_change_slot_during_game_or_post_race(phase):
     result = run_slot_keyboard({"key": "2", "phase": phase})
     assert result["emitted"] == []
     assert result["selected"] == 1
-    assert result["prevented"] == [False]
+    assert result["prevented"] == [phase in {"stopped", "leaderboard"}]
 
 
 @pytest.mark.parametrize(
@@ -128,9 +132,11 @@ def test_other_keys_do_not_select_slots(key):
     assert run_slot_keyboard({"key": key})["emitted"] == []
 
 
-def test_current_slot_shortcut_does_not_restart_browsing():
+def test_current_slot_shortcut_records_a_fresh_manual_choice():
     result = run_slot_keyboard({"key": "1", "browsing": True})
-    assert result["emitted"] == []
+    assert result["emitted"] == [
+        {"event": "select_leaderboard_slot", "leaderboard_slot": 1}
+    ]
     assert result["prevented"] == [True]
 
 

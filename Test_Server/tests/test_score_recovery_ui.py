@@ -107,13 +107,14 @@ console.log(JSON.stringify(elements));
 
 def test_internal_browse_invalidation_does_not_mark_recovering_race_closed():
     result = run_dashboard(
-        ["closeLeaderboard"],
+        ["closeLeaderboard", "closePastEvents"],
         """
 let browsing = {raceId: "race-1", pendingTimer: null};
 const gameState = {phase: "leaderboard", race_id: "race-1", persistence_status: "pending"};
 let closedLeaderboardRaceId = null;
 let activityTimer, lastActivityAt, scrollIntentUntil, suppressScrollUntil, scrollbarDragging;
 function showPhase() {}
+function updateLeaderboardSlotControls() {}
 closeLeaderboard({restoreFocus: false, dismiss: false});
 console.log(JSON.stringify({browsing, closedLeaderboardRaceId}));
 """,
@@ -222,10 +223,13 @@ def test_refresh_and_retry_reopen_results_with_new_page_identity():
             "checkLeaderboardExpiry",
             "updateLeaderboardCountdown",
             "formatCountdown",
+            "boardLabel",
+            "renderLeaderboardMetadata",
+            "closePastEvents",
         ],
         """
 let browsing = null, lastStateRevision = null, pendingScoreRetry = null;
-let closedLeaderboardRaceId = null, leaderboardRequestCounter = 0;
+let closedLeaderboardRaceId = null, leaderboardRequestCounter = 0, reconnectView = null;
 let activityTimer, lastActivityAt, scrollIntentUntil, suppressScrollUntil, scrollbarDragging;
 let gameState = {phase: "ready", race_id: null, name_entry: {active_player: null}};
 const emitted = [], PLAYER_IDS = [];
@@ -244,7 +248,8 @@ function clearTimeout() {}
 element("leaderboardRows").replaceChildren = () => {};
 for (const id of ["leaderboardTitle", "game-title"]) element(id).focus = () => {};
 const failed = {revision: 10, phase: "leaderboard", race_id: "race-1", browse_epoch: 6,
-    leaderboard_slot: 4, mode: {id: "quarter-field", label: "Quarter Field"}, available_modes: [],
+    race_leaderboard: {id: 104, slot: 4}, leaderboard_policy: {available: true, revision: 1, numbered: [], next: {id: 101, slot: 1}, active_event: null},
+    mode: {id: "quarter-field", label: "Quarter Field"}, available_modes: [],
     result_order: [], name_entry: {active_player: null}, players: {}, remaining_seconds: null,
     persistence_status: "error", persistence_error: "Scores could not be saved"};
 renderGameState(failed);
@@ -253,9 +258,9 @@ browsing.boundary = 7;
 browsing.pendingOffset = null;
 browsing.rows.set(99, {});
 renderGameState({...failed, revision: 11, browse_epoch: 7, persistence_status: "pending"});
-const pending = {requestCount: emitted.length, waiting: browsing?.waitingForPersistence,
+const pending = {requestCount: emitted.length, requested: browsing?.pendingOffset === 0,
     rows: browsing?.rows.size, retryDisabled: element("retryScores").disabled};
-renderGameState({...failed, revision: 12, browse_epoch: 7, persistence_status: "saved",
+renderGameState({...failed, revision: 12, browse_epoch: 8, persistence_status: "saved",
     persistence_error: null, remaining_seconds: 60});
 console.log(JSON.stringify({emitted, refreshShowsRetry, pending,
     retryHidden: element("retryScores").hidden, errorHidden: element("persistenceError").hidden,
@@ -264,8 +269,8 @@ console.log(JSON.stringify({emitted, refreshShowsRetry, pending,
     )
     assert result["refreshShowsRetry"] is True
     assert result["pending"] == {
-        "requestCount": 1,
-        "waiting": True,
+        "requestCount": 2,
+        "requested": True,
         "rows": 0,
         "retryDisabled": True,
     }
@@ -275,11 +280,11 @@ console.log(JSON.stringify({emitted, refreshShowsRetry, pending,
             "request_id": request_id,
             "mode_id": "quarter-field",
             "race_id": "race-1",
-            "leaderboard_slot": 4,
+            "leaderboard_id": 104,
             "boundary": None,
             "offset": 0,
         }
-        for request_id in (1, 2)
+        for request_id in (1, 2, 3)
     ]
     assert result["retryHidden"] and result["errorHidden"]
     assert "1:00" in result["countdown"]

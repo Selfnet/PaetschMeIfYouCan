@@ -10,7 +10,7 @@ def test_leaderboard_labels_keep_tied_ranks_and_personal_best_flags():
             "positionRaceResult",
         ],
         """
-const browsing = {requestId: 1, modeId: "full-field", leaderboardSlot: 1,
+const browsing = {requestId: 1, modeId: "full-field", leaderboardId: 101,
     raceId: "race-1", boundary: null, pendingOffset: 0, rows: new Map()};
 function checkLeaderboardExpiry() { return false; }
 function updatePageControl() {}
@@ -21,7 +21,7 @@ const body = element("leaderboardRows");
 body.children = [];
 body.appendChild = (row) => body.children.push(row);
 body.querySelector = () => null;
-appendLeaderboardPage({request_id: 1, mode_id: "full-field", leaderboard_slot: 1,
+appendLeaderboardPage({request_id: 1, mode_id: "full-field", leaderboard_id: 101,
     race_id: "race-1", boundary: 3, offset: 0, next_offset: null,
     rows: [
         {id: 1, rank: 1, name: "Ada", duration_ms: 1000, attempts: 2,

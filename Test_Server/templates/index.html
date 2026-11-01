@@ -100,7 +100,7 @@
         </section>
         <footer id="idleActions" class="game-controls">
             <div class="footer-errors"><p id="modeError" class="persistence-error" role="alert" hidden></p></div>
-            <div class="mode-bar__info"><strong id="currentMode"></strong><span id="gameStatus" role="status">Connecting</span><span id="modeDescription"></span></div>
+            <div class="mode-bar__info"><strong id="currentMode"></strong><span id="gameStatus" role="status">Connecting</span><span id="modeDescription"></span><span id="scoreDestination" role="status"></span></div>
             <aside id="gameInstructions" class="game-instructions" aria-labelledby="instructionsTitle">
                 <strong id="instructionsTitle">Instructions:</strong>
                 <p>Sit across from each other. Your job is to 1:1 patch as fast as you can, against the other player. Press space to start the clock and let's fucking goooooo</p>
@@ -111,14 +111,18 @@
                 <button id="leaderboardButton" class="leaderboard-button" type="button" disabled><kbd aria-hidden="true">L</kbd><span>Leaderboard</span></button>
                 <button id="retryScores" class="leaderboard-button primary" type="button" hidden>Retry saving</button>
                 <button id="closeLeaderboard" class="leaderboard-button mode-control" type="button" hidden><kbd aria-hidden="true">L</kbd><span>Back to game</span></button>
+                <button id="currentEventButton" class="leaderboard-button" type="button" hidden><kbd aria-hidden="true">0</kbd><span>Current event</span></button>
+                <button id="pastEventsButton" class="leaderboard-button" type="button" hidden><kbd aria-hidden="true">E</kbd><span>Past events</span></button>
                 <div id="idleSlotControl" class="slot-setting">
                     <label class="slot-control"><kbd aria-hidden="true">1-9</kbd><span>Leaderboard slot</span><select id="idleLeaderboardSlot" class="leaderboard-slot" aria-label="Leaderboard slot" disabled>
+                        <option value="" disabled>Event</option>
                         {% for slot in range(1, 10) %}<option value="{{ slot }}">{{ slot }}</option>{% endfor %}
                     </select></label>
                     <p id="slotSelectionError" class="persistence-error" role="alert" hidden></p>
                 </div>
                 <div id="viewSlotControl" class="slot-setting" hidden>
                     <label class="slot-control"><kbd aria-hidden="true">1-9</kbd><span>Leaderboard slot</span><select id="viewLeaderboardSlot" class="leaderboard-slot" aria-label="Leaderboard slot" aria-describedby="leaderboardSlotHint" disabled>
+                        <option value="" disabled>Event</option>
                         {% for slot in range(1, 10) %}<option value="{{ slot }}">{{ slot }}</option>{% endfor %}
                     </select></label>
                     <p id="leaderboardSlotError" class="persistence-error" role="alert" hidden></p>
@@ -139,6 +143,15 @@
     <p id="modeSelectionError" role="status" hidden></p>
     <p>Arrows: browse | Enter: select | Esc / M: cancel</p>
     <button id="closeModeDialog" class="leaderboard-button mode-control" type="button">Close</button>
+</dialog>
+<dialog id="pastEventsDialog" aria-labelledby="pastEventsTitle">
+    <h2 id="pastEventsTitle">Past events</h2>
+    <p id="pastEventsStatus" role="status">Loading events...</p>
+    <div id="pastEventOptions"></div>
+    <div class="dialog-actions">
+        <button id="retryPastEvents" class="leaderboard-button" type="button" hidden>Retry</button>
+        <button id="closePastEvents" class="leaderboard-button" type="button" autofocus>Close</button>
+    </div>
 </dialog>
 <dialog id="maintenanceOverlay" aria-labelledby="maintenanceTitle">
     <p id="maintenanceTitle" tabindex="-1" autofocus>maintenance mode</p>
@@ -174,8 +187,10 @@
     let pendingModeGeneration = null;
     let pendingLeaderboardSlot = null;
     let pendingScoreRetry = null;
+    let pastEventsGeneration = 0;
+    let reconnectView = null;
     let gameState = {
-        phase: "ready", race_id: null, leaderboard_slot: 1, players: {}, result_order: [], tie: false,
+        phase: "ready", race_id: null, leaderboard_policy: null, race_leaderboard: null, players: {}, result_order: [], tie: false,
         name_entry: { active_player: null, drafts: {}, resolved: {} },
         remaining_seconds: null, leaderboard: [], persistence_error: null,
     };
@@ -322,6 +337,10 @@
         document.getElementById("leaderboardButton").hidden = Boolean(browsing);
         document.getElementById("leaderboardButton").disabled = lastStateRevision === null || !idlePhase;
         document.getElementById("closeLeaderboard").hidden = !browsing;
+        document.getElementById("pastEventsButton").hidden = !browsing;
+        document.getElementById("pastEventsButton").disabled = lastStateRevision === null;
+        document.getElementById("currentEventButton").hidden = !gameState.leaderboard_policy?.active_event;
+        document.getElementById("currentEventButton").disabled = lastStateRevision === null || !["ready", "stopped", "leaderboard"].includes(phase);
         document.getElementById("idleSlotControl").hidden = Boolean(browsing);
         document.getElementById("viewSlotControl").hidden = !browsing;
         document.getElementById("nameEntryCountdown").hidden = phase !== "name_entry";
@@ -329,7 +348,7 @@
         document.getElementById("leaderboardSlotHint").hidden = !browsing;
         document.getElementById("gameStatus").textContent = lastStateRevision === null ? "Connecting" : ({ ready: "Ready", racing: "Racing", stopped: "Stopped", name_entry: "Finished", leaderboard: "Finished", maintenance: "Maintenance" }[phase] || phase);
         document.getElementById("clockButton").hidden = Boolean(browsing) || !["ready", "racing", "stopped"].includes(phase);
-        document.getElementById("clockButton").disabled = lastStateRevision === null;
+        document.getElementById("clockButton").disabled = lastStateRevision === null || (phase === "ready" && !gameState.leaderboard_policy?.available);
         document.getElementById("clockAction").textContent = ({ready: "Start", racing: "Stop", stopped: "Reset"})[phase] || "Start";
         const shortcut = document.getElementById("modeShortcut");
         shortcut.hidden = Boolean(browsing) || lastStateRevision === null || phase !== "name_entry";
@@ -342,12 +361,14 @@
         const priorPhase = gameState.phase;
         const priorRaceId = gameState.race_id;
         const priorActive = gameState.name_entry.active_player;
-        const slotChanged = gameState.leaderboard_slot !== state.leaderboard_slot;
-        const reopenForSlot = Boolean(browsing && browsing.raceId === null && slotChanged && state.phase === "ready");
-        const originChanged = slotChanged || gameState.browse_epoch !== state.browse_epoch || gameState.mode?.id !== state.mode.id || priorPhase !== state.phase || priorRaceId !== state.race_id;
+        const policy = state.leaderboard_policy;
+        const sameContext = gameState.mode?.id === state.mode.id && priorPhase === state.phase && priorRaceId === state.race_id;
+        const refreshBoard = browsing && sameContext && state.phase === "leaderboard" && gameState.browse_epoch !== state.browse_epoch ? browsing.board : null;
+        const originChanged = gameState.browse_epoch !== state.browse_epoch || !sameContext;
         const closedForOrigin = Boolean(browsing && originChanged);
         if (browsing && (originChanged || !["ready", "stopped", "leaderboard"].includes(state.phase))) closeLeaderboard({ restoreFocus: false, dismiss: false });
         gameState = state;
+        if (browsing && (!policy?.available || policy.active_event)) browsing.pendingSelection = null;
         if (pendingScoreRetry && (state.race_id !== pendingScoreRetry.race_id || state.browse_epoch !== pendingScoreRetry.browse_epoch || state.persistence_status !== "error")) pendingScoreRetry = null;
         updateModeOptions(state.available_modes);
         if (priorPhase !== state.phase) {
@@ -355,18 +376,27 @@
         }
         document.getElementById("currentMode").textContent = `${state.mode.label}${state.mode.required_port_count === null ? "" : ` (${state.mode.required_port_count})`} `;
         document.getElementById("modeDescription").textContent = state.mode.description;
-        document.getElementById("nameEntryMode").textContent = `${state.mode.label} - Slot ${state.leaderboard_slot}`;
-        document.getElementById("leaderboardMode").textContent = `${state.mode.label} - Slot ${state.leaderboard_slot}`;
+        document.getElementById("nameEntryMode").textContent = `${state.mode.label} - ${boardLabel(state.race_leaderboard)}`;
+        const knownBoard = [policy?.next, policy?.active_event, state.race_leaderboard, ...(policy?.numbered || [])].find((board) => board && board.id === browsing?.leaderboardId);
+        if (knownBoard) browsing.board = knownBoard;
+        renderLeaderboardMetadata();
         updateLeaderboardSlotControls();
         const modeError = document.getElementById("modeError");
-        modeError.textContent = state.mode_error || "";
-        modeError.hidden = !state.mode_error;
+        modeError.textContent = state.mode_error || policy?.error || "";
+        modeError.hidden = !modeError.textContent;
+        if (reconnectView) {
+            if (reconnectView.modeId === state.mode.id && reconnectView.phase === state.phase && reconnectView.raceId === (state.phase === "leaderboard" ? state.race_id : null) && (reconnectView.deadline === null || reconnectView.deadline > Date.now())) {
+                openLeaderboard(reconnectView.board, { focus: false });
+                if (browsing) browsing.deadline = reconnectView.deadline;
+            }
+            reconnectView = null;
+        }
+        if (refreshBoard) openLeaderboard(refreshBoard, { focus: false });
         if (state.phase === "leaderboard" && !browsing && closedLeaderboardRaceId !== state.race_id) openLeaderboard();
-        if (reopenForSlot) openLeaderboard();
         if (state.phase !== "leaderboard") closedLeaderboardRaceId = null;
         showPhase(state.phase);
         renderMaintenance(state.phase);
-        if ((priorPhase !== state.phase || closedForOrigin) && !["name_entry", "maintenance"].includes(state.phase)) document.getElementById(state.phase === "leaderboard" ? "leaderboardTitle" : "game-title").focus();
+        if ((priorPhase !== state.phase || (closedForOrigin && !refreshBoard)) && !["name_entry", "maintenance"].includes(state.phase)) document.getElementById(state.phase === "leaderboard" ? "leaderboardTitle" : "game-title").focus();
         PLAYER_IDS.forEach((playerId) => {
             const player = state.players[String(playerId)];
             if (!player) return;
@@ -401,10 +431,6 @@
         });
         document.getElementById("nameEntryCountdown").textContent = `Leaderboard in ${formatCountdown(state.remaining_seconds)} - empty names are skipped`;
         renderScoreRecovery();
-        if (browsing?.waitingForPersistence && state.persistence_status !== "pending") {
-            browsing.waitingForPersistence = false;
-            requestNextPage();
-        }
         updateLeaderboardCountdown();
 
         const focusedNameInput = document.activeElement instanceof HTMLInputElement && document.activeElement.matches(".name-input:not(:disabled)");
@@ -421,12 +447,12 @@
 
     function renderScoreRecovery() {
         const recovering = gameState.phase === "leaderboard" && Boolean(gameState.persistence_error);
-        const pending = pendingScoreRetry !== null || (recovering && gameState.persistence_status === "pending");
+        const pending = pendingScoreRetry !== null || (gameState.phase === "leaderboard" && gameState.persistence_status === "pending");
         const error = document.getElementById("persistenceError");
-        error.textContent = browsing?.raceId && recovering ? pending ? "Retrying score save..." : gameState.persistence_error : "";
+        error.textContent = pending ? "Saving scores..." : recovering ? gameState.persistence_error : "";
         error.hidden = !error.textContent;
         const retry = document.getElementById("retryScores");
-        retry.hidden = !browsing?.raceId || !recovering;
+        retry.hidden = !recovering;
         retry.disabled = lastStateRevision === null || pending || gameState.persistence_status !== "error";
         retry.textContent = pending ? "Saving..." : "Retry saving";
         document.getElementById("closeLeaderboard").disabled = lastStateRevision === null || pending;
@@ -509,31 +535,139 @@
 
     function updateLeaderboardSlotControls() {
         document.querySelectorAll(".leaderboard-slot").forEach((control) => {
-            control.value = String(gameState.leaderboard_slot);
-            control.disabled = lastStateRevision === null || gameState.phase !== "ready" || pendingLeaderboardSlot !== null;
+            control.value = String((browsing?.board || gameState.leaderboard_policy?.next)?.slot || "");
+            control.disabled = lastStateRevision === null || !["ready", "stopped", "leaderboard"].includes(gameState.phase) || pendingLeaderboardSlot !== null || !gameState.leaderboard_policy?.numbered.length;
         });
-        document.getElementById("leaderboardSlotHint").textContent = gameState.phase === "ready" ? "Separate scores for each slot" : "Switch slots when the game is ready";
+        document.getElementById("leaderboardSlotHint").textContent = gameState.phase === "ready" && !gameState.leaderboard_policy?.active_event ? "Separate scores for each slot" : "Browsing does not change this race's scores";
     }
 
     function selectLeaderboardSlot(slot) {
-        if (gameState.phase !== "ready" || lastStateRevision === null || pendingLeaderboardSlot !== null || document.getElementById("modeDialog").open) return;
-        if (slot === gameState.leaderboard_slot) return;
+        if (!["ready", "stopped", "leaderboard"].includes(gameState.phase) || lastStateRevision === null || pendingLeaderboardSlot !== null || document.getElementById("modeDialog").open || document.getElementById("pastEventsDialog").open) return;
+        const board = gameState.leaderboard_policy?.numbered.find((item) => item.slot === slot);
+        if (!board) return;
+        if (gameState.phase !== "ready" || gameState.leaderboard_policy.active_event) {
+            openLeaderboard(board);
+            noteLeaderboardActivity();
+            return;
+        }
         const selection = {};
         pendingLeaderboardSlot = selection;
         ["slotSelectionError", "leaderboardSlotError"].forEach((id) => { document.getElementById(id).hidden = true; });
         updateLeaderboardSlotControls();
-        socket.emit("select_leaderboard_slot", { leaderboard_slot: slot }, (ack) => {
+        socket.timeout(10_000).emit("select_leaderboard_slot", { leaderboard_slot: slot }, (failure, ack) => {
             if (pendingLeaderboardSlot !== selection) return;
             pendingLeaderboardSlot = null;
             updateLeaderboardSlotControls();
-            if (!ack?.accepted) {
+            if (failure || !ack?.accepted) {
                 ["slotSelectionError", "leaderboardSlotError"].forEach((id) => {
                     const error = document.getElementById(id);
-                    error.textContent = ack?.error || "Leaderboard slot selection failed. Try again.";
+                    error.textContent = failure ? "Could not confirm slot selection. Try again." : ack?.error || "Leaderboard slot selection failed. Try again.";
                     error.hidden = false;
                 });
+            } else if (browsing && gameState.phase === "ready") {
+                openLeaderboard(board);
+                noteLeaderboardActivity();
             }
         });
+    }
+
+    function boardLabel(board) {
+        return board ? board.slot ? `Slot ${board.slot}` : board.name : "Unavailable";
+    }
+
+    function renderLeaderboardMetadata() {
+        if (browsing) {
+            document.getElementById("leaderboardTitle").textContent = browsing.board.slot ? "Leaderboard" : `Leaderboard - ${browsing.board.name}`;
+            document.getElementById("leaderboardMode").textContent = `${gameState.mode.label} - ${boardLabel(browsing.board)}`;
+        }
+        const captured = gameState.phase !== "ready" && gameState.race_leaderboard;
+        const policy = gameState.leaderboard_policy;
+        document.getElementById("scoreDestination").textContent = captured ? `This race: ${boardLabel(captured)}` : `Next race: ${boardLabel(policy?.next)}${policy?.active_event ? " (event locked)" : ""}`;
+    }
+
+    function openCurrentEvent() {
+        const board = gameState.leaderboard_policy?.active_event;
+        if (board) {
+            openLeaderboard(board);
+            noteLeaderboardActivity();
+        }
+    }
+
+    function formatEventRange(board) {
+        const format = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", dateStyle: "medium", timeStyle: "short" });
+        return `${format.format(new Date(board.starts_at))} - ${format.format(new Date(board.ends_at))} (Europe/Berlin)`;
+    }
+
+    function openPastEvents() {
+        if (!browsing || lastStateRevision === null || checkLeaderboardExpiry()) return;
+        const dialog = document.getElementById("pastEventsDialog");
+        if (!dialog.open) dialog.showModal();
+        browsing.positionPending = false;
+        noteLeaderboardActivity();
+        const generation = ++pastEventsGeneration;
+        const options = document.getElementById("pastEventOptions");
+        options.replaceChildren();
+        const status = document.getElementById("pastEventsStatus");
+        status.textContent = "Loading events...";
+        document.getElementById("retryPastEvents").hidden = true;
+        document.getElementById("closePastEvents").focus();
+        socket.timeout(10_000).emit("list_events", { past_only: true }, (failure, ack) => {
+            if (generation !== pastEventsGeneration || !dialog.open || !browsing || checkLeaderboardExpiry()) return;
+            if (failure || !ack?.accepted) {
+                status.textContent = failure ? "Events did not arrive. Try again." : ack?.error || "Could not load events";
+                document.getElementById("retryPastEvents").hidden = false;
+                return;
+            }
+            status.textContent = ack.events.length ? "" : "No past events yet";
+            ack.events.forEach((board) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "leaderboard-button";
+                button.dataset.eventId = String(board.id);
+                const name = document.createElement("strong");
+                name.textContent = board.name;
+                const range = document.createElement("span");
+                range.textContent = formatEventRange(board);
+                button.append(name, range);
+                button.addEventListener("click", () => {
+                    noteLeaderboardActivity();
+                    closePastEvents({ restoreFocus: false, reconcileSelection: false });
+                    openLeaderboard(board);
+                });
+                options.appendChild(button);
+            });
+            const buttons = Array.from(options.children);
+            (buttons.find((button) => Number(button.dataset.eventId) === browsing.leaderboardId) || buttons[0])?.focus();
+        });
+    }
+
+    function closePastEvents({ restoreFocus = true, reconcileSelection = true } = {}) {
+        const dialog = document.getElementById("pastEventsDialog");
+        if (!dialog.open) return;
+        pastEventsGeneration += 1;
+        dialog.close();
+        if (reconcileSelection) reconcileLeaderboardSelection();
+        else if (browsing) browsing.pendingSelection = null;
+        if (restoreFocus && browsing) document.getElementById("pastEventsButton").focus();
+    }
+
+    function handlePastEventsKey(event) {
+        noteLeaderboardActivity();
+        if (["Escape", "e", "E"].includes(event.key)) {
+            event.preventDefault();
+            if (!event.repeat) closePastEvents();
+        } else if (["ArrowDown", "ArrowUp"].includes(event.key)) {
+            event.preventDefault();
+            const buttons = Array.from(document.getElementById("pastEventOptions").children);
+            const index = buttons.indexOf(document.activeElement);
+            buttons[Math.max(0, Math.min(buttons.length - 1, index + (event.key === "ArrowDown" ? 1 : -1)))]?.focus();
+        } else if (event.key === "Tab") {
+            const controls = [...document.getElementById("pastEventOptions").children, document.getElementById("retryPastEvents"), document.getElementById("closePastEvents")].filter((button) => !button.hidden);
+            if (event.shiftKey && document.activeElement === controls[0]) { event.preventDefault(); controls.at(-1).focus(); }
+            else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0].focus(); }
+        } else if (event.key === "Enter") {
+            if (event.repeat) event.preventDefault();
+        } else if (event.code !== "Space" || !["closePastEvents", "retryPastEvents"].includes(event.target.id) && !event.target.dataset.eventId) event.preventDefault();
     }
 
     function submitNames() {
@@ -590,14 +724,15 @@
         }, 1050);
     }
 
-    function newBrowsingState(requestId, modeId, raceId) {
+    function newBrowsingState(requestId, modeId, raceId, board) {
         return {
-            requestId, modeId, raceId, leaderboardSlot: gameState.leaderboard_slot, boundary: null, nextOffset: 0,
+            requestId, modeId, raceId, board, leaderboardId: board.id, boundary: null, nextOffset: 0,
+            selectionRevision: gameState.leaderboard_policy?.revision,
+            pendingSelection: null,
             pendingOffset: null, rows: new Map(), navigationIntent: null,
             focusGeneration: 0, error: null, pendingTimer: null, restartRequired: false,
             deadline: raceId === null ? Date.now() + IDLE_LEADERBOARD_TIMEOUT_MS : null,
-            waitingForPersistence: raceId !== null && gameState.persistence_status === "pending",
-            positionPending: raceId !== null,
+            positionPending: raceId !== null && board.id === gameState.race_leaderboard?.id,
         };
     }
 
@@ -616,10 +751,13 @@
         row.firstChild.textContent = message;
     }
 
-    function openLeaderboard() {
-        if (browsing || document.getElementById("modeDialog").open || !["ready", "stopped", "leaderboard"].includes(gameState.phase) || lastStateRevision === null) return;
+    function openLeaderboard(board = null, { focus = true } = {}) {
+        if (document.getElementById("modeDialog").open || document.getElementById("pastEventsDialog").open || !["ready", "stopped", "leaderboard"].includes(gameState.phase) || lastStateRevision === null) return;
+        board ||= gameState.phase === "leaderboard" ? gameState.race_leaderboard : gameState.leaderboard_policy?.next;
+        if (!board) return;
+        if (browsing) closeLeaderboard({ restoreFocus: false, dismiss: false });
         const raceId = gameState.phase === "leaderboard" ? gameState.race_id : null;
-        browsing = newBrowsingState(++leaderboardRequestCounter, gameState.mode.id, raceId);
+        browsing = newBrowsingState(++leaderboardRequestCounter, gameState.mode.id, raceId, board);
         document.getElementById("leaderboardRows").replaceChildren();
         document.getElementById("leaderboardTail").style.height = "0px";
         document.getElementById("leaderboardScroll").scrollTop = 0;
@@ -627,7 +765,9 @@
         document.getElementById("persistenceError").hidden = true;
         leaderboardPlaceholder("Loading scores...");
         showPhase(gameState.phase);
-        document.getElementById("leaderboardTitle").focus();
+        renderLeaderboardMetadata();
+        updateLeaderboardSlotControls();
+        if (focus) document.getElementById("leaderboardTitle").focus();
         updateLeaderboardCountdown();
         updatePageControl();
         renderScoreRecovery();
@@ -637,12 +777,12 @@
     function updatePageControl() {
         const control = document.getElementById("loadLeaderboardPage");
         control.hidden = !browsing || (browsing.nextOffset === null && !browsing.error);
-        control.setAttribute("aria-disabled", String(Boolean(browsing?.pendingOffset !== null || browsing?.waitingForPersistence)));
-        control.textContent = browsing?.restartRequired ? "Retry from start" : browsing?.error ? "Retry" : browsing?.pendingOffset !== null || browsing?.waitingForPersistence ? "Loading..." : "Load more";
+        control.setAttribute("aria-disabled", String(Boolean(browsing?.pendingOffset !== null)));
+        control.textContent = browsing?.restartRequired ? "Retry from start" : browsing?.error ? "Retry" : browsing?.pendingOffset !== null ? "Loading..." : "Load more";
     }
 
     function requestNextPage(navigationIntent = null) {
-        if (!browsing || checkLeaderboardExpiry() || browsing.waitingForPersistence || browsing.restartRequired || browsing.nextOffset === null) return;
+        if (!browsing || lastStateRevision === null || checkLeaderboardExpiry() || browsing.restartRequired || browsing.nextOffset === null) return;
         if (navigationIntent) browsing.navigationIntent = navigationIntent;
         if (browsing.pendingOffset !== null) return;
         browsing.pendingOffset = browsing.nextOffset;
@@ -665,13 +805,13 @@
         }, 10_000);
         socket.emit("request_leaderboard", {
             request_id: browsing.requestId, mode_id: browsing.modeId, race_id: browsing.raceId,
-            leaderboard_slot: browsing.leaderboardSlot,
+            leaderboard_id: browsing.leaderboardId,
             boundary: browsing.boundary, offset: browsing.pendingOffset,
         });
     }
 
     function appendLeaderboardPage(data) {
-        if (!browsing || checkLeaderboardExpiry() || browsing.pendingOffset === null || data?.request_id !== browsing.requestId || data.mode_id !== browsing.modeId || data.leaderboard_slot !== browsing.leaderboardSlot || data.race_id !== browsing.raceId || data.offset !== browsing.pendingOffset) return;
+        if (!browsing || checkLeaderboardExpiry() || browsing.pendingOffset === null || data?.request_id !== browsing.requestId || data.mode_id !== browsing.modeId || data.leaderboard_id !== browsing.leaderboardId || data.race_id !== browsing.raceId || data.offset !== browsing.pendingOffset) return;
         const opening = browsing.boundary === null && browsing.pendingOffset === 0;
         if (!opening && data.boundary !== browsing.boundary) return;
         if (data.error) {
@@ -688,6 +828,10 @@
         }
         if (!Number.isSafeInteger(data.boundary) || data.boundary < 0 || !Array.isArray(data.rows) || !(data.next_offset === null || (Number.isSafeInteger(data.next_offset) && data.next_offset > data.offset))) return;
         clearTimeout(browsing.pendingTimer);
+        if (data.leaderboard && !browsing.metadataChanged) {
+            browsing.board = data.leaderboard;
+            renderLeaderboardMetadata();
+        }
         if (opening) browsing.boundary = data.boundary;
         const body = document.getElementById("leaderboardRows");
         const appended = [];
@@ -754,7 +898,7 @@
 
     function closeLeaderboard({ restoreFocus = true, dismiss = true } = {}) {
         if (dismiss && gameState.phase === "leaderboard") {
-            if (lastStateRevision === null || pendingScoreRetry !== null) return;
+            if (lastStateRevision === null || pendingScoreRetry !== null || gameState.persistence_status === "pending") return;
             const request = { race_id: gameState.race_id };
             if (gameState.persistence_error) {
                 if (gameState.persistence_status === "pending") return;
@@ -766,6 +910,7 @@
             return;
         }
         if (!browsing) return;
+        closePastEvents({ restoreFocus: false, reconcileSelection: false });
         const raceId = browsing.raceId;
         clearTimeout(browsing.pendingTimer);
         browsing.navigationIntent = null;
@@ -777,6 +922,7 @@
         scrollbarDragging = false;
         if (dismiss && raceId !== null) closedLeaderboardRaceId = raceId;
         showPhase(gameState.phase);
+        updateLeaderboardSlotControls();
         if (restoreFocus) document.getElementById("game-title").focus();
         if (dismiss && raceId !== null) socket.emit("dismiss_leaderboard", { race_id: raceId });
     }
@@ -846,12 +992,13 @@
     }
 
     function toggleLeaderboard() {
-        if (document.getElementById("modeDialog").open) return;
+        if (document.getElementById("modeDialog").open || document.getElementById("pastEventsDialog").open) return;
         if (browsing) closeLeaderboard();
         else if (["ready", "stopped"].includes(gameState.phase)) openLeaderboard();
     }
 
     function resetConnectionBaseline() {
+        if (browsing) reconnectView = { board: browsing.board, modeId: browsing.modeId, raceId: browsing.raceId, deadline: browsing.deadline, phase: gameState.phase };
         lastStateRevision = null;
         pendingLeaderboardSlot = null;
         pendingScoreRetry = null;
@@ -876,6 +1023,35 @@
     socket.on("disconnect", resetConnectionBaseline);
     socket.on("game_state", renderGameState);
     socket.on("leaderboard_snapshot", appendLeaderboardPage);
+    function reconcileLeaderboardSelection() {
+        if (!browsing?.pendingSelection || checkLeaderboardExpiry()) return;
+        const policy = gameState.leaderboard_policy;
+        if (lastStateRevision === null || gameState.phase !== "ready" || !policy?.available || policy.active_event || !browsing.board.slot || browsing.raceId !== null || browsing.modeId !== gameState.mode.id) {
+            browsing.pendingSelection = null;
+            return;
+        }
+        if (document.getElementById("pastEventsDialog").open) return;
+        const board = policy.numbered.find((item) => item.id === browsing.pendingSelection);
+        browsing.pendingSelection = null;
+        if (board && board.id === policy.next?.id && browsing.leaderboardId !== board.id) openLeaderboard(board, { focus: false });
+    }
+    socket.on("leaderboard_selected", (data) => {
+        const policy = gameState.leaderboard_policy;
+        if (lastStateRevision === null || gameState.phase !== "ready" || !policy?.available || policy.active_event || !browsing?.board.slot || browsing.raceId !== null || browsing.modeId !== gameState.mode.id) return;
+        if (!Number.isSafeInteger(data?.revision) || data.revision !== policy.revision || data.revision <= browsing.selectionRevision) return;
+        const board = policy.numbered.find((item) => item.id === data.leaderboard?.id && item.slot === data.leaderboard?.slot);
+        if (!board || board.id !== policy.next?.id) return;
+        browsing.selectionRevision = data.revision;
+        browsing.pendingSelection = board.id;
+        reconcileLeaderboardSelection();
+    });
+    socket.on("leaderboard_changed", ({ leaderboard, revision }) => {
+        if (browsing?.leaderboardId !== leaderboard.id || revision < (browsing.metadataRevision || 0)) return;
+        browsing.board = leaderboard;
+        browsing.metadataRevision = revision;
+        browsing.metadataChanged = true;
+        renderLeaderboardMetadata();
+    });
     socket.on("clock_update", (data) => {
         if (lastStateRevision === null || data.race_id !== gameState.race_id || data.phase !== gameState.phase || data.revision !== lastStateRevision) return;
         PLAYER_IDS.forEach((playerId) => {
@@ -889,14 +1065,19 @@
     document.getElementById("submitNamesButton").addEventListener("click", submitAllNames);
     document.getElementById("clockButton").addEventListener("click", () => { if (lastStateRevision !== null && !browsing && ["ready", "racing", "stopped"].includes(gameState.phase)) advanceClockWithSpacebar().catch((error) => console.error("Clock control failed", error)); });
     document.getElementById("leaderboardButton").addEventListener("click", toggleLeaderboard);
+    document.getElementById("currentEventButton").addEventListener("click", openCurrentEvent);
+    document.getElementById("pastEventsButton").addEventListener("click", openPastEvents);
+    document.getElementById("retryPastEvents").addEventListener("click", openPastEvents);
+    document.getElementById("closePastEvents").addEventListener("click", () => closePastEvents());
+    document.getElementById("pastEventsDialog").addEventListener("cancel", (event) => { event.preventDefault(); closePastEvents(); });
+    ["pointerdown", "wheel", "touchmove"].forEach((event) => document.getElementById("pastEventsDialog").addEventListener(event, noteLeaderboardActivity, { passive: true }));
     document.getElementById("closeLeaderboard").addEventListener("click", () => closeLeaderboard());
     document.getElementById("retryScores").addEventListener("click", retryScores);
     document.getElementById("loadLeaderboardPage").addEventListener("click", () => {
         if (!browsing || checkLeaderboardExpiry()) return;
         noteLeaderboardActivity();
         if (browsing.restartRequired) {
-            closeLeaderboard({ restoreFocus: false, dismiss: false });
-            openLeaderboard();
+            openLeaderboard(browsing.board);
             return;
         }
         requestNextPage(scoreNavigationIntent());
@@ -950,6 +1131,7 @@
             return;
         }
         if (event.target.closest("input, textarea, select, [contenteditable]:not([contenteditable='false'])")) return;
+        if (document.getElementById("pastEventsDialog").open) { handlePastEventsKey(event); return; }
         if (document.getElementById("modeDialog").open) {
             if (["Escape", "m", "M"].includes(event.key)) { event.preventDefault(); if (!event.repeat) closeModeSelector(); }
             else if (["ArrowDown", "ArrowRight", "ArrowUp", "ArrowLeft"].includes(event.key)) { event.preventDefault(); moveModeFocus(["ArrowDown", "ArrowRight"].includes(event.key) ? 1 : -1); }
@@ -961,12 +1143,21 @@
             else if (event.key === "Enter" && event.repeat) event.preventDefault();
             return;
         }
-        if (/^[1-9]$/.test(event.key) && !event.shiftKey && gameState.phase === "ready") {
+        if (/^[1-9]$/.test(event.key) && !event.shiftKey && ["ready", "stopped", "leaderboard"].includes(gameState.phase)) {
             event.preventDefault();
             if (!event.repeat) selectLeaderboardSlot(Number(event.key));
             return;
         }
+        if (event.key === "0" && !event.shiftKey) {
+            if (gameState.leaderboard_policy?.active_event && ["ready", "stopped", "leaderboard"].includes(gameState.phase)) {
+                event.preventDefault();
+                if (!event.repeat) openCurrentEvent();
+            }
+            return;
+        }
+        if (event.code === "Space" && ["currentEventButton", "pastEventsButton"].includes(event.target.id)) return;
         if (browsing) {
+            if (["e", "E"].includes(event.key)) { event.preventDefault(); if (!event.repeat) openPastEvents(); return; }
             if (event.code === "Space" && event.target === document.getElementById("retryScores")) return;
             if (["KeyL"].includes(event.code) || event.key === "Escape" || (event.code === "Space" && browsing.raceId !== null)) { event.preventDefault(); if (!event.repeat) closeLeaderboard(); }
             else if (event.code === "Space" || ["KeyV", "KeyS"].includes(event.code)) event.preventDefault();

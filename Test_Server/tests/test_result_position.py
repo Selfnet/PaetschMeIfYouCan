@@ -112,14 +112,15 @@ def test_empty_or_idle_results_do_not_seek_pages():
     result = run_dashboard(
         ["newBrowsingState", "positionRaceResult"],
         """
-const gameState = {leaderboard_slot: 1};
+const board = {id: 101, slot: 1};
+const gameState = {race_leaderboard: board};
 const IDLE_LEADERBOARD_TIMEOUT_MS = 60000;
 let requests = 0;
 function requestNextPage() { requests++; }
-let browsing = newBrowsingState(1, "full-field", null);
+let browsing = newBrowsingState(1, "full-field", null, board);
 positionRaceResult(61);
 const idlePending = browsing.positionPending;
-browsing = newBrowsingState(2, "full-field", "race");
+browsing = newBrowsingState(2, "full-field", "race", board);
 positionRaceResult(null);
 console.log(JSON.stringify({requests, idlePending, emptyPending: browsing.positionPending}));
 """,

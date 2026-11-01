@@ -132,11 +132,18 @@ Metadata is `{id, slot, name, starts_at, ends_at}` with UTC ISO event times.
 `leaderboard_slot` snapshot field is replaced, not repurposed. Race IDs, state
 revisions, browse epochs and persistence fields retain their other meanings.
 Policy changes update metadata without invalidating an explicit same-mode view.
+Every `game_state` also includes `server_now`, a UTC ISO timestamp from the same
+wall-time sample used for policy evaluation. It does not itself change the policy
+revision. Operator status labels use this value rather than the browser clock.
 
 Socket commands use acknowledgement objects `{accepted, error, ...}`:
 
 - `select_leaderboard_slot {leaderboard_slot}`: existing numbered scoring command;
   ready-only, reject during event lock, acknowledge the effective numbered slot.
+  Every successful selection also broadcasts `leaderboard_selected {leaderboard,
+  revision}` after its committed state, including same-slot selections. This
+  explicit signal updates other displays' ordinary numbered views; event edits
+  and schedule boundaries never emit it, and explicit archives remain local.
 - `request_leaderboard`: existing request IDs/boundaries/offset/mode/race context,
   with `leaderboard_id` replacing the requested slot. Allow any existing eligible
   board independently of routing. Result packets echo `leaderboard_id` and include

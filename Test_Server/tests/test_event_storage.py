@@ -1,7 +1,7 @@
 import sqlite3
 import threading
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -294,3 +294,36 @@ def test_contained_and_containing_event_windows_are_overlaps(store, changes):
     create(store)
     with pytest.raises(ValueError, match="overlap"):
         create(store, **changes)
+
+
+def test_end_now_at_exact_start_rejects_atomically_then_positive_instant_succeeds(
+    store,
+):
+    event = create(store, start_now=True)
+    store.insert_entries(
+        [NewLeaderboardEntry("captured", 1, "Ada", 1000, "full-field", event.id)]
+    )
+    before = store.load_policy()
+    with sqlite3.connect(store.path) as db:
+        scores_before = db.execute("SELECT * FROM leaderboard_entries").fetchall()
+    with pytest.raises(ValueError, match="nonempty window"):
+        store.end_event(event.id, before.revision, event.starts_at)
+    assert store.load_policy() == before
+    with sqlite3.connect(store.path) as db:
+        assert (
+            db.execute("SELECT * FROM leaderboard_entries").fetchall() == scores_before
+        )
+    later = event.starts_at + timedelta(microseconds=1)
+    ended = store.end_event(event.id, before.revision, later)
+    assert ended == replace(event, ends_at=later)
+    after = store.load_policy()
+    assert after.revision == before.revision + 1
+    assert after.boards == tuple(
+        ended if b.id == event.id else b for b in before.boards
+    )
+    assert after.manual_slot == before.manual_slot
+    assert after.manual_selected_at == before.manual_selected_at
+    with sqlite3.connect(store.path) as db:
+        assert (
+            db.execute("SELECT * FROM leaderboard_entries").fetchall() == scores_before
+        )

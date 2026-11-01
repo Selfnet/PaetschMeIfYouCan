@@ -30,13 +30,17 @@ mode; other slots start empty. The preview deliberately ignores `LEADERBOARD_DB`
 and never opens the normal game database. User-entered preview scores are real
 SQLite writes, but only to this disposable file. Restart with a new directory
 for a fresh preview. Stop the server with Ctrl+C; its data remains in that
-directory until deliberately removed.
+directory until deliberately removed. Event creation at `/control` uses only this
+disposable database, and starts with an empty event catalog.
 
 Never use a production database or backup for interactive testing. For a
 deployment, make a fresh SQLite online backup and verify its integrity before
 changing the deployed source. A preview-time backup does not include scores
-recorded later. This UI redesign requires no schema migration or score rewrite;
-restoring a database would discard scores recorded since that backup.
+recorded later. Named event leaderboards require the score-reference migration
+described in the [game README](../README.md#leaderboard-slots). Existing score rows
+and numbered associations are preserved; no event or historical score reassignment
+is created by migration. Source-only rollback to slot-only code is unsupported;
+restoring a database discards scores recorded since that backup.
 
 ## Verification Boundaries
 
@@ -44,10 +48,13 @@ restoring a database would discard scores recorded since that backup.
   isolation, serial blocking and a complete simulated race through score saving;
   it does not exercise browser layout or physical readers.
 - [`tests/browser_harness.py`](../Test_Server/tests/browser_harness.py) provides
-  controlled time, board observations, pagination delays and page errors for
-  deterministic browser checks. It uses a separate database, not preview data.
+  separately controlled UTC schedule time and monotonic race time, board observations,
+  pagination delays/errors and delayed/failed score inserts for deterministic browser
+  checks. It uses a separate database, not preview data. These controls are absent
+  from production and ordinary preview routes; [harness tests](../Test_Server/tests/test_browser_harness.py)
+  cover that isolation, not browser layout.
 - The [game README](../README.md) owns required name-entry keyboard behavior,
-  leaderboard grouping, failed-save recovery and slot semantics. The preview must retain those
+  leaderboard grouping, failed-save recovery, slots and scheduled event semantics. The preview must retain those
   contracts; simulation is not proof of hardware or deployed kiosk behavior.
 
 Preview approval is not deployment approval. Keep the deployed service and its

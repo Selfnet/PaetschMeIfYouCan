@@ -70,9 +70,11 @@ completed players. Reset discards sessions and returns to pure previews;
 reconnect publishes cached presentations without reinitializing sessions.
 
 Published `game_state.browse_epoch` identifies the runtime's leaderboard browse
-generation. Browsers close local browsing when it changes, including same-mode
-confirmation or a ready-state reset. Ordinary observations, progress ticks, and
-persistence updates retain the generation; modes do not manage it. The lifecycle
+generation. Same-mode confirmation and ready-state resets close local browsing.
+Save completion also changes the generation: the browser refreshes the snapshot
+while retaining its explicitly viewed board in the same result context. Ordinary
+observations, progress ticks, schedule changes and event renames do not invalidate
+pages; modes do not manage this generation. The lifecycle
 and snapshot in [`race.py`](../Test_Server/race.py) define this transport contract,
 not score storage or mode completion.
 
@@ -127,11 +129,15 @@ owns storage and migration: legacy rows without a mode column are assigned
 `full-field`, preserving their IDs and existing data. New modes need no schema
 change; do not retag historical scores to a new ruleset.
 
-Leaderboard slots are a separate event namespace, not mode IDs. The runtime
-captures the slot alongside the mode at race start, and queries filter by both.
-Modes must not select slots or handle persistence. The [leaderboard slot contract](../README.md#leaderboard-slots)
-describes switching, restart persistence, migration, and rollback constraints;
-it does not define mode rules or firmware behavior.
+Numbered and named event leaderboards form a separate scoring namespace, not mode
+IDs. The runtime captures the stable `leaderboard_id` alongside the mode at race
+start; queries, personal bests, attempts and pace references filter by both. A
+browser's viewed board is independent of that capture. Modes must not select
+boards, interpret event windows or handle persistence.
+The [event contract](../README.md#event-leaderboards) describes schedule routing,
+capture, browsing and operator controls; the [slot contract](../README.md#leaderboard-slots)
+owns manual selection, migration and rollback constraints. Neither defines mode
+rules or firmware behavior.
 
 ## Examples And Checks
 

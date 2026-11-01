@@ -550,3 +550,128 @@ def test_clock_correction_cannot_cancel_a_captured_event_before_scores_exist(
         runtime.apply(runtime.race.submit_name, race_id, player, name)
     assert runtime.race.snapshot()["persistence_status"] == "saved"
     assert runtime.store.snapshot_boundary("full-field", saved["event"]["id"]) == 2
+
+
+@pytest.mark.parametrize("selection", [1, 4])
+@pytest.mark.parametrize("publish_expiry", [False, True])
+def test_manual_selection_broadcasts_committed_state_then_choice_to_both_clients(
+    bundle, selection, publish_expiry
+):
+    app, sio, runtime, wall = bundle
+    first, second = sio.test_client(app), sio.test_client(app)
+    save(first)
+    wall.set("2026-11-01T10:01:00+00:00")
+    runtime.tick()
+    browse(first, 3)
+    wall.set("2026-11-01T12:00:00+00:00")
+    if publish_expiry:
+        runtime.tick()
+    for client in (first, second):
+        client.get_received()
+    before_revision = runtime.store.load_policy().revision
+    ack = second.emit(
+        "select_leaderboard_slot", {"leaderboard_slot": selection}, callback=True
+    )
+    assert ack["accepted"]
+    assert runtime.store.load_policy().manual_slot == selection
+    for client in (first, second):
+        packets = [
+            packet
+            for packet in client.get_received()
+            if packet["name"] in {"game_state", "leaderboard_selected"}
+        ]
+        assert [packet["name"] for packet in packets] == [
+            "game_state",
+            "leaderboard_selected",
+        ]
+        policy = packets[0]["args"][0]["leaderboard_policy"]
+        assert policy["revision"] == before_revision + 1
+        assert packets[1]["args"][0] == {
+            "leaderboard": policy["next"],
+            "revision": policy["revision"],
+        }
+        assert policy["next"]["slot"] == selection
+
+
+def test_nonmanual_policy_changes_and_rejected_selections_never_broadcast_choice(
+    bundle,
+):
+    app, sio, runtime, wall = bundle
+    first, second = sio.test_client(app), sio.test_client(app)
+    event = save(first)["event"]
+    save(first, id=event["id"], name="Renamed")
+    wall.set("2026-11-01T10:00:00+00:00")
+    runtime.tick()
+    assert not second.emit(
+        "select_leaderboard_slot", {"leaderboard_slot": 3}, callback=True
+    )["accepted"]
+    wall.set("2026-11-01T12:00:00+00:00")
+    runtime.tick()
+    with sqlite3.connect(runtime.store.path) as db:
+        db.execute(
+            "CREATE TRIGGER reject_choice BEFORE UPDATE ON leaderboard_settings BEGIN SELECT RAISE(ABORT, 'fixture failure'); END"
+        )
+    before = runtime.store.load_policy()
+    assert not second.emit(
+        "select_leaderboard_slot", {"leaderboard_slot": 1}, callback=True
+    )["accepted"]
+    assert runtime.store.load_policy() == before
+    for client in (first, second):
+        packets = client.get_received()
+        assert any(packet["name"] == "game_state" for packet in packets)
+        assert any(packet["name"] == "leaderboard_changed" for packet in packets)
+        assert not any(packet["name"] == "leaderboard_selected" for packet in packets)
+
+
+def test_state_server_time_and_policy_use_one_wall_clock_sample(bundle, monkeypatch):
+    app, sio, runtime, wall = bundle
+    client = sio.test_client(app)
+    save(client)
+    client.get_received()
+    calls = []
+
+    def crossing_boundary():
+        wall.set(
+            "2026-11-01T09:59:59.999999+00:00"
+            if not calls
+            else "2026-11-01T10:00:00+00:00"
+        )
+        calls.append(wall())
+        return wall()
+
+    monkeypatch.setattr(runtime, "now_utc", crossing_boundary)
+    runtime.emit_state()
+    state = latest_event(client, "game_state")
+    assert state["server_now"] == "2026-11-01T09:59:59.999999+00:00"
+    assert state["leaderboard_policy"]["active_event"] is None
+    assert len(calls) == 1
+
+
+def test_server_time_advances_without_policy_or_state_revision_churn(bundle):
+    app, sio, runtime, wall = bundle
+    client = sio.test_client(app)
+    initial = latest_event(client, "game_state")
+    wall.set("2026-11-01T09:00:01+00:00")
+    runtime.emit_state()
+    later = latest_event(client, "game_state")
+    assert later["server_now"] == "2026-11-01T09:00:01+00:00"
+    assert later["leaderboard_policy"] == initial["leaderboard_policy"]
+    assert later["revision"] == initial["revision"]
+    assert later["browse_epoch"] == initial["browse_epoch"]
+
+
+@pytest.mark.parametrize(
+    "now,active",
+    [("10:00:00", True), ("12:00:00", False), ("11:59:59", True)],
+)
+def test_server_time_tracks_boundaries_and_backward_corrections(bundle, now, active):
+    app, sio, runtime, wall = bundle
+    client = sio.test_client(app)
+    save(client)
+    wall.set("2026-11-01T12:01:00+00:00")
+    runtime.tick()
+    wall.set(f"2026-11-01T{now}+00:00")
+    runtime.emit_state()
+    state = latest_event(client, "game_state")
+    assert state["server_now"] == f"2026-11-01T{now}+00:00"
+    assert bool(state["leaderboard_policy"]["active_event"]) is active

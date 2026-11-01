@@ -930,8 +930,12 @@ def test_old_page_expiring_replacement_name_entry_persists_new_origin(
 
 
 @pytest.mark.parametrize("phase", ["ready", "racing", "name_entry", "leaderboard"])
-def test_reconnect_restores_full_cached_phase_presentation(app_bundle, clock, phase):
+def test_reconnect_restores_full_cached_phase_presentation(
+    app_bundle, clock, phase, monkeypatch
+):
     app, sio, runtime = app_bundle
+    now = runtime.now_utc()
+    monkeypatch.setattr(runtime, "now_utc", lambda: now)
     if phase in ("name_entry", "leaderboard"):
         race_id = finish_race(runtime, clock)
         if phase == "leaderboard":

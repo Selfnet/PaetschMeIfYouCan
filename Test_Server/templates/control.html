@@ -1,10 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pätsch me if you can - Control</title>
     <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+    <style>
+        body { font-family: sans-serif; line-height: 1.4; max-width: 900px; margin: 20px auto; padding: 0 16px; }
+        fieldset { min-width: 0; margin-top: 20px; }
+        button, input { font: inherit; max-width: 100%; }
+        button { min-height: 36px; }
+        #eventForm label { display: block; margin-block: 12px; }
+        #eventForm input:not([type="checkbox"]) { display: block; width: 100%; box-sizing: border-box; padding: 6px; }
+        #eventList { display: grid; gap: 8px; margin-block: 16px; }
+        #eventList button { text-align: left; padding: 8px; overflow-wrap: anywhere; }
+        #eventList span { display: block; font-size: 14px; }
+        #eventFormTitle, #eventDestination, #eventRange, #eventError { overflow-wrap: anywhere; }
+        #eventError { color: #79201d; }
+        .event-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    </style>
 </head>
 <body>
 
@@ -18,6 +32,33 @@
     <label><input id="maintenanceToggle" type="checkbox" disabled> Maintenance mode</label>
     <p id="maintenanceStatus" role="status">Connecting</p>
     <p id="maintenanceError" role="alert" hidden></p>
+</fieldset>
+<fieldset>
+    <legend>Event leaderboards</legend>
+    <p id="eventDestination" role="status">Connecting</p>
+    <p>Schedule timezone: Europe/Berlin</p>
+    <div class="event-actions">
+        <button id="newEvent" type="button" disabled>New event</button>
+        <button id="reloadEvents" type="button" disabled>Reload events</button>
+        <button id="retryEventStorage" type="button" disabled>Retry storage</button>
+    </div>
+    <p id="eventListStatus" role="status"></p>
+    <div id="eventList" aria-label="Events"></div>
+    <form id="eventForm" aria-describedby="eventTimezone eventError">
+        <h2 id="eventFormTitle">New event</h2>
+        <p id="eventTimezone">Enter dates and times in Europe/Berlin. Ambiguous or nonexistent daylight-saving times are rejected.</p>
+        <label for="eventName">Name<input id="eventName" type="text" required autocomplete="off" aria-describedby="eventError"></label>
+        <label><input id="eventStartNow" type="checkbox" checked> Start now (server time)</label>
+        <label for="eventStart">Start (Europe/Berlin)<input id="eventStart" type="datetime-local" disabled aria-describedby="eventError"></label>
+        <label for="eventEnd">End (Europe/Berlin)<input id="eventEnd" type="datetime-local" required aria-describedby="eventError"></label>
+        <p id="eventRange" role="status"></p>
+        <p id="eventError" role="alert" hidden></p>
+        <div class="event-actions">
+            <button id="saveEvent" type="submit" disabled>Create event</button>
+            <button id="endEvent" type="button" hidden>End now</button>
+            <button id="cancelEvent" type="button" hidden>Cancel event</button>
+        </div>
+    </form>
 </fieldset>
 
 <script>
@@ -87,6 +128,7 @@
     });
 
 </script>
+<script src="{{ url_for('static', filename='event-controls.js') }}"></script>
 
 </body>
 </html>
