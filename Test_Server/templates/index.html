@@ -585,7 +585,7 @@
         }
         const captured = gameState.phase !== "ready" && gameState.race_leaderboard;
         const policy = gameState.leaderboard_policy;
-        document.getElementById("scoreDestination").textContent = captured ? `This race: ${boardLabel(captured)}` : `Next race: ${boardLabel(policy?.next)}${policy?.active_event ? " (event locked)" : ""}`;
+        document.getElementById("scoreDestination").textContent = captured ? `This race: ${boardLabel(captured)}` : `Next race will log to leaderboard ${boardLabel(policy?.next)}`;
     }
 
     function openCurrentEvent() {

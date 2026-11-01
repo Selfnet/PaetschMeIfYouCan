@@ -19,6 +19,31 @@ def run_ui(script, page="index"):
 
 
 @pytest.mark.parametrize(
+    "page,element_id", [("index", "scoreDestination"), ("control", "eventDestination")]
+)
+@pytest.mark.parametrize("event_active", [False, True])
+def test_next_race_destination_explains_where_scores_will_be_logged(
+    page, element_id, event_active
+):
+    result = run_ui(
+        """
+const event = {...eventBoard, name: 'DHCP26'};
+handlers.game_state(state({leaderboard_policy: {...state().leaderboard_policy,
+    next: EVENT ? event : numbered[1], active_event: EVENT ? event : null}}));
+output(el(ELEMENT).textContent);
+""".replace("EVENT", json.dumps(event_active)).replace(
+            "ELEMENT", json.dumps(element_id)
+        ),
+        page,
+    )
+    assert result == (
+        "Next race will log to leaderboard DHCP26"
+        if event_active
+        else "Next race will log to leaderboard Slot 2"
+    )
+
+
+@pytest.mark.parametrize(
     "phase", ["ready", "racing", "stopped", "name_entry", "leaderboard"]
 )
 def test_header_shows_active_event_not_captured_race_event(phase):

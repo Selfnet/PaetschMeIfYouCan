@@ -248,7 +248,7 @@ socket.on("game_state", (state) => {
   const policy = state.leaderboard_policy;
   const board = policy?.next;
   document.getElementById("eventDestination").textContent = policy?.available
-    ? `Next race: ${board.slot ? `Slot ${board.slot}` : board.name}${policy.active_event ? " (event locked)" : ""}`
+    ? `Next race will log to leaderboard ${board.slot ? `Slot ${board.slot}` : board.name}`
     : policy?.error || "Leaderboard routing unavailable";
   if (
     policy?.available &&
