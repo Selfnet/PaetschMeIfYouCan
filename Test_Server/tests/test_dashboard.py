@@ -87,6 +87,13 @@ def test_header_reading_order_puts_selfnet_before_game_title(dashboard):
     assert [item["tag"] for item in branding] == ["img", "h1"]
 
 
+def test_current_event_title_belongs_to_heading_and_starts_hidden(dashboard):
+    _, html = dashboard
+    title = html.by_id("currentEventTitle")
+    assert ("h1", "game-title") in title["parents"]
+    assert "hidden" in title
+
+
 def test_dashboard_brand_and_css_assets_are_served_locally(dashboard):
     client, html = dashboard
     logos = [item for item in html.elements if item["tag"] == "img"]

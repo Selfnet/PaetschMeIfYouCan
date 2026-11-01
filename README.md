@@ -101,6 +101,10 @@ adjacent active event), never an existing race or explicitly opened view. Race
 duration still uses the monotonic clock; event eligibility uses the server's UTC
 wall clock. Keep the server clock correct.
 
+The main header shows the currently active event beside the game title in grey,
+independent of the viewed leaderboard or captured race. It hides the event name
+when no event is active or the display is disconnected.
+
 **L** toggles the leaderboard as before. Opening from the game defaults to the
 active event, otherwise the effective numbered selection. Automatic post-race
 results always open the captured board. **0**, including the keypad, returns to

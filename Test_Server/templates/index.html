@@ -16,7 +16,7 @@
 </div>
 <header class="stage-header">
     <img class="brand-logo" src="{{ url_for('static', filename='dashboard/selfnet.svg') }}" alt="Selfnet" width="186" height="56">
-    <h1 id="game-title" tabindex="-1">Pätsch me if you can</h1>
+    <h1 id="game-title" tabindex="-1"><span>Pätsch me if you can</span><span id="currentEventTitle" class="current-event-title" hidden></span></h1>
 </header>
 <main class="page">
     <section class="race-stage" aria-labelledby="game-title">
@@ -330,6 +330,9 @@
 
     function showPhase(phase) {
         const idlePhase = ["ready", "stopped"].includes(phase);
+        const eventTitle = document.getElementById("currentEventTitle");
+        eventTitle.textContent = lastStateRevision === null ? "" : gameState.leaderboard_policy?.active_event?.name || "";
+        eventTitle.hidden = !eventTitle.textContent;
         document.getElementById("raceView").hidden = Boolean(browsing) || !(["ready", "racing", "stopped", "maintenance"].includes(phase) || (phase === "leaderboard" && closedLeaderboardRaceId === gameState.race_id));
         document.getElementById("nameEntryView").hidden = phase !== "name_entry";
         document.getElementById("leaderboardView").hidden = !browsing;

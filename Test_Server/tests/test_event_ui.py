@@ -18,6 +18,64 @@ def run_ui(script, page="index"):
     return json.loads(result.stdout)
 
 
+@pytest.mark.parametrize(
+    "phase", ["ready", "racing", "stopped", "name_entry", "leaderboard"]
+)
+def test_header_shows_active_event_not_captured_race_event(phase):
+    result = run_ui(
+        """
+const current = {...eventBoard, name: 'DHCP26 <patch & play>'};
+handlers.game_state(state({phase: PHASE, race_id: 'race', race_leaderboard: archive,
+    leaderboard_policy: {...state().leaderboard_policy, next: current, active_event: current}}));
+output({text: el('currentEventTitle').textContent, hidden: el('currentEventTitle').hidden,
+    children: el('currentEventTitle').children.length});
+""".replace("PHASE", json.dumps(phase))
+    )
+    assert result == {
+        "text": "DHCP26 <patch & play>",
+        "hidden": False,
+        "children": 0,
+    }
+
+
+def test_header_tracks_event_start_rename_and_expiry_while_browsing_archive():
+    result = run_ui("""
+const title = () => ({text: el('currentEventTitle').textContent, hidden: el('currentEventTitle').hidden});
+handlers.game_state(state());
+const before = title();
+openLeaderboard(archive);
+handlers.game_state(state({revision: 2, leaderboard_policy: {...state().leaderboard_policy, next: eventBoard, active_event: eventBoard}}));
+const active = title();
+const renamed = {...eventBoard, name: 'DHCP26'};
+handlers.game_state(state({revision: 3, leaderboard_policy: {...state().leaderboard_policy, next: renamed, active_event: renamed}}));
+const renamedTitle = title();
+handlers.game_state(state({revision: 4}));
+output({before, active, renamed: renamedTitle, ended: title(), viewed: browsing.leaderboardId});
+""")
+    assert result == {
+        "before": {"text": "", "hidden": True},
+        "active": {"text": "Patch night", "hidden": False},
+        "renamed": {"text": "DHCP26", "hidden": False},
+        "ended": {"text": "", "hidden": True},
+        "viewed": 209,
+    }
+
+
+def test_header_clears_unconfirmed_event_on_disconnect_and_refreshes_on_reconnect():
+    result = run_ui("""
+handlers.game_state(state({leaderboard_policy: {...state().leaderboard_policy, next: eventBoard, active_event: eventBoard}}));
+handlers.disconnect();
+const disconnected = {text: el('currentEventTitle').textContent, hidden: el('currentEventTitle').hidden};
+managerHandlers.open();
+handlers.game_state(state({revision: 2}));
+output({disconnected, reconnected: {text: el('currentEventTitle').textContent, hidden: el('currentEventTitle').hidden}});
+""")
+    assert result == {
+        "disconnected": {"text": "", "hidden": True},
+        "reconnected": {"text": "", "hidden": True},
+    }
+
+
 def test_l_opens_active_event_and_zero_returns_from_numbered_browse():
     result = run_ui("""
 handlers.game_state(state({leaderboard_policy: {...state().leaderboard_policy, next: eventBoard, active_event: eventBoard}}));

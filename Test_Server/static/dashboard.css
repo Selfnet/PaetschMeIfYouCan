@@ -92,7 +92,18 @@ input:focus-visible,
   border-bottom: 6px solid var(--orange);
 }
 .stage-header h1 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1em 0.5em;
+  min-width: 0;
   font: 700 48px/1.1 var(--display);
+  overflow-wrap: anywhere;
+}
+.current-event-title {
+  min-width: 0;
+  color: var(--secondary);
+  font-weight: 400;
 }
 .brand-logo {
   width: 186px;
