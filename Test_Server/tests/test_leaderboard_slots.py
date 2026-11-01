@@ -24,7 +24,7 @@ def score(race_id, slot, mode="full-field", duration=100):
 
 def rows(store, slot, mode="full-field"):
     boundary = store.snapshot_boundary(mode, slot)
-    return store.page_entries(mode, boundary, 0, leaderboard_slot=slot).rows
+    return store.page_entries(mode, boundary, 0, leaderboard_id=slot).rows
 
 
 def test_all_slots_isolate_modes_boundaries_and_ranks(tmp_path):
@@ -38,7 +38,7 @@ def test_all_slots_isolate_modes_boundaries_and_ranks(tmp_path):
         )
     for slot in range(1, 10):
         page = rows(store, slot)
-        assert [(row.race_id, row.leaderboard_slot, row.rank) for row in page] == [
+        assert [(row.race_id, row.leaderboard_id, row.rank) for row in page] == [
             (f"race-{slot}", slot, 1)
         ]
         assert [row.race_id for row in rows(store, slot, "quarter-field")] == [
@@ -48,9 +48,7 @@ def test_all_slots_isolate_modes_boundaries_and_ranks(tmp_path):
     store.insert_entries([score("later", 9, duration=0)])
     assert [
         row.race_id
-        for row in store.page_entries(
-            "full-field", boundary, 0, leaderboard_slot=9
-        ).rows
+        for row in store.page_entries("full-field", boundary, 0, leaderboard_id=9).rows
     ] == ["race-9"]
 
 
@@ -85,7 +83,7 @@ def test_migration_preserves_historical_ids_times_and_retry_identity(
             historical.name,
             historical.duration_ms,
             historical.created_at,
-            historical.leaderboard_slot,
+            historical.leaderboard_id,
         ) == (42, "Grace", 1234, "2026-01-01T00:00:00+00:00", 1)
         assert store.insert_entries([score("old", 9, mode)]) == {42}
         assert rows(store, 9, mode) == ()
@@ -94,11 +92,20 @@ def test_migration_preserves_historical_ids_times_and_retry_identity(
 @pytest.mark.parametrize("slot", [None, True, False, 0, 10, -1, 1.0, "1", [], {}])
 def test_storage_rejects_invalid_slots_atomically(tmp_path, slot):
     store = LeaderboardStore(tmp_path / "slots.sqlite3")
+    with pytest.raises(ValueError):
+        store.set_selected_slot(slot)
+    assert store.selected_slot() == 1
+
+
+@pytest.mark.parametrize(
+    "identity", [None, True, False, 0, -1, 1.0, "1", [], {}, 2**53]
+)
+def test_storage_rejects_invalid_score_identities_atomically(tmp_path, identity):
+    store = LeaderboardStore(tmp_path / "slots.sqlite3")
     for operation in (
-        lambda: store.set_selected_slot(slot),
-        lambda: store.snapshot_boundary("full-field", slot),
-        lambda: store.page_entries("full-field", 0, 0, leaderboard_slot=slot),
-        lambda: store.insert_entries([score("valid", 1), score("invalid", slot)]),
+        lambda: store.snapshot_boundary("full-field", identity),
+        lambda: store.page_entries("full-field", 0, 0, leaderboard_id=identity),
+        lambda: store.insert_entries([score("valid", 1), score("invalid", identity)]),
     ):
         with pytest.raises(ValueError):
             operation()
@@ -121,16 +128,16 @@ def test_selection_broadcasts_and_restores_on_app_restart(bundle, clock):
     }
     for client in clients:
         state = latest_event(client, "game_state")
-        assert state["leaderboard_slot"] == 9
-        assert state["browse_epoch"] > before["browse_epoch"]
+        assert state["leaderboard_policy"]["next"]["slot"] == 9
+        assert state["browse_epoch"] == before["browse_epoch"]
     assert runtime.store.selected_slot() == 9
     restarted, restart_sio = create_app(
         CONFIG, clock_ns=clock, store=LeaderboardStore(runtime.store.path)
     )
     assert (
         latest_event(restart_sio.test_client(restarted), "game_state")[
-            "leaderboard_slot"
-        ]
+            "leaderboard_policy"
+        ]["next"]["slot"]
         == 9
     )
 
@@ -148,13 +155,16 @@ def test_duplicate_selection_from_two_clients_preserves_open_browse(bundle):
     assert second.emit(
         "select_leaderboard_slot", {"leaderboard_slot": 2}, callback=True
     ) == {"accepted": True, "leaderboard_slot": 2, "error": None}
-    assert runtime.race.snapshot() == before
+    assert runtime.race.snapshot()["browse_epoch"] == before["browse_epoch"]
     assert runtime.race.browse_is_current(origin)[0]
     for client in (first, second):
-        assert client.get_received() == []
+        assert (
+            latest_event(client, "game_state")["leaderboard_policy"]["next"]["slot"]
+            == 2
+        )
     assert runtime.store.selected_slot() == 2
-    second.emit("request_leaderboard", page_request(leaderboard_slot=2))
-    assert latest_event(second, "leaderboard_snapshot")["leaderboard_slot"] == 2
+    second.emit("request_leaderboard", page_request(leaderboard_id=2))
+    assert latest_event(second, "leaderboard_snapshot")["leaderboard_id"] == 2
 
 
 @pytest.mark.parametrize(
@@ -184,9 +194,9 @@ def test_malformed_selection_does_not_write_or_mutate(bundle, monkeypatch, data)
 @pytest.mark.parametrize("phase", ["racing", "stopped", "name_entry", "leaderboard"])
 def test_selection_is_ready_only(bundle, clock, monkeypatch, phase):
     app, sio, runtime = bundle
-    runtime.apply(runtime.race.start)
+    runtime.start()
     if phase == "stopped":
-        runtime.apply(runtime.race.space)
+        runtime.space()
     elif phase in ("name_entry", "leaderboard"):
         clock.advance_ms(100)
         for player in (1, 2):
@@ -239,62 +249,66 @@ def test_startup_read_failure_is_recoverable_and_selection_can_retry(
     def fail():
         raise sqlite3.OperationalError("fixture failure")
 
-    monkeypatch.setattr(store, "selected_slot", fail)
+    monkeypatch.setattr(store, "load_policy", fail)
     app, sio = create_app(CONFIG, clock_ns=clock, store=store)
     client = sio.test_client(app)
-    assert latest_event(client, "game_state")["leaderboard_slot"] == 1
+    assert (
+        latest_event(client, "game_state")["leaderboard_policy"]["available"] is False
+    )
+    assert client.emit("retry_leaderboard_storage", {}, callback=True)["accepted"]
+    assert latest_event(client, "game_state")["leaderboard_policy"]["next"]["slot"] == 9
     assert client.emit(
         "select_leaderboard_slot", {"leaderboard_slot": 3}, callback=True
     )["accepted"]
     assert LeaderboardStore(store.path).selected_slot() == 3
 
 
-def test_unavailable_store_selection_is_rejected_without_stopping_game(
-    tmp_path, monkeypatch
-):
+def test_unavailable_store_selection_and_start_are_rejected(tmp_path, monkeypatch):
     blocked = tmp_path / "blocked"
     blocked.write_text("blocked")
     monkeypatch.setenv("LEADERBOARD_DB", str(blocked / "scores.sqlite3"))
     app, sio = create_app(CONFIG)
     client = sio.test_client(app)
-    assert latest_event(client, "game_state")["leaderboard_slot"] == 1
+    assert (
+        latest_event(client, "game_state")["leaderboard_policy"]["available"] is False
+    )
     assert not client.emit(
         "select_leaderboard_slot", {"leaderboard_slot": 2}, callback=True
     )["accepted"]
     app.test_client().get("/start-clock")
-    assert latest_event(client, "game_state")["phase"] == "racing"
+    assert latest_event(client, "game_state")["phase"] == "ready"
 
 
 def test_race_capture_and_persistence_identity_include_slot(clock):
-    race = RaceStateMachine(clock_ns=clock, leaderboard_slot=8)
-    race.start()
-    assert not race.select_leaderboard_slot(9).changed
+    race = RaceStateMachine(clock_ns=clock)
+    race.start(8)
+    assert not race.start(9).changed
     clock.advance_ms(100)
     for player in (1, 2):
         race.observe_board(player, EXPECTED_IDS)
     race_id = race.snapshot()["race_id"]
     race.submit_name(race_id, 1, "Ada")
     change = race.submit_name(race_id, 2, "Grace")
-    assert {item.leaderboard_slot for item in change.submissions} == {8}
-    assert change.origin.leaderboard_slot == 8
+    assert {item.leaderboard_id for item in change.submissions} == {8}
+    assert change.origin.leaderboard_id == 8
     assert not race.set_persistence(
-        replace(change.origin, leaderboard_slot=9), None
+        replace(change.origin, leaderboard_id=9), None
     ).changed
     assert race.set_persistence(change.origin, None).changed
-    assert race.capture_browse("full-field", race_id, 9) is None
-    assert race.capture_browse("full-field", race_id, 8).leaderboard_slot == 8
+    assert race.capture_browse("full-field", race_id, 9).leaderboard_id == 9
+    assert race.capture_browse("full-field", race_id, 8).leaderboard_id == 8
     race.reset()
-    race.select_leaderboard_slot(9)
+    race.start(9)
     assert not race.set_persistence(change.origin, None).changed
-    assert {item.leaderboard_slot for item in change.submissions} == {8}
+    assert {item.leaderboard_id for item in change.submissions} == {8}
 
 
-def test_blocked_score_write_saves_captured_slot_after_reset_and_switch(
+def test_blocked_score_write_rejects_reset_and_switch_and_saves_captured_board(
     bundle, clock, monkeypatch
 ):
     _, _, runtime = bundle
     assert runtime.select_leaderboard_slot(8)["accepted"]
-    runtime.apply(runtime.race.start)
+    runtime.start()
     clock.advance_ms(100)
     for player in (1, 2):
         runtime.observe_board(player, EXPECTED_IDS)
@@ -316,16 +330,18 @@ def test_blocked_score_write_saves_captured_slot_after_reset_and_switch(
     )
     try:
         runtime.apply(runtime.race.reset)
-        assert runtime.select_leaderboard_slot(9)["accepted"]
+        assert not runtime.select_leaderboard_slot(9)["accepted"]
     finally:
         unblock(thread, errors, release)
     assert [row.race_id for row in rows(runtime.store, 8)] == [race_id, race_id]
     assert rows(runtime.store, 9) == ()
-    assert runtime.race.snapshot()["persistence_status"] == "idle"
+    assert runtime.race.snapshot()["persistence_status"] == "saved"
 
 
 @pytest.mark.parametrize("stage", ["snapshot_boundary", "page_entries"])
-def test_slot_switch_discards_inflight_page(bundle, monkeypatch, stage):
+def test_manual_selection_does_not_discard_explicit_inflight_page(
+    bundle, monkeypatch, stage
+):
     app, sio, runtime = bundle
     client = sio.test_client(app)
     client.get_received()
@@ -339,7 +355,7 @@ def test_slot_switch_discards_inflight_page(bundle, monkeypatch, stage):
 
     monkeypatch.setattr(runtime.store, stage, delayed)
     thread, errors = run_blocked(
-        lambda: client.emit("request_leaderboard", page_request(leaderboard_slot=1)),
+        lambda: client.emit("request_leaderboard", page_request(leaderboard_id=1)),
         entered,
         release,
     )
@@ -347,35 +363,32 @@ def test_slot_switch_discards_inflight_page(bundle, monkeypatch, stage):
         assert runtime.select_leaderboard_slot(2)["accepted"]
     finally:
         unblock(thread, errors, release)
-    assert not [
-        event
-        for event in client.get_received()
-        if event["name"] == "leaderboard_snapshot"
-    ]
+    assert latest_event(client, "leaderboard_snapshot")["leaderboard_id"] == 1
 
 
-def test_pages_enforce_selected_slot_and_echo_identity(bundle):
+def test_pages_enforce_request_identity_independently_of_selected_slot(bundle):
     app, sio, runtime = bundle
     runtime.store.insert_entries([score("one", 1), score("two", 2)])
     client = sio.test_client(app)
     client.get_received()
     client.emit("request_leaderboard", page_request())
     opening = latest_event(client, "leaderboard_snapshot")
-    assert opening["leaderboard_slot"] == 1
+    assert opening["leaderboard_id"] == 1
     assert [row["race_id"] for row in opening["rows"]] == ["one"]
     runtime.select_leaderboard_slot(2)
     client.get_received()
     for request in (
-        page_request(request_id=2),
-        page_request(request_id=2, leaderboard_slot=1),
-        page_request(boundary=opening["boundary"], offset=50, leaderboard_slot=2),
+        page_request(boundary=opening["boundary"], offset=50, leaderboard_id=2),
+        page_request(
+            request_id=2, boundary=opening["boundary"], offset=50, leaderboard_id=2
+        ),
     ):
         client.emit("request_leaderboard", request)
         assert client.get_received() == []
-    client.emit("request_leaderboard", page_request(request_id=2, leaderboard_slot=2))
+    client.emit("request_leaderboard", page_request(request_id=2, leaderboard_id=2))
     page = latest_event(client, "leaderboard_snapshot")
-    assert page["leaderboard_slot"] == 2
-    assert [(row["race_id"], row["leaderboard_slot"]) for row in page["rows"]] == [
+    assert page["leaderboard_id"] == 2
+    assert [(row["race_id"], row["leaderboard_id"]) for row in page["rows"]] == [
         ("two", 2)
     ]
 
@@ -388,7 +401,7 @@ def test_malformed_page_slot_does_not_read(bundle, monkeypatch, slot):
     )
     client = sio.test_client(app)
     client.get_received()
-    client.emit("request_leaderboard", page_request(leaderboard_slot=slot))
+    client.emit("request_leaderboard", page_request(leaderboard_id=slot))
     assert client.get_received() == []
 
 
@@ -405,10 +418,10 @@ def test_settings_write_and_state_publication_are_serialized_against_start(
     )
     original = runtime.store.set_selected_slot
 
-    def delayed(slot):
+    def delayed(slot, **kwargs):
         entered.set()
         assert release.wait(3)
-        original(slot)
+        original(slot, **kwargs)
 
     monkeypatch.setattr(runtime.store, "set_selected_slot", delayed)
     thread, errors = run_blocked(
@@ -417,25 +430,28 @@ def test_settings_write_and_state_publication_are_serialized_against_start(
 
     def start():
         attempted.set()
-        runtime.apply(runtime.race.start)
+        runtime.start()
 
     starter = threading.Thread(target=start)
     starter.start()
     try:
         assert attempted.wait(3)
         assert runtime.race.snapshot()["phase"] == "ready"
-        assert runtime.race.snapshot()["leaderboard_slot"] == 1
+        assert runtime.policy.manual_slot == 1
     finally:
         unblock(thread, errors, release)
         starter.join(3)
     assert not starter.is_alive()
-    assert runtime.race.race_leaderboard_slot == 9
+    assert runtime.race.race_leaderboard_id == 9
     states = [
         event["args"][0]
         for event in client.get_received()
         if event["name"] == "game_state"
     ]
-    assert [(state["phase"], state["leaderboard_slot"]) for state in states] == [
+    assert [
+        (state["phase"], state["leaderboard_policy"]["next"]["slot"])
+        for state in states
+    ] == [
         ("ready", 9),
         ("racing", 9),
     ]

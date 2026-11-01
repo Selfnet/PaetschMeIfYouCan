@@ -3,8 +3,16 @@ import sqlite3
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from itertools import pairwise
 from pathlib import Path
 from statistics import median
+
+from leaderboard_policy import (
+    Leaderboard,
+    LeaderboardPolicy,
+    parse_event_time,
+    utc_time,
+)
 
 
 @dataclass(frozen=True)
@@ -14,7 +22,7 @@ class NewLeaderboardEntry:
     name: str
     duration_ms: int
     mode_id: str
-    leaderboard_slot: int = 1
+    leaderboard_id: int = 1
 
 
 @dataclass(frozen=True)
@@ -27,7 +35,7 @@ class RankedLeaderboardEntry:
     created_at: str
     mode_id: str
     rank: int
-    leaderboard_slot: int = 1
+    leaderboard_id: int = 1
     attempts: int = 1
     latest_race_id: str = ""
     latest_duration_ms: int = 0
@@ -59,29 +67,40 @@ class LeaderboardStore:
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=5.0)
         connection.execute("PRAGMA busy_timeout = 5000")
+        connection.execute("PRAGMA foreign_keys = ON")
         connection.create_function("casefold", 1, str.casefold, deterministic=True)
         return connection
 
     def _initialize(self) -> None:
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
-            connection.execute(SCHEMA)
+            connection.execute(CATALOG_SCHEMA)
+            connection.executemany(
+                "INSERT INTO leaderboards (id, slot) VALUES (?, ?) ON CONFLICT(id) DO NOTHING",
+                [(slot, slot) for slot in range(1, 10)],
+            )
             columns = {
                 row[1]
                 for row in connection.execute("PRAGMA table_info(leaderboard_entries)")
             }
-            if "mode_id" not in columns:
+            if columns and "leaderboard_id" not in columns:
                 connection.execute(
-                    "ALTER TABLE leaderboard_entries ADD COLUMN mode_id TEXT NOT NULL DEFAULT 'full-field'"
+                    "ALTER TABLE leaderboard_entries RENAME TO legacy_entries"
                 )
-            if "leaderboard_slot" not in columns:
+                connection.execute(SCHEMA)
+                mode = "mode_id" if "mode_id" in columns else "'full-field'"
+                slot = "leaderboard_slot" if "leaderboard_slot" in columns else "1"
                 connection.execute(
-                    "ALTER TABLE leaderboard_entries ADD COLUMN leaderboard_slot "
-                    "INTEGER NOT NULL DEFAULT 1 CHECK (leaderboard_slot BETWEEN 1 AND 9)"
+                    "INSERT INTO leaderboard_entries "
+                    "(id, race_id, player_number, name, duration_ms, created_at, mode_id, leaderboard_id) "
+                    f"SELECT id, race_id, player_number, name, duration_ms, created_at, {mode}, {slot} FROM legacy_entries"
                 )
+                connection.execute("DROP TABLE legacy_entries")
+            else:
+                connection.execute(SCHEMA)
             connection.execute(
-                "CREATE INDEX IF NOT EXISTS leaderboard_slot_mode_time_idx "
-                "ON leaderboard_entries (leaderboard_slot, mode_id, duration_ms, created_at, id)"
+                "CREATE INDEX IF NOT EXISTS leaderboard_id_mode_time_idx "
+                "ON leaderboard_entries (leaderboard_id, mode_id, duration_ms, created_at, id)"
             )
             connection.execute(
                 "CREATE TABLE IF NOT EXISTS leaderboard_settings ("
@@ -97,10 +116,200 @@ class LeaderboardStore:
                     "ALTER TABLE leaderboard_settings ADD COLUMN maintenance_requested "
                     "INTEGER NOT NULL DEFAULT 0 CHECK (maintenance_requested IN (0, 1))"
                 )
+            if "manual_selected_at" not in settings_columns:
+                connection.execute(
+                    "ALTER TABLE leaderboard_settings ADD COLUMN manual_selected_at TEXT NOT NULL DEFAULT ''"
+                )
+                connection.execute(
+                    "UPDATE leaderboard_settings SET manual_selected_at = ?",
+                    (utc_time(self.now()).isoformat(),),
+                )
+            if "policy_revision" not in settings_columns:
+                connection.execute(
+                    "ALTER TABLE leaderboard_settings ADD COLUMN policy_revision INTEGER NOT NULL DEFAULT 0 CHECK (policy_revision >= 0)"
+                )
             connection.execute(
-                "INSERT INTO leaderboard_settings (id, leaderboard_slot) VALUES (1, 1) "
-                "ON CONFLICT(id) DO NOTHING"
+                "INSERT INTO leaderboard_settings (id, leaderboard_slot, maintenance_requested, manual_selected_at) "
+                "VALUES (1, 1, 0, ?) ON CONFLICT(id) DO NOTHING",
+                (utc_time(self.now()).isoformat(),),
             )
+
+    def load_policy(self) -> LeaderboardPolicy:
+        with self._connect() as connection:
+            connection.execute("BEGIN")
+            return self._load_policy(connection)
+
+    def _load_policy(self, connection) -> LeaderboardPolicy:
+        settings = connection.execute(
+            "SELECT leaderboard_slot, manual_selected_at, policy_revision FROM leaderboard_settings WHERE id = 1"
+        ).fetchone()
+        if settings is None:
+            raise ValueError("Leaderboard settings are missing")
+        slot, selected_at, revision = settings
+        self.validate_slot(slot)
+        if type(revision) is not int or revision < 0:
+            raise ValueError("Invalid policy revision")
+        boards = []
+        for identity, numbered, name, start, end in connection.execute(
+            "SELECT id, slot, name, starts_at, ends_at FROM leaderboards ORDER BY id"
+        ):
+            self.validate_id(identity)
+            if numbered is not None:
+                self.validate_slot(numbered)
+                if (name, start, end) != (None, None, None):
+                    raise ValueError("Invalid numbered leaderboard")
+            else:
+                if self._event_name(name) != name:
+                    raise ValueError("Invalid event name")
+                start, end = self._stored_time(start), self._stored_time(end)
+                if end <= start:
+                    raise ValueError("Invalid event window")
+            boards.append(Leaderboard(identity, numbered, name, start, end))
+        if sorted(board.slot for board in boards if board.slot is not None) != list(
+            range(1, 10)
+        ):
+            raise ValueError("Numbered leaderboards are missing")
+        events = sorted(
+            (board for board in boards if board.slot is None),
+            key=lambda board: board.starts_at,
+        )
+        if any(first.ends_at > second.starts_at for first, second in pairwise(events)):
+            raise ValueError("Event windows overlap")
+        return LeaderboardPolicy(
+            tuple(boards), slot, self._stored_time(selected_at), revision
+        )
+
+    @staticmethod
+    def _stored_time(value):
+        if not isinstance(value, str):
+            raise ValueError("Invalid stored time")  # noqa: TRY004 - invalid storage data
+        return utc_time(datetime.fromisoformat(value))
+
+    @staticmethod
+    def _event_name(value):
+        if (
+            not isinstance(value, str)
+            or not value.isprintable()
+            or not 1 <= len(value.strip()) <= 60
+        ):
+            raise ValueError("Event name must contain 1 to 60 printable characters")
+        return value.strip()
+
+    def _edit_policy(self, connection, expected_revision):
+        if type(expected_revision) is not int or not 0 <= expected_revision < 2**53:
+            raise ValueError("Invalid policy revision")
+        connection.execute("BEGIN IMMEDIATE")
+        policy = self._load_policy(connection)
+        if expected_revision != policy.revision:
+            raise ValueError("Schedule changed; reload before editing")
+        return policy
+
+    @staticmethod
+    def _bump_revision(connection):
+        connection.execute(
+            "UPDATE leaderboard_settings SET policy_revision = policy_revision + 1 WHERE id = 1"
+        )
+
+    def _find_event(self, policy, event_id):
+        self.validate_id(event_id)
+        event = next(
+            (
+                board
+                for board in policy.boards
+                if board.id == event_id and board.slot is None
+            ),
+            None,
+        )
+        if event is None:
+            raise ValueError("Event does not exist")
+        return event
+
+    def save_event(
+        self, data: dict, expected_revision: int, now: datetime
+    ) -> Leaderboard:
+        now = utc_time(now)
+        if not isinstance(data, dict) or type(data.get("start_now", False)) is not bool:
+            raise ValueError("Invalid event data")
+        name = self._event_name(data.get("name"))
+        start = (
+            now if data.get("start_now") else parse_event_time(data.get("starts_at"))
+        )
+        end = parse_event_time(data.get("ends_at"))
+        if end <= start:
+            raise ValueError("Event end must be later than its start")
+        with self._connect() as connection:
+            policy = self._edit_policy(connection, expected_revision)
+            existing = self._find_event(policy, data["id"]) if "id" in data else None
+            if existing is None or now < existing.starts_at:
+                if start < now or end <= now:
+                    raise ValueError(
+                        "New event windows must start now or in the future"
+                    )
+            elif now < existing.ends_at:
+                if start != existing.starts_at or end <= now or data.get("start_now"):
+                    raise ValueError(
+                        "Active events keep their start and must end in the future; use End now"
+                    )
+            elif (start, end) != (existing.starts_at, existing.ends_at) or data.get(
+                "start_now"
+            ):
+                raise ValueError("Ended event windows cannot be changed")
+            if any(
+                board.slot is None
+                and board != existing
+                and start < board.ends_at
+                and board.starts_at < end
+                for board in policy.boards
+            ):
+                raise ValueError("Event windows overlap")
+            values = (name, start.isoformat(), end.isoformat())
+            if existing is None:
+                identity = connection.execute(
+                    "INSERT INTO leaderboards (name, starts_at, ends_at) VALUES (?, ?, ?)",
+                    values,
+                ).lastrowid
+            else:
+                identity = existing.id
+                connection.execute(
+                    "UPDATE leaderboards SET name = ?, starts_at = ?, ends_at = ? WHERE id = ?",
+                    (*values, identity),
+                )
+            self._bump_revision(connection)
+            return Leaderboard(identity, None, name, start, end)
+
+    def cancel_event(
+        self, event_id: int, expected_revision: int, now: datetime
+    ) -> None:
+        now = utc_time(now)
+        with self._connect() as connection:
+            policy = self._edit_policy(connection, expected_revision)
+            event = self._find_event(policy, event_id)
+            has_scores = connection.execute(
+                "SELECT 1 FROM leaderboard_entries WHERE leaderboard_id = ? LIMIT 1",
+                (event_id,),
+            ).fetchone()
+            if now >= event.starts_at or has_scores:
+                raise ValueError("Only future empty events can be cancelled")
+            connection.execute("DELETE FROM leaderboards WHERE id = ?", (event_id,))
+            self._bump_revision(connection)
+
+    def end_event(
+        self, event_id: int, expected_revision: int, now: datetime
+    ) -> Leaderboard:
+        now = utc_time(now)
+        with self._connect() as connection:
+            policy = self._edit_policy(connection, expected_revision)
+            event = self._find_event(policy, event_id)
+            if not event.starts_at < now < event.ends_at:
+                raise ValueError(
+                    "Only active events with a nonempty window can end now"
+                )
+            connection.execute(
+                "UPDATE leaderboards SET ends_at = ? WHERE id = ?",
+                (now.isoformat(), event_id),
+            )
+            self._bump_revision(connection)
+            return Leaderboard(event.id, None, event.name, event.starts_at, now)
 
     def selected_slot(self) -> int:
         with self._connect() as connection:
@@ -112,14 +321,19 @@ class LeaderboardStore:
         self.validate_slot(row[0])
         return row[0]
 
-    def set_selected_slot(self, leaderboard_slot: int) -> None:
-        self.validate_slot(leaderboard_slot)
+    def set_selected_slot(
+        self, slot: int, *, selected_at: datetime | None = None
+    ) -> None:
+        self.validate_slot(slot)
+        selected_at = utc_time(selected_at if selected_at is not None else self.now())
         with self._connect() as connection:
-            connection.execute(
-                "INSERT INTO leaderboard_settings (id, leaderboard_slot) VALUES (1, ?) "
-                "ON CONFLICT(id) DO UPDATE SET leaderboard_slot = excluded.leaderboard_slot",
-                (leaderboard_slot,),
+            cursor = connection.execute(
+                "UPDATE leaderboard_settings SET leaderboard_slot = ?, manual_selected_at = ?, "
+                "policy_revision = policy_revision + 1 WHERE id = 1",
+                (slot, selected_at.isoformat()),
             )
+            if cursor.rowcount != 1:
+                raise ValueError("Leaderboard settings are missing")
 
     def maintenance_requested(self) -> bool:
         with self._connect() as connection:
@@ -150,7 +364,7 @@ class LeaderboardStore:
             for item in validated:
                 connection.execute(
                     """INSERT INTO leaderboard_entries
-                       (race_id, player_number, name, duration_ms, created_at, mode_id, leaderboard_slot)
+                       (race_id, player_number, name, duration_ms, created_at, mode_id, leaderboard_id)
                        VALUES (?, ?, ?, ?, ?, ?, ?)
                        ON CONFLICT(race_id, player_number) DO NOTHING""",
                     (
@@ -160,7 +374,7 @@ class LeaderboardStore:
                         item.duration_ms,
                         self.now().isoformat(),
                         item.mode_id,
-                        item.leaderboard_slot,
+                        item.leaderboard_id,
                     ),
                 )
             return {
@@ -172,31 +386,29 @@ class LeaderboardStore:
                 )
             }
 
-    def median_duration_ms(
-        self, mode_id: str, leaderboard_slot: int = 1
-    ) -> float | None:
+    def median_duration_ms(self, mode_id: str, leaderboard_id: int = 1) -> float | None:
         self._validate_mode(mode_id)
-        self.validate_slot(leaderboard_slot)
+        self.validate_id(leaderboard_id)
         with self._connect() as connection:
             times = [
                 row[0]
                 for row in connection.execute(
                     "SELECT MIN(duration_ms) FROM leaderboard_entries "
-                    "WHERE mode_id = ? AND leaderboard_slot = ? "
+                    "WHERE mode_id = ? AND leaderboard_id = ? "
                     "GROUP BY casefold(name) HAVING MIN(duration_ms) > 0",
-                    (mode_id, leaderboard_slot),
+                    (mode_id, leaderboard_id),
                 )
             ]
         return median(times) if times else None
 
-    def snapshot_boundary(self, mode_id: str, leaderboard_slot: int = 1) -> int:
+    def snapshot_boundary(self, mode_id: str, leaderboard_id: int = 1) -> int:
         self._validate_mode(mode_id)
-        self.validate_slot(leaderboard_slot)
+        self.validate_id(leaderboard_id)
         with self._connect() as connection:
             return connection.execute(
                 "SELECT COALESCE(MAX(id), 0) FROM leaderboard_entries "
-                "WHERE mode_id = ? AND leaderboard_slot = ?",
-                (mode_id, leaderboard_slot),
+                "WHERE mode_id = ? AND leaderboard_id = ?",
+                (mode_id, leaderboard_id),
             ).fetchone()[0]
 
     def page_entries(
@@ -205,11 +417,11 @@ class LeaderboardStore:
         boundary: int,
         offset: int,
         limit: int = 50,
-        leaderboard_slot: int = 1,
+        leaderboard_id: int = 1,
         race_id: str | None = None,
     ) -> LeaderboardPage:
         self._validate_mode(mode_id)
-        self.validate_slot(leaderboard_slot)
+        self.validate_id(leaderboard_id)
         if race_id is not None and (not isinstance(race_id, str) or not race_id):
             raise ValueError("race_id must be a non-empty string or None")
         if type(boundary) is not int or boundary < 0:
@@ -224,7 +436,7 @@ class LeaderboardStore:
                 target = connection.execute(
                     """WITH scoped AS (
                            SELECT * FROM leaderboard_entries
-                           WHERE mode_id = ? AND leaderboard_slot = ? AND id <= ?
+                           WHERE mode_id = ? AND leaderboard_id = ? AND id <= ?
                        )
                        SELECT id FROM scoped
                        WHERE casefold(name) = (
@@ -232,7 +444,7 @@ class LeaderboardStore:
                            ORDER BY duration_ms, player_number LIMIT 1
                        )
                        ORDER BY duration_ms, id DESC LIMIT 1""",
-                    (mode_id, leaderboard_slot, boundary, race_id),
+                    (mode_id, leaderboard_id, boundary, race_id),
                 ).fetchone()
             rows = connection.execute(
                 """WITH attempts AS (
@@ -251,10 +463,10 @@ class LeaderboardStore:
                                   PARTITION BY casefold(name) ORDER BY duration_ms, id DESC
                               ) AS best
                        FROM leaderboard_entries
-                       WHERE mode_id = ? AND leaderboard_slot = ? AND id <= ?
+                       WHERE mode_id = ? AND leaderboard_id = ? AND id <= ?
                    )
                    SELECT id, race_id, player_number, latest_name, duration_ms, created_at,
-                          mode_id, rank, leaderboard_slot, attempts, latest_race_id,
+                          mode_id, rank, leaderboard_id, attempts, latest_race_id,
                           latest_duration_ms,
                           NOT EXISTS (
                               SELECT 1 FROM attempts prior
@@ -274,13 +486,18 @@ class LeaderboardStore:
                    ) ranked
                    ORDER BY duration_ms, created_at, id
                    LIMIT ? OFFSET ?""",
-                (mode_id, leaderboard_slot, boundary, race_id, limit + 1, offset),
+                (mode_id, leaderboard_id, boundary, race_id, limit + 1, offset),
             ).fetchall()
             return LeaderboardPage(
                 tuple(RankedLeaderboardEntry(*row) for row in rows[:limit]),
                 offset + limit if len(rows) > limit else None,
                 target[0] if target else None,
             )
+
+    @staticmethod
+    def validate_id(leaderboard_id: object) -> None:
+        if type(leaderboard_id) is not int or not 1 <= leaderboard_id < 2**53:
+            raise ValueError("leaderboard_id must be a positive safe integer")
 
     @staticmethod
     def validate_slot(leaderboard_slot: object) -> None:
@@ -295,7 +512,7 @@ class LeaderboardStore:
     @staticmethod
     def _validate(entry: NewLeaderboardEntry) -> NewLeaderboardEntry:
         LeaderboardStore._validate_mode(entry.mode_id)
-        LeaderboardStore.validate_slot(entry.leaderboard_slot)
+        LeaderboardStore.validate_id(entry.leaderboard_id)
         if not isinstance(entry.race_id, str) or not entry.race_id:
             raise ValueError("race_id is required")
         if type(entry.player_number) is not int or entry.player_number not in (1, 2):
@@ -313,6 +530,21 @@ class LeaderboardStore:
         return entry
 
 
+CATALOG_SCHEMA = """
+CREATE TABLE IF NOT EXISTS leaderboards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slot INTEGER UNIQUE,
+    name TEXT,
+    starts_at TEXT,
+    ends_at TEXT,
+    CHECK (
+        (slot IS NOT NULL AND slot BETWEEN 1 AND 9 AND name IS NULL AND starts_at IS NULL AND ends_at IS NULL)
+        OR (slot IS NULL AND name IS NOT NULL AND length(name) BETWEEN 1 AND 60
+            AND starts_at IS NOT NULL AND ends_at IS NOT NULL AND starts_at < ends_at)
+    )
+);
+"""
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS leaderboard_entries (
     id INTEGER PRIMARY KEY,
@@ -322,7 +554,7 @@ CREATE TABLE IF NOT EXISTS leaderboard_entries (
     duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
     created_at TEXT NOT NULL,
     mode_id TEXT NOT NULL,
-    leaderboard_slot INTEGER NOT NULL DEFAULT 1 CHECK (leaderboard_slot BETWEEN 1 AND 9),
+    leaderboard_id INTEGER NOT NULL DEFAULT 1 REFERENCES leaderboards(id),
     UNIQUE (race_id, player_number)
 );
 """

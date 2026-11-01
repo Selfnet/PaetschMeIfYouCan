@@ -11,11 +11,11 @@ from gamemodes import BUILTIN_MODES
 from leaderboard import LeaderboardStore, NewLeaderboardEntry
 
 
-def create_preview(data_dir: Path, *, background=True):
+def create_preview(data_dir: Path, *, background=True, now_utc=None):
     data_dir = Path(data_dir).expanduser()
     # Never open an existing directory/database, including LEADERBOARD_DB.
     data_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
-    store = LeaderboardStore(data_dir / "leaderboard.sqlite3")
+    store = LeaderboardStore(data_dir / "leaderboard.sqlite3", now=now_utc)
     store.insert_entries(
         [
             NewLeaderboardEntry(
@@ -36,6 +36,7 @@ def create_preview(data_dir: Path, *, background=True):
             "TEMPLATES_AUTO_RELOAD": True,
         },
         store=store,
+        now_utc=store.now,
     )
     runtime = app.extensions["game_runtime"]
 

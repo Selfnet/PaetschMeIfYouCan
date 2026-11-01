@@ -83,7 +83,7 @@ def test_preview_runs_real_race_and_saves_only_local_scores(tmp_path):
             db.execute("SELECT COUNT(*) FROM leaderboard_entries").fetchone()[0] == 181
         )
         assert db.execute(
-            "SELECT mode_id, leaderboard_slot FROM leaderboard_entries WHERE name = ?",
+            "SELECT mode_id, leaderboard_id FROM leaderboard_entries WHERE name = ?",
             ("PreviewTest",),
         ).fetchone() == ("quarter-field", 1)
     client.post("/preview/reset")
@@ -135,3 +135,34 @@ def test_preview_simulates_wrong_connection(tmp_path):
         "wrong",
         "open",
     ]
+
+
+def test_preview_supports_injected_event_clock(tmp_path):
+    from datetime import UTC, datetime
+
+    from preview import create_preview
+    from tests.test_app import latest_event
+
+    now = datetime(2026, 11, 1, 10, tzinfo=UTC)
+    app, sio = create_preview(tmp_path / "timed", background=False, now_utc=lambda: now)
+    client = sio.test_client(app)
+    state = latest_event(client, "game_state")
+    result = client.emit(
+        "save_event",
+        {
+            "event": {
+                "name": "Preview",
+                "start_now": True,
+                "ends_at": "2026-11-01T11:00:00Z",
+            },
+            "revision": state["leaderboard_policy"]["revision"],
+        },
+        callback=True,
+    )
+    assert result["accepted"]
+    assert result["event"]["starts_at"] == "2026-11-01T10:00:00+00:00"
+    app.test_client().get("/start-clock")
+    assert (
+        latest_event(client, "game_state")["race_leaderboard"]["id"]
+        == result["event"]["id"]
+    )

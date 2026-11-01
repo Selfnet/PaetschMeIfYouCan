@@ -1,4 +1,3 @@
-import json
 import sqlite3
 import threading
 
@@ -35,6 +34,7 @@ def page_request(**kwargs):
     return {
         "request_id": 1,
         "mode_id": "full-field",
+        "leaderboard_id": 1,
         "race_id": None,
         "boundary": None,
         "offset": 0,
@@ -42,7 +42,7 @@ def page_request(**kwargs):
 
 
 def finish_race(runtime, clock):
-    runtime.handle_change(runtime.race.start())
+    runtime.start()
     clock.advance_ms(1000)
     runtime.observe_board(1, EXPECTED_IDS)
     clock.advance_ms(100)
@@ -57,7 +57,7 @@ def finish_race(runtime, clock):
 def test_optional_names_save_only_named_players(app_bundle, clock, order, names):
     app, sio, runtime = app_bundle
     client = sio.test_client(app)
-    runtime.apply(runtime.race.start)
+    runtime.start()
     for player in order:
         clock.advance_ms(1000)
         runtime.observe_board(player, EXPECTED_IDS)
@@ -95,7 +95,7 @@ def test_mode_selection_broadcast_and_ack(app_bundle):
     assert clients[0].emit("select_mode", {"mode_id": "quarter-field"}, callback=True)[
         "accepted"
     ]
-    runtime.handle_change(runtime.race.start())
+    runtime.start()
     assert not clients[0].emit("select_mode", {"mode_id": "half-field"}, callback=True)[
         "accepted"
     ]
@@ -160,7 +160,7 @@ def test_pace_reference_is_captured_once_per_race_and_reused_on_reconnect(
     assert latest_event(client, "game_state")["pace_reference_ms"] is None
     runtime.apply(runtime.race.select_mode, "half-field")
     runtime.select_leaderboard_slot(2)
-    runtime.apply(runtime.race.start)
+    runtime.start()
     clock.advance_ms(6000)
     runtime.observe_board(1, [EXPECTED_IDS[0]] + [0] * 47)
     state = latest_event(sio.test_client(app), "game_state")
@@ -169,7 +169,7 @@ def test_pace_reference_is_captured_once_per_race_and_reused_on_reconnect(
     assert calls == [("half-field", 2)]
     runtime.apply(runtime.race.reset)
     assert latest_event(client, "game_state")["pace_reference_ms"] is None
-    runtime.apply(runtime.race.start)
+    runtime.start()
     assert calls == [("half-field", 2)] * 2
 
 
@@ -184,7 +184,7 @@ def test_failed_pace_lookup_does_not_block_racing_or_retry_on_each_update(
         raise OSError("unavailable")
 
     monkeypatch.setattr(runtime.store, "median_duration_ms", fail)
-    runtime.apply(runtime.race.start)
+    runtime.start()
     for _ in range(2):
         state = latest_event(sio.test_client(app), "game_state")
         assert state["phase"] == "racing"
@@ -268,8 +268,8 @@ def test_open_and_subsequent_pages_are_targeted_and_boundary_fixed(app_bundle, s
         ]
     )
     if stopped:
-        runtime.handle_change(runtime.race.start())
-        runtime.handle_change(runtime.race.space())
+        runtime.start()
+        runtime.space()
     requester, observer = sio.test_client(app), sio.test_client(app)
     requester.get_received()
     observer.get_received()
@@ -423,7 +423,7 @@ def unblock(thread, errors, release):
     assert not errors
 
 
-def test_pending_broadcast_precedes_blocking_write_and_reset_is_responsive(
+def test_pending_broadcast_precedes_blocking_write_and_reset_is_rejected(
     app_bundle, clock, monkeypatch
 ):
     app, sio, runtime = app_bundle
@@ -455,15 +455,16 @@ def test_pending_broadcast_precedes_blocking_write_and_reset_is_responsive(
             "request_leaderboard",
             page_request(mode_id="quarter-field", race_id=race_id),
         )
-        assert clients[0].get_received() == []
+        assert latest_event(clients[0], "leaderboard_snapshot")["rows"] == []
         runtime.apply(runtime.race.reset)
         runtime.apply(runtime.race.select_mode, "half-field")
-        runtime.apply(runtime.race.start)
+        runtime.start()
     finally:
         unblock(thread, errors, release)
     assert {entry.mode_id for entry in captured} == {"quarter-field"}
     assert {entry.race_id for entry in captured} == {race_id}
-    assert runtime.race.snapshot()["persistence_status"] == "idle"
+    assert runtime.race.snapshot()["persistence_status"] == "saved"
+    assert runtime.race.snapshot()["race_id"] == race_id
     assert runtime.store.snapshot_boundary("quarter-field") == 2
 
 
@@ -517,7 +518,7 @@ def test_delayed_opening_discards_stale_results(
             runtime.handle_change(runtime.race.select_mode("quarter-field"))
         else:
             if replacement == "start-reset":
-                runtime.handle_change(runtime.race.start())
+                runtime.start()
             runtime.handle_change(runtime.race.reset())
     finally:
         unblock(thread, errors, release)
@@ -562,7 +563,7 @@ def test_database_failures_are_recoverable(app_bundle, clock, monkeypatch, failu
     )
     runtime.observe_board(1, [255] * 48)
     runtime.observe_board(2, [255] * 48)
-    runtime.handle_change(runtime.race.start())
+    runtime.start()
     assert runtime.race.snapshot()["phase"] == "racing"
 
 
@@ -574,9 +575,10 @@ def test_unavailable_initialization_is_nonfatal(tmp_path, monkeypatch, clock):
     client = sio.test_client(app)
     assert latest_event(client, "game_state")["phase"] == "ready"
     client.emit("request_leaderboard", page_request())
-    assert latest_event(client, "leaderboard_snapshot")["error"]
-    app.test_client().get("/start-clock")
-    assert latest_event(client, "game_state")["phase"] == "racing"
+    assert app.test_client().get("/start-clock").status_code == 503
+    state = latest_event(client, "game_state")
+    assert state["phase"] == "ready"
+    assert state["leaderboard_policy"]["available"] is False
 
 
 def test_activity_expiry_and_page_reads_do_not_extend_deadline(app_bundle, clock):
@@ -714,6 +716,36 @@ def test_browser_harness_raw_reset_seeds_and_page_controls(tmp_path):
     assert latest_event(client, "leaderboard_snapshot")["request_id"] == 2
 
 
+def test_browser_harness_wall_clock_is_independent_of_race_clock(tmp_path):
+    from datetime import UTC, datetime
+
+    from tests.browser_harness import create_harness
+
+    wall = [datetime(2026, 11, 1, 9, tzinfo=UTC)]
+    app, sio, _, _ = create_harness(tmp_path / "timed.db", now_utc=lambda: wall[0])
+    client = sio.test_client(app)
+    result = client.emit(
+        "save_event",
+        {
+            "event": {
+                "name": "Test",
+                "start_now": True,
+                "ends_at": "2026-11-01T10:00:00Z",
+            },
+            "revision": 0,
+        },
+        callback=True,
+    )
+    assert result["accepted"]
+    app.test_client().get("/start-clock")
+    wall[0] = datetime(2026, 11, 1, 11, tzinfo=UTC)
+    app.test_client().post("/__test__/advance/1234")
+    state = latest_event(client, "game_state")
+    assert state["players"]["1"]["duration_ms"] == 1234
+    assert state["race_leaderboard"]["id"] == result["event"]["id"]
+    assert state["leaderboard_policy"]["next"]["slot"] == 1
+
+
 def test_opening_failure_retry_and_later_failure_reuses_boundary(
     app_bundle, monkeypatch
 ):
@@ -796,12 +828,12 @@ def test_final_page_publication_is_ordered_before_replacement(app_bundle, monkey
 
 
 @pytest.mark.parametrize("empty", [False, True])
-def test_write_completion_processes_expiry_and_keeps_empty_origin(
+def test_write_completion_restarts_timeout_and_keeps_empty_origin(
     app_bundle, clock, monkeypatch, empty
 ):
     app, sio, runtime = app_bundle
     runtime.apply(runtime.race.select_mode, "quarter-field")
-    runtime.apply(runtime.race.start)
+    runtime.start()
     clock.advance_ms(1000)
     runtime.observe_board(1, EXPECTED_IDS)
     runtime.observe_board(2, EXPECTED_IDS)
@@ -838,8 +870,9 @@ def test_write_completion_processes_expiry_and_keeps_empty_origin(
     finally:
         unblock(thread, errors, release)
     state = latest_event(observer, "game_state")
-    assert state["phase"] == "ready"
-    assert state["persistence_status"] == "idle"
+    assert state["phase"] == "leaderboard"
+    assert state["persistence_status"] == "saved"
+    assert state["remaining_seconds"] == 60
     assert [(origin.race_id, origin.mode_id) for origin in origins] == [
         (race_id, "quarter-field")
     ]
@@ -904,9 +937,10 @@ def test_reconnect_restores_full_cached_phase_presentation(app_bundle, clock, ph
         if phase == "leaderboard":
             runtime.apply(runtime.race.submit_name, race_id, 2, "")
     elif phase == "racing":
-        runtime.apply(runtime.race.start)
+        runtime.start()
         runtime.observe_board(1, EXPECTED_IDS)
-    expected = json.loads(json.dumps(runtime.race.snapshot()))
+    initial = sio.test_client(app)
+    expected = latest_event(initial, "game_state")
     expected["pace_reference_ms"] = None
     client = sio.test_client(app)
     state = latest_event(client, "game_state")

@@ -36,14 +36,14 @@ class ScoreSubmission:
     player_number: int
     name: str
     duration_ms: int
-    leaderboard_slot: int = 1
+    leaderboard_id: int = 1
 
 
 @dataclass(frozen=True)
 class RaceOrigin:
     race_id: str
     mode_id: str
-    leaderboard_slot: int = 1
+    leaderboard_id: int = 1
 
 
 @dataclass(frozen=True)
@@ -52,7 +52,7 @@ class BrowseOrigin:
     phase: Phase
     mode_id: str
     race_id: str | None
-    leaderboard_slot: int = 1
+    leaderboard_id: int = 1
 
 
 @dataclass(frozen=True)
@@ -84,7 +84,6 @@ class RaceStateMachine:
         clock_ns: Callable[[], int] = time.monotonic_ns,
         race_id_factory: Callable[[], str] = lambda: str(uuid.uuid4()),
         registry: ModeRegistry = BUILTIN_MODES,
-        leaderboard_slot: int = 1,
         maintenance_requested: bool = False,
     ) -> None:
         self._clock_ns = clock_ns
@@ -92,9 +91,6 @@ class RaceStateMachine:
         self._lock = threading.RLock()
         self.registry = registry
         self.selected_mode_id = "full-field"
-        if type(leaderboard_slot) is not int or not 1 <= leaderboard_slot <= 9:
-            raise ValueError("leaderboard_slot must be an integer between 1 and 9")
-        self.leaderboard_slot = leaderboard_slot
         if type(maintenance_requested) is not bool:
             raise ValueError("maintenance_requested must be a boolean")
         self.maintenance_requested = maintenance_requested
@@ -138,7 +134,7 @@ class RaceStateMachine:
         self.deadline_ns: int | None = None
         self.sessions = {}
         self.race_mode_id = None
-        self.race_leaderboard_slot = None
+        self.race_leaderboard_id = None
         self.mode_error = None
         self.persistence_status = "idle"
         self.persistence_error: str | None = None
@@ -160,14 +156,18 @@ class RaceStateMachine:
             "mode_error", diagnostic=f"{type(error).__name__}: {error}"
         )
 
-    def _start_unlocked(self, now_ns) -> StateChange:
-        if self.mode_error is not None:
+    def _start_unlocked(self, now_ns, leaderboard_id) -> StateChange:
+        if (
+            self.mode_error is not None
+            or type(leaderboard_id) is not int
+            or not 1 <= leaderboard_id < 2**53
+        ):
             return StateChange(False)
         self.epoch += 1
         self.phase = Phase.RACING
         self.race_id = self._race_id_factory()
         self.race_mode_id = self.selected_mode_id
-        self.race_leaderboard_slot = self.leaderboard_slot
+        self.race_leaderboard_id = leaderboard_id
         self.started_ns = now_ns
         try:
             mode = self.registry.get(self.race_mode_id)
@@ -241,17 +241,17 @@ class RaceStateMachine:
                 self.epoch += 1
             return self._change_unlocked("maintenance_set")
 
-    def start(self) -> StateChange:
+    def start(self, leaderboard_id: int = 1) -> StateChange:
         with self._lock:
             if self.phase != Phase.READY:
                 return StateChange(False)
-            return self._start_unlocked(self._clock_ns())
+            return self._start_unlocked(self._clock_ns(), leaderboard_id)
 
-    def space(self) -> StateChange:
+    def space(self, leaderboard_id: int = 1) -> StateChange:
         with self._lock:
             now_ns = self._clock_ns()
             if self.phase == Phase.READY:
-                return self._start_unlocked(now_ns)
+                return self._start_unlocked(now_ns, leaderboard_id)
             if self.phase == Phase.RACING:
                 for player in self.players.values():
                     if player.completed_ns is None and player.manual_stopped_ns is None:
@@ -329,19 +329,9 @@ class RaceStateMachine:
             diagnostic = self._preview_unlocked()
             return self._change_unlocked("mode_selected", diagnostic=diagnostic)
 
-    def select_leaderboard_slot(self, leaderboard_slot) -> StateChange:
+    def policy_changed(self) -> StateChange:
         with self._lock:
-            if (
-                self.phase != Phase.READY
-                or type(leaderboard_slot) is not int
-                or not 1 <= leaderboard_slot <= 9
-            ):
-                return StateChange(False)
-            if leaderboard_slot == self.leaderboard_slot:
-                return StateChange(False, action="leaderboard_slot_selected")
-            self.leaderboard_slot = leaderboard_slot
-            self.epoch += 1
-            return self._change_unlocked("leaderboard_slot_selected")
+            return self._change_unlocked("leaderboard_policy")
 
     def set_verification(self, verify) -> StateChange:
         with self._lock:
@@ -449,7 +439,7 @@ class RaceStateMachine:
                 player_number=player_number,
                 name=self.name_fields[player_number].draft,
                 duration_ms=self._duration_ms_unlocked(player_number, now_ns),
-                leaderboard_slot=self.race_leaderboard_slot,
+                leaderboard_id=self.race_leaderboard_id,
             )
             for player_number in self.result_order
             if self.name_fields[player_number].resolved
@@ -458,14 +448,14 @@ class RaceStateMachine:
         self.phase = Phase.LEADERBOARD
         self.epoch += 1
         self.active_name_player = None
-        self.deadline_ns = now_ns + LEADERBOARD_TIMEOUT_NS
+        self.deadline_ns = None
         self.persistence_status = "pending"
         self.persistence_error = None
         self._score_submissions = submissions
         self._score_origin = RaceOrigin(
             race_id=self.race_id,
             mode_id=self.race_mode_id,
-            leaderboard_slot=self.race_leaderboard_slot,
+            leaderboard_id=self.race_leaderboard_id,
         )
         return self._change_unlocked(
             "leaderboard",
@@ -493,7 +483,7 @@ class RaceStateMachine:
                     field.resolved = True
             return self._enter_leaderboard_unlocked(now_ns)
         if self.phase == Phase.LEADERBOARD:
-            if self.maintenance_requested and self.persistence_status == "pending":
+            if self.persistence_status in ("pending", "error"):
                 return None
             diagnostic = self._reset_unlocked()
             return self._change_unlocked("reset", diagnostic=diagnostic)
@@ -509,12 +499,14 @@ class RaceStateMachine:
                 or self.phase != Phase.LEADERBOARD
                 or origin.race_id != self.race_id
                 or origin.mode_id != self.race_mode_id
-                or origin.leaderboard_slot != self.race_leaderboard_slot
+                or origin.leaderboard_id != self.race_leaderboard_id
             ):
                 return StateChange(False)
+            if self.persistence_status == "pending":
+                self.epoch += 1
             if error is not None:
                 self.deadline_ns = None
-            elif self.persistence_error is not None:
+            elif self.persistence_status in ("pending", "error"):
                 self.deadline_ns = self._clock_ns() + LEADERBOARD_TIMEOUT_NS
             if error is None:
                 self._score_submissions = ()
@@ -552,39 +544,31 @@ class RaceStateMachine:
                 return expired
             if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
                 return StateChange(False)
-            if self.persistence_error is not None:
+            if self.persistence_status in ("pending", "error"):
                 return StateChange(False)
             self.deadline_ns = now_ns + LEADERBOARD_TIMEOUT_NS
             return self._change_unlocked("leaderboard_activity")
 
-    def _browse_origin_unlocked(self):
+    def _browse_origin_unlocked(self, leaderboard_id):
         return BrowseOrigin(
             epoch=self.epoch,
             phase=self.phase,
             mode_id=self.selected_mode_id,
             race_id=self.race_id if self.phase == Phase.LEADERBOARD else None,
-            leaderboard_slot=(
-                self.race_leaderboard_slot
-                if self.phase == Phase.LEADERBOARD
-                else self.leaderboard_slot
-            ),
+            leaderboard_id=leaderboard_id,
         )
 
-    def capture_browse(
-        self, mode_id, race_id, leaderboard_slot=1
-    ) -> BrowseOrigin | None:
+    def capture_browse(self, mode_id, race_id, leaderboard_id=1) -> BrowseOrigin | None:
         """Capture eligibility; recheck after the outside-lock page read."""
         with self._lock:
             if self.phase not in (Phase.READY, Phase.STOPPED, Phase.LEADERBOARD):
                 return None
-            if self.phase == Phase.LEADERBOARD and self.persistence_status == "pending":
-                return None
-            origin = self._browse_origin_unlocked()
+            origin = self._browse_origin_unlocked(leaderboard_id)
             if (
                 mode_id != origin.mode_id
                 or race_id != origin.race_id
-                or type(leaderboard_slot) is not int
-                or leaderboard_slot != origin.leaderboard_slot
+                or type(leaderboard_id) is not int
+                or not 1 <= leaderboard_id < 2**53
             ):
                 return None
             return origin
@@ -596,11 +580,7 @@ class RaceStateMachine:
             current = (
                 type(origin) is BrowseOrigin
                 and self.phase in (Phase.READY, Phase.STOPPED, Phase.LEADERBOARD)
-                and (
-                    self.phase != Phase.LEADERBOARD
-                    or self.persistence_status in ("saved", "error")
-                )
-                and origin == self._browse_origin_unlocked()
+                and origin == self._browse_origin_unlocked(origin.leaderboard_id)
             )
             return current, expired or StateChange(False)
 
@@ -610,7 +590,7 @@ class RaceStateMachine:
         with self._lock:
             if self.phase != Phase.LEADERBOARD or race_id != self.race_id:
                 return StateChange(False)
-            if self.maintenance_requested and self.persistence_status == "pending":
+            if self.persistence_status == "pending":
                 return StateChange(False)
             if self.persistence_error is not None and (
                 self.persistence_status == "pending"
@@ -624,9 +604,7 @@ class RaceStateMachine:
 
     def reset(self) -> StateChange:
         with self._lock:
-            if self.persistence_error is not None or (
-                self.maintenance_requested and self.persistence_status == "pending"
-            ):
+            if self.persistence_status in ("pending", "error"):
                 return StateChange(False)
             diagnostic = self._reset_unlocked()
             return self._change_unlocked("reset", diagnostic=diagnostic)
@@ -690,7 +668,7 @@ class RaceStateMachine:
                 ),
                 "available_modes": [asdict(mode) for mode in self.registry.metadata()],
                 "browse_epoch": self.epoch,
-                "leaderboard_slot": self.leaderboard_slot,
+                "race_leaderboard_id": self.race_leaderboard_id,
                 "maintenance_requested": self.maintenance_requested,
                 "mode_error": self.mode_error,
                 "persistence_status": self.persistence_status,

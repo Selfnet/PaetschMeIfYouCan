@@ -38,7 +38,7 @@ def test_race_winner_target_uses_grouped_best_beyond_first_page(tmp_path):
     assert store.page_entries("full-field", boundary, 0).target_score_id is None
     assert (
         store.page_entries(
-            "full-field", boundary, 0, leaderboard_slot=2, race_id="race"
+            "full-field", boundary, 0, leaderboard_id=2, race_id="race"
         ).target_score_id
         is None
     )

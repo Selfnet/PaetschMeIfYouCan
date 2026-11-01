@@ -213,6 +213,8 @@ def test_name_timeout_saves_confirmed_names_and_leaderboard_resets(clock):
     assert [(item.player_number, item.name) for item in expired.submissions] == [
         (1, "Ada")
     ]
+    assert machine.snapshot()["remaining_seconds"] is None
+    machine.set_persistence(expired.origin, None)
     assert machine.snapshot()["remaining_seconds"] == 60
 
     clock.advance_ms(60_000)
@@ -302,7 +304,7 @@ def test_browser_epoch_exposes_same_origin_invalidation(clock, action):
     assert machine.capture_browse("full-field", None).epoch == after["browse_epoch"]
 
 
-def test_browser_epoch_survives_observation_tick_and_persistence(clock):
+def test_browser_epoch_survives_observation_and_ticks_but_refreshes_after_save(clock):
     machine = RaceStateMachine(clock_ns=clock)
     epoch = machine.snapshot()["browse_epoch"]
     machine.observe_board(1, (255,) * 48)
@@ -322,6 +324,8 @@ def test_browser_epoch_survives_observation_tick_and_persistence(clock):
     change = machine.submit_name(race_id, 2, "")
     epoch = machine.snapshot()["browse_epoch"]
     machine.set_persistence(change.origin, None)
+    assert machine.snapshot()["browse_epoch"] > epoch
+    epoch = machine.snapshot()["browse_epoch"]
     machine.leaderboard_activity(race_id)
     clock.advance_ms(1000)
     machine.tick()
@@ -344,8 +348,10 @@ def test_browse_origins_survive_progress_but_not_replacement_or_expiry(clock):
     machine.submit_name(race_id, 1, "")
     change = machine.submit_name(race_id, 2, "")
     assert change.origin.mode_id == "full-field"
-    assert machine.capture_browse("full-field", race_id) is None
+    pending = machine.capture_browse("full-field", race_id)
+    assert pending is not None
     machine.set_persistence(change.origin, None)
+    assert not machine.browse_is_current(pending)[0]
     origin = machine.capture_browse("full-field", race_id)
     assert machine.browse_is_current(origin)[0]
     assert machine.set_persistence(change.origin, None).changed
@@ -361,7 +367,8 @@ def test_activity_refreshes_only_current_unexpired_leaderboard(clock):
     machine = completed_race(clock)
     race_id = machine.snapshot()["race_id"]
     machine.submit_name(race_id, 1, "")
-    machine.submit_name(race_id, 2, "")
+    change = machine.submit_name(race_id, 2, "")
+    machine.set_persistence(change.origin, None)
     clock.advance_ms(59_000)
     assert not machine.leaderboard_activity("old").changed
     assert machine.snapshot()["remaining_seconds"] == 1
@@ -485,6 +492,7 @@ def test_selection_rejected_outside_ready_and_retained_on_all_resets(clock):
         change = machine.submit_name(race_id, 2, "")
         assert change.origin.mode_id == "quarter-field"
         assert change.submissions[0].mode_id == "quarter-field"
+        machine.set_persistence(change.origin, None)
         if exit_method == "dismiss":
             machine.dismiss_leaderboard(race_id)
         elif exit_method == "expiry":
@@ -688,10 +696,10 @@ def test_stale_persistence_mode_and_epoch_origins_are_rejected(clock):
     machine.submit_name(race_id, 1, "Ada")
     change = machine.submit_name(race_id, 2, "")
     assert not machine.set_persistence(RaceOrigin(race_id, "half-field"), None).changed
-    before = machine.snapshot()["remaining_seconds"]
+    assert machine.snapshot()["remaining_seconds"] is None
     clock.advance_ms(1000)
     machine.set_persistence(change.origin, None)
-    assert machine.snapshot()["remaining_seconds"] == before - 1
+    assert machine.snapshot()["remaining_seconds"] == 60
     machine.reset()
     machine.start()
     assert not machine.set_persistence(change.origin, "stale error").changed
@@ -872,11 +880,8 @@ def test_delayed_reads_and_persistence_cannot_restore_old_view(
     if saved:
         machine.set_persistence(change.origin, None)
     browse = machine.capture_browse("full-field", race_id)
-    if saved:
-        assert browse is not None
-        assert machine.browse_is_current(browse)[0]
-    else:
-        assert browse is None
+    assert browse is not None
+    assert machine.browse_is_current(browse)[0]
     captured = threading.Event()
     release = threading.Event()
     results = []
@@ -908,6 +913,12 @@ def test_delayed_reads_and_persistence_cannot_restore_old_view(
         thread.join(5)
     assert not thread.is_alive()
     assert len(results) == (2 if saved else 1)
+    if not saved:
+        assert results[0].action == "persistence"
+        assert machine.snapshot()["phase"] == "leaderboard"
+        assert machine.snapshot()["persistence_status"] == "error"
+        assert machine.snapshot()["persistence_error"] == "old write failed"
+        return
     assert results[0].action == ("reset" if replacement == "expiry" else None)
     if saved:
         assert not results[1][0]

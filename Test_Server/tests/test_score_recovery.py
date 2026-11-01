@@ -72,7 +72,7 @@ def test_retry_saves_original_identity_and_refreshes_frozen_browse(
     race_id = failed_race(runtime, clock, monkeypatch)
     client = sio.test_client(app)
     before = latest_event(client, "game_state")
-    request = page_request(mode_id="quarter-field", leaderboard_slot=4, race_id=race_id)
+    request = page_request(mode_id="quarter-field", leaderboard_id=4, race_id=race_id)
     client.emit("request_leaderboard", request)
     old = latest_event(client, "leaderboard_snapshot")
     assert old["target_score_id"] is None
@@ -116,14 +116,14 @@ def test_retry_saves_original_identity_and_refreshes_frozen_browse(
     assert all(
         r["current_race"]
         and r["mode_id"] == "quarter-field"
-        and r["leaderboard_slot"] == 4
+        and r["leaderboard_id"] == 4
         for r in rows
     )
     assert rows[0]["personal_best"] is (previous_time == 2000)
     assert rows[1]["personal_best"] is True
     with sqlite3.connect(runtime.store.path) as connection:
         assert connection.execute(
-            "SELECT race_id, player_number, name, duration_ms, mode_id, leaderboard_slot "
+            "SELECT race_id, player_number, name, duration_ms, mode_id, leaderboard_id "
             "FROM leaderboard_entries WHERE race_id = ? ORDER BY player_number",
             (race_id,),
         ).fetchall() == [
@@ -183,7 +183,7 @@ def test_page_started_before_retry_cannot_publish_after_success(
         assert release.wait(3)
         return page
 
-    request = page_request(mode_id="quarter-field", leaderboard_slot=4, race_id=race_id)
+    request = page_request(mode_id="quarter-field", leaderboard_id=4, race_id=race_id)
     with monkeypatch.context() as patch:
         patch.setattr(runtime.store, "page_entries", delayed)
         thread, errors = run_blocked(

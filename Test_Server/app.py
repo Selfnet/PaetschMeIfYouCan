@@ -3,7 +3,8 @@ import re
 import sqlite3
 import threading
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
+from datetime import UTC, datetime
 
 import serial
 from flask import Flask, jsonify, render_template, request
@@ -12,7 +13,8 @@ from flask_socketio import SocketIO
 from board import EXPECTED_IDS, NUM_PORTS, OPEN_ID
 from gamemodes import BUILTIN_MODES
 from leaderboard import LeaderboardStore, NewLeaderboardEntry, default_database_path
-from race import Phase, RaceStateMachine
+from leaderboard_policy import active_event, resolve_destination, utc_time
+from race import Phase, RaceStateMachine, StateChange
 
 MAX_SAFE_INTEGER = 2**53 - 1
 
@@ -38,40 +40,32 @@ class BrowseToken:
     opening: bool = False
 
 
-class UnavailableLeaderboardStore:
-    def median_duration_ms(self, mode_id, leaderboard_slot=1):
-        raise OSError("Leaderboard store is unavailable")
-
-    def maintenance_requested(self):
-        raise OSError("Leaderboard store is unavailable")
-
-    def set_maintenance_requested(self, enabled):
-        raise OSError("Leaderboard store is unavailable")
-
-    def selected_slot(self):
-        raise OSError("Leaderboard store is unavailable")
-
-    def set_selected_slot(self, leaderboard_slot):
-        raise OSError("Leaderboard store is unavailable")
-
-    def insert_entries(self, entries):
-        raise OSError("Leaderboard store is unavailable")
-
-    def snapshot_boundary(self, mode_id, leaderboard_slot=1):
-        raise OSError("Leaderboard store is unavailable")
-
-    def page_entries(
-        self, mode_id, boundary, offset, limit=50, leaderboard_slot=1, race_id=None
-    ):
-        raise OSError("Leaderboard store is unavailable")
+def board_metadata(board):
+    if board is None:
+        return None
+    return asdict(board) | {
+        "starts_at": board.starts_at.isoformat() if board.starts_at else None,
+        "ends_at": board.ends_at.isoformat() if board.ends_at else None,
+    }
 
 
 class GameRuntime:
-    def __init__(self, socketio, race, store, logger):
+    def __init__(self, socketio, race, store, logger, now_utc, database_path):
         self.socketio = socketio
         self.race = race
         self.store = store
         self.logger = logger
+        self.now_utc = now_utc
+        self.database_path = database_path
+        self.policy = None
+        self._published_policy = None
+        self._race_board = None
+        try:
+            self.policy = self._storage().load_policy()
+        except (sqlite3.Error, OSError, ValueError):
+            self.logger.exception(
+                "Could not load leaderboard routing; new races are blocked"
+            )
         self._browsing = {}
         self._browse_lock = threading.Lock()
         self._publication_lock = threading.RLock()
@@ -80,6 +74,65 @@ class GameRuntime:
         self.serial_threads = None
         self.stop_serial = False
         self._serial_lock = threading.Lock()
+
+    def _storage(self):
+        if self.store is None:
+            raise OSError("Leaderboard store is unavailable")
+        return self.store
+
+    def _board(self, identity):
+        return (
+            next((board for board in self.policy.boards if board.id == identity), None)
+            if self.policy
+            else None
+        )
+
+    def _policy_payload(self, now=None):
+        known = self.policy is not None
+        now = utc_time(now if now is not None else self.now_utc())
+        return {
+            "available": known,
+            "error": None
+            if known
+            else "Leaderboard routing is unavailable; retry storage from control",
+            "revision": self.policy.revision if known else None,
+            "next": board_metadata(resolve_destination(self.policy, now))
+            if known
+            else None,
+            "active_event": board_metadata(active_event(self.policy, now))
+            if known
+            else None,
+            "numbered": [
+                board_metadata(board)
+                for board in sorted(
+                    self.policy.boards, key=lambda board: board.slot or 10
+                )
+                if board.slot is not None
+            ]
+            if known
+            else [],
+        }
+
+    def start(self):
+        return self._race_control(self.race.start)
+
+    def space(self):
+        return self._race_control(self.race.space)
+
+    def _race_control(self, operation):
+        with self._publication_lock:
+            if self.race.snapshot()["phase"] == Phase.READY:
+                if self.policy is None:
+                    self.emit_state()
+                    return StateChange(False, action="routing_unavailable")
+                destination = resolve_destination(self.policy, self.now_utc())
+                self._race_board = destination
+                change = operation(destination.id)
+            else:
+                change = operation()
+            self._publish_change(change)
+        self._after_change(change)
+        return change
 
     def observe_board(self, player_number, values):
         self.apply(self.race.observe_board, player_number, values)
@@ -98,27 +151,128 @@ class GameRuntime:
 
     def select_leaderboard_slot(self, leaderboard_slot):
         with self._publication_lock:
+            now = utc_time(self.now_utc())
             error = None
             accepted = False
             if type(leaderboard_slot) is not int or not 1 <= leaderboard_slot <= 9:
                 error = "Leaderboard slot must be an integer between 1 and 9"
             elif self.race.snapshot()["phase"] != Phase.READY:
                 error = "Leaderboard slot selection is only available when ready"
+            elif self.policy is None:
+                error = "Leaderboard routing is unavailable"
+            elif active_event(self.policy, now) is not None:
+                error = "Scoring is locked to the active event; numbered boards can still be browsed"
             else:
                 try:
-                    self.store.set_selected_slot(leaderboard_slot)
+                    self._storage().set_selected_slot(leaderboard_slot, selected_at=now)
                 except (sqlite3.Error, OSError, ValueError):
                     self.logger.exception("Could not save selected leaderboard slot")
                     error = "Leaderboard slot could not be saved"
                 else:
-                    change = self.race.select_leaderboard_slot(leaderboard_slot)
-                    self._publish_change(change)
-                    accepted = change.action == "leaderboard_slot_selected"
+                    self.policy = replace(
+                        self.policy,
+                        manual_slot=leaderboard_slot,
+                        manual_selected_at=now,
+                        revision=self.policy.revision + 1,
+                    )
+                    self.emit_state()
+                    accepted = True
             return {
                 "accepted": accepted,
-                "leaderboard_slot": self.race.snapshot()["leaderboard_slot"],
+                "leaderboard_slot": resolve_destination(self.policy, now).slot
+                if self.policy
+                else None,
                 "error": error,
             }
+
+    def list_events(self, data):
+        with self._publication_lock:
+            if not isinstance(data, dict) or type(data.get("past_only")) is not bool:
+                return {"accepted": False, "error": "Expected a boolean past_only flag"}
+            if self.policy is None:
+                return {
+                    "accepted": False,
+                    "error": "Leaderboard routing is unavailable",
+                }
+            now = utc_time(self.now_utc())
+            events = [
+                board
+                for board in self.policy.boards
+                if board.slot is None
+                and (not data["past_only"] or board.ends_at <= now)
+            ]
+            events.sort(key=lambda board: (board.ends_at, board.id), reverse=True)
+            return {
+                "accepted": True,
+                "error": None,
+                "events": [board_metadata(board) for board in events],
+                "revision": self.policy.revision,
+            }
+
+    def edit_event(self, action, data):
+        with self._publication_lock:
+            if not isinstance(data, dict) or self.policy is None:
+                return {
+                    "accepted": False,
+                    "error": "Event data or leaderboard routing is unavailable",
+                }
+            revision = data.get("revision")
+            if (
+                action == "cancel_event"
+                and self.race.race_leaderboard_id is not None
+                and data.get("id") == self.race.race_leaderboard_id
+            ):
+                return {
+                    "accepted": False,
+                    "error": "The current race still belongs to this event",
+                }
+            try:
+                now = utc_time(self.now_utc())
+                if action == "save_event":
+                    event = self._storage().save_event(data.get("event"), revision, now)
+                    identity = event.id
+                else:
+                    identity = data.get("id")
+                    event = getattr(self._storage(), action)(identity, revision, now)
+            except ValueError as error:
+                return {"accepted": False, "error": str(error)}
+            except (sqlite3.Error, OSError):
+                self.logger.exception("Could not save leaderboard event")
+                return {"accepted": False, "error": "Event change could not be saved"}
+            boards = tuple(
+                board for board in self.policy.boards if board.id != identity
+            )
+            if event is not None:
+                boards += (event,)
+            self.policy = replace(self.policy, boards=boards, revision=revision + 1)
+            self.emit_state()
+            result = {"accepted": True, "error": None, "revision": self.policy.revision}
+            if event is not None:
+                result["event"] = board_metadata(event)
+                self.socketio.emit(
+                    "leaderboard_changed",
+                    {"leaderboard": result["event"], "revision": self.policy.revision},
+                )
+            return result
+
+    def retry_storage(self, data):
+        if not isinstance(data, dict):
+            return {"accepted": False, "error": "Expected a storage retry request"}
+        with self._publication_lock:
+            try:
+                store = LeaderboardStore(self.database_path, now=self.now_utc)
+                policy = store.load_policy()
+            except (sqlite3.Error, OSError, ValueError):
+                self.logger.exception("Could not reload leaderboard storage")
+                return {
+                    "accepted": False,
+                    "error": "Leaderboard storage is still unavailable",
+                }
+            if self.store is None:
+                self.store = store
+            self.policy = policy
+            self.emit_state()
+            return {"accepted": True, "error": None}
 
     def set_maintenance(self, enabled):
         with self._publication_lock:
@@ -128,7 +282,7 @@ class GameRuntime:
                     "error": "Expected a boolean maintenance setting",
                 }
             try:
-                self.store.set_maintenance_requested(enabled)
+                self._storage().set_maintenance_requested(enabled)
             except (sqlite3.Error, OSError, ValueError):
                 self.logger.exception("Could not save maintenance setting")
                 return {
@@ -152,7 +306,7 @@ class GameRuntime:
     def _persist(self, origin, submissions):
         persistence_error = None
         try:
-            self.store.insert_entries(
+            self._storage().insert_entries(
                 [
                     NewLeaderboardEntry(
                         race_id=item.race_id,
@@ -160,7 +314,7 @@ class GameRuntime:
                         player_number=item.player_number,
                         name=item.name,
                         duration_ms=item.duration_ms,
-                        leaderboard_slot=item.leaderboard_slot,
+                        leaderboard_id=item.leaderboard_id,
                     )
                     for item in submissions
                 ]
@@ -172,14 +326,26 @@ class GameRuntime:
 
     def emit_state(self, to=None):
         with self._publication_lock:
+            policy = self._policy_payload()
+            if policy != self._published_policy:
+                self.race.policy_changed()
+                self._published_policy = policy
+                to = None
             snapshot = self.race.snapshot()
+            identity = snapshot.pop("race_leaderboard_id")
+            if identity is None:
+                self._race_board = None
+            else:
+                self._race_board = self._board(identity) or self._race_board
+            snapshot["leaderboard_policy"] = policy
+            snapshot["race_leaderboard"] = board_metadata(self._race_board)
             if snapshot["race_id"] != self._pace_race_id:
                 self._pace_race_id = snapshot["race_id"]
                 self._pace_reference_ms = None
                 if self._pace_race_id is not None:
                     try:
-                        self._pace_reference_ms = self.store.median_duration_ms(
-                            snapshot["mode"]["id"], snapshot["leaderboard_slot"]
+                        self._pace_reference_ms = self._storage().median_duration_ms(
+                            snapshot["mode"]["id"], identity
                         )
                     except (sqlite3.Error, OSError, ValueError):
                         self.logger.exception("Could not load leaderboard pace")
@@ -202,13 +368,17 @@ class GameRuntime:
                 )
 
     def request_page(self, sid, data):
+        rejected = {
+            "accepted": False,
+            "error": "Leaderboard request is invalid or no longer current",
+        }
         if not isinstance(data, dict):
-            return
+            return rejected
         request_id, offset, boundary = (
             data.get(key) for key in ("request_id", "offset", "boundary")
         )
         mode_id, race_id = data.get("mode_id"), data.get("race_id")
-        leaderboard_slot = data.get("leaderboard_slot", 1)
+        leaderboard_id = data.get("leaderboard_id")
         if (
             not safe_integer(request_id, 1)
             or not safe_integer(offset)
@@ -216,24 +386,25 @@ class GameRuntime:
             or (boundary is None and offset != 0)
             or not isinstance(mode_id, str)
             or (race_id is not None and not isinstance(race_id, str))
-            or type(leaderboard_slot) is not int
-            or not 1 <= leaderboard_slot <= 9
+            or not safe_integer(leaderboard_id, 1)
         ):
-            return
+            return rejected
         with self._publication_lock:
-            origin = self.race.capture_browse(mode_id, race_id, leaderboard_slot)
+            if self._board(leaderboard_id) is None:
+                return rejected
+            origin = self.race.capture_browse(mode_id, race_id, leaderboard_id)
             current, change = self.race.browse_is_current(origin)
             self._publish_change(change)
         self._after_change(change)
         if not current:
-            return
+            return rejected
         with self._browse_lock:
             if sid not in self._browsing:
-                return
+                return rejected
             token = self._browsing[sid]
             if token is None or request_id > token.request_id:
                 if boundary is not None:
-                    return
+                    return rejected
                 token = BrowseToken(request_id, origin, None)
                 self._browsing[sid] = token
             elif (
@@ -241,30 +412,33 @@ class GameRuntime:
                 or origin != token.origin
                 or boundary != token.boundary
             ):
-                return
+                return rejected
             if boundary is None:
                 if token.opening:
-                    return
+                    return rejected
                 token.opening = True
         rows, next_offset, error = [], None, None
         target_score_id = None
         captured_boundary = boundary
+        result_race_id = (
+            race_id if leaderboard_id == self.race.race_leaderboard_id else None
+        )
         try:
             if boundary is None:
-                captured_boundary = self.store.snapshot_boundary(
-                    mode_id, leaderboard_slot
+                captured_boundary = self._storage().snapshot_boundary(
+                    mode_id, leaderboard_id
                 )
                 if not safe_integer(captured_boundary):
                     raise ValueError("invalid snapshot boundary")
-            page = self.store.page_entries(
-                mode_id, captured_boundary, offset, 50, leaderboard_slot, race_id
+            page = self._storage().page_entries(
+                mode_id, captured_boundary, offset, 50, leaderboard_id, result_race_id
             )
             rows = [
                 asdict(row)
                 | {
                     "current_race": row.race_duration_ms is not None,
-                    "personal_best": race_id is not None
-                    and row.race_id == race_id
+                    "personal_best": result_race_id is not None
+                    and row.race_id == result_race_id
                     and bool(row.best_improved),
                 }
                 for row in page.rows
@@ -278,10 +452,12 @@ class GameRuntime:
         with self._publication_lock:
             current, change = self.race.browse_is_current(origin)
             self._publish_change(change)
+            board = self._board(leaderboard_id)
+            published = False
             with self._browse_lock:
                 if self._browsing.get(sid) is token:
                     token.opening = False
-                    if current and token.boundary == boundary:
+                    if current and board is not None and token.boundary == boundary:
                         if error is None and boundary is None:
                             token.boundary = captured_boundary
                         self.socketio.emit(
@@ -289,7 +465,8 @@ class GameRuntime:
                             {
                                 "request_id": request_id,
                                 "mode_id": mode_id,
-                                "leaderboard_slot": leaderboard_slot,
+                                "leaderboard_id": leaderboard_id,
+                                "leaderboard": board_metadata(board),
                                 "race_id": race_id,
                                 "boundary": token.boundary,
                                 "offset": offset,
@@ -300,10 +477,15 @@ class GameRuntime:
                             },
                             to=sid,
                         )
+                        published = True
         self._after_change(change)
+        return {"accepted": True, "error": error} if published else rejected
 
     def tick(self):
         self.apply(self.race.tick)
+        with self._publication_lock:
+            if self._policy_payload() != self._published_policy:
+                self.emit_state()
 
     def start_serial_once(self):
         with self._serial_lock:
@@ -384,7 +566,9 @@ def register_routes(app, runtime):
 
     @app.get("/start-clock")
     def start_clock():
-        runtime.apply(runtime.race.start)
+        change = runtime.start()
+        if change.action == "routing_unavailable":
+            return "Leaderboard routing is unavailable", 503
         return "Clock started"
 
     @app.get("/stop-clock1")
@@ -404,7 +588,9 @@ def register_routes(app, runtime):
 
     @app.get("/space-clock")
     def space_clock():
-        change = runtime.apply(runtime.race.space)
+        change = runtime.space()
+        if change.action == "routing_unavailable":
+            return "Leaderboard routing is unavailable", 503
         return f"Clock {change.action or 'ignored'}"
 
     @app.get("/toggle-verify")
@@ -502,7 +688,27 @@ def register_socket_events(app, socketio, runtime):
 
     @socketio.on("request_leaderboard")
     def request_leaderboard(data=None):
-        runtime.request_page(request.sid, data)
+        return runtime.request_page(request.sid, data)
+
+    @socketio.on("list_events")
+    def list_events(data=None):
+        return runtime.list_events(data)
+
+    @socketio.on("save_event")
+    def save_event(data=None):
+        return runtime.edit_event("save_event", data)
+
+    @socketio.on("cancel_event")
+    def cancel_event(data=None):
+        return runtime.edit_event("cancel_event", data)
+
+    @socketio.on("end_event")
+    def end_event(data=None):
+        return runtime.edit_event("end_event", data)
+
+    @socketio.on("retry_leaderboard_storage")
+    def retry_leaderboard_storage(data=None):
+        return runtime.retry_storage(data)
 
 
 def background_loop(socketio, runtime):
@@ -520,6 +726,7 @@ def create_app(
     config=None,
     *,
     clock_ns=time.monotonic_ns,
+    now_utc=lambda: datetime.now(UTC),
     store=None,
     race_id_factory=None,
     registry=BUILTIN_MODES,
@@ -534,20 +741,15 @@ def create_app(
     kwargs = {"clock_ns": clock_ns, "registry": registry}
     if race_id_factory is not None:
         kwargs["race_id_factory"] = race_id_factory
+    database_path = store.path if store is not None else default_database_path()
     if store is None:
         try:
-            store = LeaderboardStore(default_database_path())
-        except (sqlite3.Error, OSError):
+            store = LeaderboardStore(database_path, now=now_utc)
+        except (sqlite3.Error, OSError, ValueError):
             app.logger.exception("Could not initialize leaderboard scores")
-            store = UnavailableLeaderboardStore()
     try:
-        kwargs["leaderboard_slot"] = store.selected_slot()
-    except (sqlite3.Error, OSError, ValueError):
-        app.logger.exception(
-            "Could not restore selected leaderboard slot; using slot 1"
-        )
-    try:
-        kwargs["maintenance_requested"] = store.maintenance_requested()
+        if store is not None:
+            kwargs["maintenance_requested"] = store.maintenance_requested()
     except (sqlite3.Error, OSError, ValueError):
         app.logger.exception("Could not restore maintenance setting; allowing play")
     runtime = GameRuntime(
@@ -555,6 +757,8 @@ def create_app(
         RaceStateMachine(**kwargs),
         store,
         app.logger,
+        now_utc,
+        database_path,
     )
     app.extensions["game_runtime"] = runtime
     register_routes(app, runtime)

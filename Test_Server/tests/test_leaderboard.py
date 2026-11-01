@@ -217,7 +217,7 @@ def test_grouped_pages_count_players_and_freeze_best_and_latest_attempts(tmp_pat
     assert (improved.rank, improved.duration_ms, improved.attempts) == (1, 0, 3)
     for mode, slot in [("quarter-field", 1), ("full-field", 2)]:
         isolated = store.page_entries(
-            mode, store.snapshot_boundary(mode, slot), 0, leaderboard_slot=slot
+            mode, store.snapshot_boundary(mode, slot), 0, leaderboard_id=slot
         )
         assert [(r.name, r.attempts) for r in isolated.rows] == [("P55", 1)]
 

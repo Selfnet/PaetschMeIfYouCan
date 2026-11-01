@@ -53,7 +53,7 @@ def test_idle_activation_blocks_game_controls_and_survives_reset(app_bundle):
 def test_queue_preserves_race_names_scores_and_results(app_bundle, clock, exit_method):
     app, sio, runtime = app_bundle
     client = sio.test_client(app)
-    runtime.apply(runtime.race.start)
+    runtime.start()
     before = runtime.race.snapshot()
     assert request_maintenance(client)["accepted"]
     queued = runtime.race.snapshot()
@@ -87,19 +87,19 @@ def test_queue_preserves_race_names_scores_and_results(app_bundle, clock, exit_m
 def test_stopped_game_waits_for_reset_and_queue_can_be_cancelled(app_bundle, clock):
     app, sio, runtime = app_bundle
     client = sio.test_client(app)
-    runtime.apply(runtime.race.start)
-    runtime.apply(runtime.race.space)
+    runtime.start()
+    runtime.space()
     assert request_maintenance(client)["accepted"]
     clock.advance_ms(300_000)
     runtime.tick()
     assert runtime.race.snapshot()["phase"] == "stopped"
     assert request_maintenance(client, False)["accepted"]
-    runtime.apply(runtime.race.space)
+    runtime.space()
     assert runtime.race.snapshot()["phase"] == "ready"
-    runtime.apply(runtime.race.start)
+    runtime.start()
     assert request_maintenance(client)["accepted"]
-    runtime.apply(runtime.race.space)
-    runtime.apply(runtime.race.space)
+    runtime.space()
+    runtime.space()
     assert runtime.race.snapshot()["phase"] == "maintenance"
 
 
@@ -107,7 +107,7 @@ def test_stopped_game_waits_for_reset_and_queue_can_be_cancelled(app_bundle, clo
 def test_requested_setting_restores_on_reconnect_and_backend_restart(app_bundle, phase):
     app, sio, runtime = app_bundle
     if phase == "racing":
-        runtime.apply(runtime.race.start)
+        runtime.start()
     client = sio.test_client(app)
     assert request_maintenance(client)["accepted"]
     client.disconnect()
@@ -178,6 +178,8 @@ def test_queue_does_not_abandon_inflight_score_save(app_bundle, clock, monkeypat
         assert runtime.race.snapshot()["persistence_status"] == "pending"
     finally:
         unblock(thread, errors, release)
+    assert runtime.race.snapshot()["phase"] == "leaderboard"
+    clock.advance_ms(60_000)
     runtime.tick()
     assert runtime.race.snapshot()["phase"] == "maintenance"
     assert runtime.store.snapshot_boundary("full-field") == 2
@@ -261,7 +263,7 @@ def test_maintenance_write_is_serialized_against_start(app_bundle, monkeypatch):
 
     def start():
         attempted.set()
-        runtime.apply(runtime.race.start)
+        runtime.start()
 
     starter = threading.Thread(target=start)
     starter.start()
