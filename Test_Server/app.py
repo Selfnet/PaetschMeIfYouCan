@@ -39,6 +39,9 @@ class BrowseToken:
 
 
 class UnavailableLeaderboardStore:
+    def median_duration_ms(self, mode_id, leaderboard_slot=1):
+        raise OSError("Leaderboard store is unavailable")
+
     def maintenance_requested(self):
         raise OSError("Leaderboard store is unavailable")
 
@@ -72,6 +75,8 @@ class GameRuntime:
         self._browsing = {}
         self._browse_lock = threading.Lock()
         self._publication_lock = threading.RLock()
+        self._pace_race_id = None
+        self._pace_reference_ms = None
         self.serial_threads = None
         self.stop_serial = False
         self._serial_lock = threading.Lock()
@@ -166,7 +171,19 @@ class GameRuntime:
         self.apply(self.race.set_persistence, origin, persistence_error)
 
     def emit_state(self, to=None):
-        snapshot = self.race.snapshot()
+        with self._publication_lock:
+            snapshot = self.race.snapshot()
+            if snapshot["race_id"] != self._pace_race_id:
+                self._pace_race_id = snapshot["race_id"]
+                self._pace_reference_ms = None
+                if self._pace_race_id is not None:
+                    try:
+                        self._pace_reference_ms = self.store.median_duration_ms(
+                            snapshot["mode"]["id"], snapshot["leaderboard_slot"]
+                        )
+                    except (sqlite3.Error, OSError, ValueError):
+                        self.logger.exception("Could not load leaderboard pace")
+            snapshot["pace_reference_ms"] = self._pace_reference_ms
         self.socketio.emit("game_state", snapshot, to=to)
         for number, player in snapshot["players"].items():
             presentation = player["presentation"]

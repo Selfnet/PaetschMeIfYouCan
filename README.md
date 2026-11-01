@@ -80,6 +80,27 @@ The database remains at `LEADERBOARD_DB` or `~/.local/share/patchmeifyoucan/lead
 
 [Slot persistence and transport tests](Test_Server/tests/test_leaderboard_slots.py) cover migration, isolation, restart restoration, failed settings writes, race identity, and stale page rejection; they do not exercise physical hardware. [Slot keyboard tests](Test_Server/tests/test_leaderboard_slot_keyboard.py) execute the actual dashboard shortcut and selection helpers, including modifier, focus, and phase guards; they do not replace browser layout checks.
 
+## Live Race Statistics
+
+During racing, patches/min uses the median personal-best time from the selected
+mode and leaderboard slot as a starting weight of three patches. Each name
+counts once, matching the leaderboard; zero-time bests are excluded. The median
+is captured once per race and retained on reconnect. Empty or unavailable
+leaderboards fall back to the player's own pace.
+
+After progress changes, the estimate holds for one estimated patching interval,
+then declines if no further progress arrives. The historical weight becomes less
+significant as patches accumulate. The rate stays zero before a timed patch; stopped
+and completed players show their actual race average. The combined rate uses the
+longer player's elapsed time, as before. These display estimates never affect
+race times, winners or saved scores.
+
+Each player's lead indicator sits between progress and the clock. Comparable
+progress shows the patch gap, with the leading player's indicator highlighted;
+ties are neutral and different mode stages are not compared.
+[Rate and lead tests](Test_Server/tests/test_dashboard_rates.py) exercise the real
+dashboard calculation and rendering; they do not verify kiosk layout or hardware.
+
 ## Maintenance Mode
 
 Use the **Maintenance mode** checkbox at `/control` to enable or disable it.
@@ -90,7 +111,7 @@ ready. It never stops a race or dismisses results itself. Uncheck it to cancel
 a queued request. A stopped game still needs its normal reset.
 
 While active, every connected dashboard is darkened behind large lowercase
-**maintenance mode** text in Selfnet orange and Comic Sans. Dashboard controls
+**maintenance mode** text in Selfnet orange and Comic Neue. Dashboard controls
 and shortcuts cannot start a game or dismiss the overlay. Disable maintenance
 from `/control` to return to ready. Serial observations continue for diagnostics.
 Maintenance is an operator convenience on the existing trusted game network,
@@ -112,11 +133,10 @@ change scores or the selected slot. Pre-maintenance source ignores this setting,
 so a source rollback will no longer block games. Take a fresh database backup
 before deployment; maintenance does not itself authorize deployment or restart.
 
-Comic Sans must be installed on each dashboard device through a licensed font
-distribution. It is referenced as a local font, not bundled in this repository.
-Do not treat a CSS font-family declaration as proof it rendered: check the actual
-font on the kiosk before deployment. Without it the browser uses its cursive
-fallback, which does not satisfy the requested appearance.
+Comic Neue is the approved open-source substitute for Comic Sans. Its bold font
+is bundled and served locally, with no OS font installation or external request.
+[Dashboard assets](Test_Server/static/dashboard/README.md) records its source and
+OFL license; verify the loaded font when checking the maintenance screen.
 
 [Maintenance tests](Test_Server/tests/test_maintenance.py) cover queued
 transitions, persistence, recovery and concurrent writes; [UI tests](Test_Server/tests/test_maintenance_ui.py)

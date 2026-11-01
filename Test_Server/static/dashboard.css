@@ -12,6 +12,13 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Comic Neue";
+  src: url("dashboard/ComicNeue-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
   --orange: #ff5a17;
@@ -136,7 +143,10 @@ input:focus-visible,
 }
 .player-top {
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(140px, 0.6fr) minmax(220px, 1fr) minmax(
+      140px,
+      0.6fr
+    ) auto;
   align-items: center;
   gap: 24px;
 }
@@ -175,6 +185,25 @@ input:focus-visible,
   font-size: 18px;
   overflow-wrap: anywhere;
   min-width: 0;
+}
+.player-lead {
+  min-width: 0;
+  padding: 8px 12px;
+  border-left: 4px solid transparent;
+  color: var(--secondary);
+  font-variant-numeric: tabular-nums;
+}
+.player-lead .stat-label {
+  display: block;
+}
+.player-lead .stat-value {
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.player-lead.is-leading {
+  border-color: var(--orange);
+  background: #ffe1d4;
+  color: var(--ink);
 }
 .clock-display {
   font: 400 80px/1.1 var(--mono);
@@ -664,8 +693,7 @@ kbd {
   color: var(--orange);
   text-align: center;
   font:
-    700 112px/1.2 "Comic Sans MS",
-    "Comic Sans",
+    700 112px/1.2 "Comic Neue",
     cursive;
 }
 #maintenanceOverlay[open] {
@@ -742,8 +770,11 @@ kbd {
     padding-inline: 20px;
   }
   .player-top {
-    grid-template-columns: minmax(140px, 1fr) minmax(200px, 1fr) auto;
+    grid-template-columns: minmax(180px, 1fr) minmax(130px, 0.6fr) auto;
     gap: 16px;
+  }
+  .player-top > :first-child {
+    grid-column: 1 / -1;
   }
   .clock-display {
     font-size: 64px;
@@ -834,15 +865,22 @@ kbd {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 16px;
   }
+  .player-top > :first-child {
+    grid-column: 1;
+  }
   .clock-display {
     grid-column: 2;
     grid-row: 1;
     font-size: 52px;
   }
   .player-stats {
-    grid-column: 1 / -1;
+    grid-column: 1;
     grid-row: 2;
     align-items: baseline;
+  }
+  .player-lead {
+    grid-column: 2;
+    grid-row: 2;
   }
   .stat-primary {
     flex-basis: auto;
@@ -946,6 +984,9 @@ kbd {
     text-align: left;
   }
   .player-stats {
+    grid-row: 3;
+  }
+  .player-lead {
     grid-row: 3;
   }
 }

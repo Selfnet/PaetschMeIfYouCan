@@ -30,6 +30,7 @@
                             <div class="stat"><span class="stat-label">Remaining</span><span id="remaining1" class="stat-value">48</span></div>
                             <div class="stat"><span class="stat-label">Patches / min</span><span id="patchRate1" class="stat-value">0.00</span></div>
                         </div>
+                        <div id="leadIndicator1" class="player-lead"><span class="stat-label">Lead</span><span id="playerLead1" class="stat-value">Even</span></div>
                         <div id="clockDisplay1" class="clock-display" aria-label="Player 1 elapsed time">00:00.000</div>
                     </div>
                     <p class="player-objective"><strong id="playerStage1" class="player-stage" hidden></strong><span id="playerObjective1"></span></p>
@@ -45,6 +46,7 @@
                             <div class="stat"><span class="stat-label">Remaining</span><span id="remaining2" class="stat-value">48</span></div>
                             <div class="stat"><span class="stat-label">Patches / min</span><span id="patchRate2" class="stat-value">0.00</span></div>
                         </div>
+                        <div id="leadIndicator2" class="player-lead"><span class="stat-label">Lead</span><span id="playerLead2" class="stat-value">Even</span></div>
                         <div id="clockDisplay2" class="clock-display" aria-label="Player 2 elapsed time">00:00.000</div>
                     </div>
                     <p class="player-objective"><strong id="playerStage2" class="player-stage" hidden></strong><span id="playerObjective2"></span></p>
@@ -206,6 +208,22 @@
 
     function progressFor(playerId) { return gameState.players[String(playerId)]?.presentation?.progress ?? null; }
 
+    function patchRate(playerId, durationMs = currentDurationMs(playerId)) {
+        const counter = progressFor(playerId);
+        if (counter?.unit !== "correct") return null;
+        if (durationMs <= 0 || counter.current === 0) return 0;
+        if (!clockState.activePlayers[playerId]) return counter.current * 60000 / durationMs;
+        const changedAt = Math.min(durationMs, gameState.players[String(playerId)].progress_changed_ms ?? 0);
+        if (changedAt <= 0) return 0;
+        const reference = gameState.pace_reference_ms;
+        const prior = reference > 0 && gameState.mode?.required_port_count === counter.total ? 3 : 0;
+        const priorMs = prior ? prior * reference / counter.total : 0;
+        const intervalMs = (changedAt + priorMs) / (counter.current + prior);
+        // Allow one normal patching interval before a pause lowers the estimate.
+        const elapsedMs = Math.max(changedAt, durationMs - intervalMs);
+        return (counter.current + prior) * 60000 / (elapsedMs + priorMs);
+    }
+
     function renderStat(id, label, value) {
         const element = document.getElementById(id);
         element.previousElementSibling.textContent = label;
@@ -216,6 +234,8 @@
     function updateStats() {
         const progress = PLAYER_IDS.map(progressFor);
         const longest = Math.max(...PLAYER_IDS.map(currentDurationMs));
+        const comparable = progress.every(Boolean) && progress[0].unit === progress[1].unit && progress[0].total === progress[1].total && gameState.players["1"]?.presentation?.stage === gameState.players["2"]?.presentation?.stage;
+        const lead = comparable ? progress[0].current - progress[1].current : 0;
         PLAYER_IDS.forEach((playerId) => {
             const presentation = gameState.players[String(playerId)]?.presentation;
             document.getElementById(`playerObjective${playerId}`).textContent = presentation?.objective || "Waiting for board";
@@ -225,19 +245,21 @@
             const counter = progressFor(playerId);
             const patches = counter?.unit === "correct";
             const unit = counter && !patches ? ` (${counter.unit})` : "";
-            const durationMinutes = currentDurationMs(playerId) / 60000;
             document.getElementById(`clockDisplay${playerId}`).textContent = formatDuration(currentDurationMs(playerId));
             renderStat(`patchCount${playerId}`, patches ? "Patches" : `Progress${unit}`, counter ? `${counter.current} / ${counter.total}` : "-");
-            renderStat(`patchRate${playerId}`, patches ? "Patches / min" : "Rate", patches ? (durationMinutes > 0 ? (counter.current / durationMinutes).toFixed(2) : "0.00") : "-");
+            renderStat(`patchRate${playerId}`, patches ? "Patches / min" : "Rate", patchRate(playerId)?.toFixed(2) ?? "-");
             renderStat(`remaining${playerId}`, `Remaining${unit}`, counter ? Math.max(0, counter.total - counter.current) : "-");
+            const advantage = playerId === 1 ? lead : -lead;
+            const racing = ["racing", "stopped"].includes(gameState.phase);
+            const gapUnit = patches ? (Math.abs(lead) === 1 ? "patch" : "patches") : counter?.unit;
+            renderStat(`playerLead${playerId}`, racing && comparable && lead !== 0 ? (advantage > 0 ? "Leading by" : "Behind by") : "Lead", racing && comparable ? (lead === 0 ? "Even" : `${Math.abs(lead)} ${gapUnit}`) : "-");
+            document.getElementById(`leadIndicator${playerId}`).classList.toggle("is-leading", racing && comparable && advantage > 0);
         });
-        const comparable = progress.every(Boolean) && progress[0].unit === progress[1].unit && progress[0].total === progress[1].total && gameState.players["1"]?.presentation?.stage === gameState.players["2"]?.presentation?.stage;
         const total = comparable ? progress[0].current + progress[1].current : 0;
         const patches = comparable && progress[0].unit === "correct";
         const unit = comparable && !patches ? ` (${progress[0].unit})` : "";
         renderStat("totalPatches", patches ? "Total patches" : `Total progress${unit}`, comparable ? `${total} / ${progress[0].total * 2}` : "-");
-        renderStat("totalRate", patches ? "Patches / min" : "Rate", patches ? (longest > 0 ? (total / (longest / 60000)).toFixed(2) : "0.00") : "-");
-        const lead = comparable ? progress[0].current - progress[1].current : 0;
+        renderStat("totalRate", patches ? "Patches / min" : "Rate", patches ? PLAYER_IDS.reduce((sum, id) => sum + patchRate(id, longest), 0).toFixed(2) : "-");
         renderStat("leader", `Leader${unit}`, comparable ? (lead === 0 ? "Even" : `P${lead > 0 ? "1" : "2"} +${Math.abs(lead)}`) : "-");
     }
 

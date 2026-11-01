@@ -36,6 +36,7 @@ def test_manual_stops_freeze_display_without_completing_players(clock):
     assert state["phase"] == Phase.RACING
     assert state["players"]["1"] == {
         "duration_ms": 1000,
+        "progress_changed_ms": 0,
         "completed": False,
         "manual_stopped": True,
         "clock_active": False,
@@ -58,6 +59,24 @@ def test_invalid_raw_frames_are_rejected(clock, states):
 
     assert not machine.observe_board(1, states).changed
     assert not machine.snapshot()["players"]["1"]["completed"]
+
+
+def test_progress_timestamp_tracks_changes_not_repeated_observations(clock):
+    machine = started_race(clock)
+    clock.advance_ms(6000)
+    one_patch = [EXPECTED_IDS[0]] + [0] * 47
+    machine.observe_board(1, one_patch)
+    assert machine.snapshot()["players"]["1"]["progress_changed_ms"] == 6000
+    clock.advance_ms(3000)
+    machine.observe_board(1, one_patch)
+    machine.tick()
+    state = machine.snapshot()
+    assert state["players"]["1"]["progress_changed_ms"] == 6000
+    assert state["players"]["2"]["progress_changed_ms"] == 0
+    machine.observe_board(1, [0] * 48)
+    assert machine.snapshot()["players"]["1"]["progress_changed_ms"] == 9000
+    machine.reset()
+    assert machine.snapshot()["players"]["1"]["progress_changed_ms"] == 0
 
 
 def test_first_valid_completion_is_idempotent_and_uses_floor_milliseconds(clock):

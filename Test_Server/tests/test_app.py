@@ -145,6 +145,53 @@ def test_same_origin_invalidation_broadcasts_epoch_to_both_views(app_bundle, act
     assert replacement["offset"] == 0
 
 
+def test_pace_reference_is_captured_once_per_race_and_reused_on_reconnect(
+    app_bundle, clock, monkeypatch
+):
+    app, sio, runtime = app_bundle
+    calls = []
+
+    def median(mode, slot):
+        calls.append((mode, slot))
+        return 288000
+
+    monkeypatch.setattr(runtime.store, "median_duration_ms", median)
+    client = sio.test_client(app)
+    assert latest_event(client, "game_state")["pace_reference_ms"] is None
+    runtime.apply(runtime.race.select_mode, "half-field")
+    runtime.select_leaderboard_slot(2)
+    runtime.apply(runtime.race.start)
+    clock.advance_ms(6000)
+    runtime.observe_board(1, [EXPECTED_IDS[0]] + [0] * 47)
+    state = latest_event(sio.test_client(app), "game_state")
+    assert state["pace_reference_ms"] == 288000
+    assert state["players"]["1"]["progress_changed_ms"] == 6000
+    assert calls == [("half-field", 2)]
+    runtime.apply(runtime.race.reset)
+    assert latest_event(client, "game_state")["pace_reference_ms"] is None
+    runtime.apply(runtime.race.start)
+    assert calls == [("half-field", 2)] * 2
+
+
+def test_failed_pace_lookup_does_not_block_racing_or_retry_on_each_update(
+    app_bundle, monkeypatch
+):
+    app, sio, runtime = app_bundle
+    calls = []
+
+    def fail(*args):
+        calls.append(args)
+        raise OSError("unavailable")
+
+    monkeypatch.setattr(runtime.store, "median_duration_ms", fail)
+    runtime.apply(runtime.race.start)
+    for _ in range(2):
+        state = latest_event(sio.test_client(app), "game_state")
+        assert state["phase"] == "racing"
+        assert state["pace_reference_ms"] is None
+    assert calls == [("full-field", 1)]
+
+
 def test_reconnect_has_cached_presentation(app_bundle):
     app, sio, runtime = app_bundle
     runtime.observe_board(1, EXPECTED_IDS)
@@ -860,6 +907,7 @@ def test_reconnect_restores_full_cached_phase_presentation(app_bundle, clock, ph
         runtime.apply(runtime.race.start)
         runtime.observe_board(1, EXPECTED_IDS)
     expected = json.loads(json.dumps(runtime.race.snapshot()))
+    expected["pace_reference_ms"] = None
     client = sio.test_client(app)
     state = latest_event(client, "game_state")
     assert state == expected

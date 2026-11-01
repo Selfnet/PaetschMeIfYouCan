@@ -26,6 +26,7 @@ class Phase(StrEnum):
 class PlayerRaceState:
     completed_ns: int | None = None
     manual_stopped_ns: int | None = None
+    progress_changed_ms: int = 0
 
 
 @dataclass(frozen=True)
@@ -187,6 +188,14 @@ class RaceStateMachine:
     def _publish_evaluations_unlocked(self, staged, now_ns, action=None):
         changed = action is not None
         for number, result in staged.items():
+            previous = self.presentations[number]
+            if previous is None or (previous.progress, previous.stage) != (
+                result.progress,
+                result.stage,
+            ):
+                self.players[number].progress_changed_ms = self._duration_ms_unlocked(
+                    number, now_ns
+                )
             changed |= self.presentations[number] != result
             self.presentations[number] = result
             if result.complete:
@@ -656,6 +665,7 @@ class RaceStateMachine:
             players = {
                 str(player_number): {
                     "duration_ms": self._duration_ms_unlocked(player_number, now_ns),
+                    "progress_changed_ms": player.progress_changed_ms,
                     "completed": player.completed_ns is not None,
                     "manual_stopped": player.manual_stopped_ns is not None,
                     "clock_active": (

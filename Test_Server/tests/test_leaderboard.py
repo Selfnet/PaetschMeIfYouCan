@@ -53,6 +53,27 @@ def test_store_initializes_and_reopens_existing_database(tmp_path):
     ] == [("Ada", 1234)]
 
 
+def test_pace_median_uses_all_personal_bests_in_the_selected_mode_and_slot(tmp_path):
+    store = LeaderboardStore(tmp_path / "scores.db")
+    assert store.median_duration_ms("full-field") is None
+    store.insert_entries(
+        [
+            entry("a", 1, "Ada", 12000),
+            entry("b", 1, "ADA", 15000),
+            entry("c", 1, "Grace", 24000),
+            entry("d", 1, "Zero", 0),
+            entry("e", 1, "OtherMode", 1, "half-field"),
+            NewLeaderboardEntry("f", 1, "OtherSlot", 999999, "full-field", 2),
+        ]
+    )
+    assert store.median_duration_ms("full-field") == 18000
+    store.insert_entries([entry("g", 1, "Third", 30000)])
+    assert store.median_duration_ms("full-field") == 24000
+    assert store.median_duration_ms("half-field") == 1
+    assert store.median_duration_ms("full-field", 2) == 999999
+    assert store.median_duration_ms("full-field", 3) is None
+
+
 def test_insert_is_atomic_and_duplicate_race_player_is_idempotent(tmp_path):
     store = LeaderboardStore(tmp_path / "scores.sqlite3", now=AdvancingUtcClock())
     submissions = [

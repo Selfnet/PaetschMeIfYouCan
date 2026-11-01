@@ -4,6 +4,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from statistics import median
 
 
 @dataclass(frozen=True)
@@ -170,6 +171,23 @@ class LeaderboardStore:
                     (item.race_id, item.player_number),
                 )
             }
+
+    def median_duration_ms(
+        self, mode_id: str, leaderboard_slot: int = 1
+    ) -> float | None:
+        self._validate_mode(mode_id)
+        self.validate_slot(leaderboard_slot)
+        with self._connect() as connection:
+            times = [
+                row[0]
+                for row in connection.execute(
+                    "SELECT MIN(duration_ms) FROM leaderboard_entries "
+                    "WHERE mode_id = ? AND leaderboard_slot = ? "
+                    "GROUP BY casefold(name) HAVING MIN(duration_ms) > 0",
+                    (mode_id, leaderboard_slot),
+                )
+            ]
+        return median(times) if times else None
 
     def snapshot_boundary(self, mode_id: str, leaderboard_slot: int = 1) -> int:
         self._validate_mode(mode_id)

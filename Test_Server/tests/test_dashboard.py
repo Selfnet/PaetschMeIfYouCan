@@ -343,6 +343,7 @@ def test_player_lanes_render_mode_objective_stage_and_progress(
             "formatDuration",
             "currentDurationMs",
             "progressFor",
+            "patchRate",
             "renderStat",
             "updateStats",
         ],
